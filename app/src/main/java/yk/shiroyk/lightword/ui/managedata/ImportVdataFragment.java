@@ -47,6 +47,7 @@ import yk.shiroyk.lightword.utils.FileUtils;
 
 public class ImportVdataFragment extends Fragment {
 
+    private static final String TAG = "ImportVdataFragment";
     private static int REQUEST_VOCABDATA = 10002;
     private boolean firstLoad = true;
 
@@ -176,20 +177,44 @@ public class ImportVdataFragment extends Fragment {
         });
     }
 
-    public void pickVocabData() {
+    private void pickVocabData() {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("text/plain");
         this.startActivityForResult(intent, REQUEST_VOCABDATA);
     }
 
-    public VocabType insertVocabType(String filename) throws ExecutionException, InterruptedException {
+    private VocabType insertVocabType(String filename) throws ExecutionException, InterruptedException {
         VocabType vocabType = new VocabType();
         vocabType.setVocabtype(filename);
         vocabType.setAmount(0);
         vocabType.setId(vocabTypeRepository.vtypeInsert(vocabType));
         return vocabType;
     }
+
+    private void setEnsureDialog(Uri uri, String fname, VocabType vocabType) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle("该词汇分类已存在")
+                .setMessage("是否新增该词汇分类的单词？")
+                .setPositiveButton("确认", (dialogInterface, i) ->
+                        importVocabData(uri, fname, true))
+                .setNegativeButton("取消", null).create().show();
+    }
+
+    private void importVocabData(Uri uri, String fname, boolean overWrite) {
+        Integer lines = new FileUtils(context).countLines(uri);
+        Map<String, Long[]> wordMap = vocabularyRepository.getWordToFrequencyMap();
+
+        try {
+            VocabType vocabType = insertVocabType(fname);
+            vocabType.setAmount(lines);
+            new ImportVdataFragment.ImportVocabData(vocabType, wordMap, overWrite).execute(uri);
+            Log.d(TAG, "vtypeId: " + vocabType.getId() + " Count: " + vocabType.getAmount());
+        } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -198,17 +223,12 @@ public class ImportVdataFragment extends Fragment {
         if (requestCode == REQUEST_VOCABDATA && resultCode == Activity.RESULT_OK) {
             if (data != null) {
                 uri = data.getData();
-                FileUtils fileUtils = new FileUtils(context);
-                Integer lines = fileUtils.countLines(uri);
-                Map<String, Long[]> wordMap = vocabularyRepository.getWordToFrequencyMap();
-                String fname = fileUtils.getFileName(uri);
-                try {
-                    VocabType vocabType = insertVocabType(fname);
-                    vocabType.setAmount(lines);
-                    new ImportVdataFragment.ImportVocabData(vocabType, wordMap).execute(uri);
-                    Log.d("vtypeId", vocabType.getId() + " Count:" + vocabType.getAmount());
-                } catch (ExecutionException | InterruptedException e) {
-                    e.printStackTrace();
+                String fname = new FileUtils(context).getFileName(uri);
+                VocabType vocabType = vocabTypeRepository.getVocabType(fname);
+                if (vocabType != null) {
+                    setEnsureDialog(uri, fname, vocabType);
+                } else {
+                    importVocabData(uri, fname, false);
                 }
             }
         }
@@ -219,17 +239,24 @@ public class ImportVdataFragment extends Fragment {
         String get(VocabType v);
     }
 
-    public class ImportVocabData extends AsyncTask<Uri, Void, VocabData[]> {
+    private class ImportVocabData extends AsyncTask<Uri, Void, VocabData[]> {
         int count = 0;
-        int lines = 0;
+        int lines;
+        int ignoreWord = 0;
         VocabType vocabType;
+        List<Long> wordIdList;
         Map<String, Long[]> wordMap;
         private AlertDialog loadingDialog;
 
-        public ImportVocabData(VocabType vocabType, Map<String, Long[]> wordMap) {
+        public ImportVocabData(VocabType vocabType, Map<String, Long[]> wordMap, boolean overWrite) {
             this.vocabType = vocabType;
+            this.wordIdList = new ArrayList<>();
             this.lines = vocabType.getAmount();
             this.wordMap = wordMap;
+
+            if (overWrite) {
+                this.wordIdList = vocabDataRepository.getAllWordId(vocabType.getId());
+            }
             AlertDialog.Builder builder = new AlertDialog.Builder(context);
             loadingDialog = builder.setCancelable(false)
                     .setView(R.layout.layout_loading).create();
@@ -243,7 +270,6 @@ public class ImportVdataFragment extends Fragment {
         @Override
         protected VocabData[] doInBackground(Uri... uri) {
             List<VocabData> vocabDataList = new ArrayList<>();
-            VocabData[] vocabData = new VocabData[lines];
             try {
                 InputStream is = context.getContentResolver().openInputStream(uri[0]);
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(is));
@@ -254,15 +280,20 @@ public class ImportVdataFragment extends Fragment {
                         VocabData v = new VocabData();
                         Long[] data = wordMap.get(line);
                         if (data != null) {
-                            v.setWordId(data[0]);
-                            v.setFrequency(data[1]);
-                            v.setVtypeId(vocabType.getId());
-                            vocabDataList.add(v);
+                            Long wordId = data[0];
+                            if (!wordIdList.contains(wordId)) {
+                                v.setWordId(wordId);
+                                v.setFrequency(data[1]);
+                                v.setVtypeId(vocabType.getId());
+                                vocabDataList.add(v);
+                            } else {
+                                ignoreWord += 1;
+                            }
                         }
                     }
                 }
                 count = vocabDataList.size();
-                Log.d("词汇数据初始化数量", count + "/" + lines);
+                Log.d(TAG, "词汇数据初始化数量: " + count + "/" + lines);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -274,17 +305,23 @@ public class ImportVdataFragment extends Fragment {
             String msg;
             if (count > 0) {
                 vocabDataRepository.insert(result);
+                msg = "词汇数据导入成功,";
+                if (ignoreWord > 0) {
+                    msg += "新增" + count + "条";
+                    count += ignoreWord;
+                } else {
+                    if (vdataViewModel.getWordMapSize() == 0) {
+                        vdataViewModel.setWordMap(vocabularyRepository.getIdToWordMap());
+                    }
+                    vdataViewModel.setVocabData(result);
+                    defualtVocabType = vocabType;
+                    sharedViewModel.setSubTitle(title.get(defualtVocabType));
+                    msg += "共导入" + count + "条数据";
+                }
                 vocabType.setAmount(count);
                 vocabTypeRepository.update(vocabType);
-                if (vdataViewModel.getWordMapSize() == 0) {
-                    vdataViewModel.setWordMap(vocabularyRepository.getIdToWordMap());
-                }
-                vdataViewModel.setVocabData(result);
-                defualtVocabType = vocabType;
-                sharedViewModel.setSubTitle(title.get(defualtVocabType));
-                msg = "词汇数据导入成功，共导入" + count + "条数据";
             } else {
-                msg = "解析失败，未导入数据";
+                msg = ignoreWord > 0 ? "没有可新增的数据" : "解析失败，未导入数据！";
             }
             loadingDialog.dismiss();
             Snackbar.make(getView(), msg, Snackbar.LENGTH_LONG)

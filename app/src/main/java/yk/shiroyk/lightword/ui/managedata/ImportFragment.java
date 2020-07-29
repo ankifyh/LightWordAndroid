@@ -29,7 +29,7 @@ public class ImportFragment extends Fragment {
         return root;
     }
 
-    public void init(View root) {
+    private void init(View root) {
 
         TabLayout import_tabs = root.findViewById(R.id.import_tabs);
         ViewPager import_viewpager = root.findViewById(R.id.import_viewpager);

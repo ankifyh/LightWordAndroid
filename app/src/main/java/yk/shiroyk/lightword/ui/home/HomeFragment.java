@@ -50,7 +50,7 @@ public class HomeFragment extends Fragment {
         root.findViewById(R.id.btn_start_exercise).setOnClickListener(view -> Navigation.findNavController(view).navigate(R.id.action_to_exercise));
     }
 
-    public void setHomeCard() {
+    private void setHomeCard() {
         String preValue = sp.getString("vtypeId", "1");
 
         vocabTypeRepository.getVocabTypeById(Long.valueOf(preValue)).observe(getViewLifecycleOwner(), vocabType -> {

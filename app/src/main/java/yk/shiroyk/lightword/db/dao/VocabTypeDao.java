@@ -2,6 +2,7 @@ package yk.shiroyk.lightword.db.dao;
 
 import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
+import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Update;
@@ -17,6 +18,9 @@ public interface VocabTypeDao {
 
     @Update
     int update(VocabType vocabtype);
+
+    @Delete
+    int delete(VocabType vocabtype);
 
     @Query("SELECT * FROM vocab_type")
     List<VocabType> getAllVocabType();

@@ -1,7 +1,5 @@
 package yk.shiroyk.lightword.ui.managedata;
 
-import android.util.Log;
-
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Transformations;
@@ -46,7 +44,6 @@ public class ImportVdataViewModel extends ViewModel {
                 strings.add(idToWordMap.get(w));
             }
         }
-        Log.d("WordList", strings.size() + "");
         wordList.setValue(strings);
     }
 }

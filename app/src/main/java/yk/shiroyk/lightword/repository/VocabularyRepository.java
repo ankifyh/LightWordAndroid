@@ -38,6 +38,10 @@ public class VocabularyRepository {
         return vocabularyDao.getWordStringById(wordId);
     }
 
+    public List<String> getWordStringIM() {
+        return vocabularyDao.getWordStringIM();
+    }
+
     public LiveData<List<String>> getWordString() {
         return vocabularyDao.getWordString();
     }

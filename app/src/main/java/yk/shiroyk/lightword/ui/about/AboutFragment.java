@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.ImageView;
 
 import androidx.appcompat.app.AlertDialog;
@@ -27,7 +26,6 @@ public class AboutFragment extends PreferenceFragmentCompat {
     private void init() {
         Preference about_source = findPreference("about_source");
         about_source.setOnPreferenceClickListener(preference -> {
-            Log.d("source", about_source.getSummary().toString());
             startActivity(new Intent(Intent.ACTION_VIEW)
                     .setData(Uri.parse(about_source.getSummary().toString())));
             return false;

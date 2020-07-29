@@ -33,6 +33,10 @@ public class VocabTypeRepository {
         return vocabTypeDao.update(vocabType);
     }
 
+    public int delete(VocabType vocabtype) {
+        return vocabTypeDao.delete(vocabtype);
+    }
+
     public List<VocabType> getAllVocabType() {
         return vocabTypeDao.getAllVocabType();
     }

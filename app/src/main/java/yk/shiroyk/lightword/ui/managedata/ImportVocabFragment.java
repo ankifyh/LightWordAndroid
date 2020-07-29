@@ -37,6 +37,7 @@ import yk.shiroyk.lightword.utils.VocabularyDataManage;
 
 public class ImportVocabFragment extends Fragment {
 
+    private static final String TAG = "ImportVocabFragment";
     private static int REQUEST_VOCABULARY = 10001;
 
     private SharedViewModel sharedViewModel;
@@ -84,9 +85,7 @@ public class ImportVocabFragment extends Fragment {
         tv_vocab_msg = root.findViewById(R.id.tv_vocab_msg);
         vocab_list = root.findViewById(R.id.vocab_list);
 
-        root.findViewById(R.id.fab_import_vocab).setOnClickListener(view -> {
-            pickVocabulary();
-        });
+        root.findViewById(R.id.fab_import_vocab).setOnClickListener(view -> pickVocabulary());
     }
 
     public void pickVocabulary() {
@@ -122,19 +121,24 @@ public class ImportVocabFragment extends Fragment {
             if (data != null) {
                 FileUtils fileUtils = new FileUtils(context);
                 uri = data.getData();
+                List<String> wordString = vocabularyRepository.getWordStringIM();
                 Integer lines = fileUtils.countLines(uri);
-                new ImportVocabFragment.ImportVocabulary(lines).execute(uri);
+                new ImportVocabFragment.ImportVocabulary(lines, wordString).execute(uri);
+
             }
         }
     }
 
     public class ImportVocabulary extends AsyncTask<Uri, Void, List<Vocabulary>> {
         int count = 0;
-        int lines = 0;
+        int lines;
+        int overWrite = 0;
         private AlertDialog loadingDialog;
+        private List<String> wordString;
 
-        public ImportVocabulary(int lines) {
+        public ImportVocabulary(int lines, List<String> wordString) {
             this.lines = lines;
+            this.wordString = wordString;
             AlertDialog.Builder builder = new AlertDialog.Builder(context);
             loadingDialog = builder.setCancelable(false)
                     .setView(R.layout.layout_loading).create();
@@ -155,17 +159,22 @@ public class ImportVocabFragment extends Fragment {
                 while ((str = bufferedReader.readLine()) != null) {
                     String[] line = str.split(",", 3);
                     if (line.length > 1) {
-                        Vocabulary vocabulary = new Vocabulary();
                         String word = line[0];
-                        long frequency = Long.parseLong(line[1]);
-                        vocabulary.setWord(word);
-                        vocabulary.setFrequency(frequency);
-                        vocabularyList.add(vocabulary);
-                        vocabularyDataManage.writeFile(line[2], word);
+                        if (!wordString.contains(word)) {
+                            Vocabulary vocabulary = new Vocabulary();
+                            long frequency = Long.parseLong(line[1]);
+                            vocabulary.setWord(word);
+                            vocabulary.setFrequency(frequency);
+                            vocabularyList.add(vocabulary);
+                            vocabularyDataManage.writeFile(line[2], word);
+                        } else {
+                            overWrite += 1;
+                            vocabularyDataManage.overWriteFile(line[2], word);
+                        }
                     }
                 }
                 count = vocabularyList.size();
-                Log.d("词汇例句初始化数量", vocabularyList.size() + "/" + lines);
+                Log.d(TAG, "词汇例句初始化数量: " + vocabularyList.size() + "/" + lines);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -177,10 +186,15 @@ public class ImportVocabFragment extends Fragment {
             String msg;
             if (result.size() > 0) {
                 msg = "词库数据导入成功，共导入" + result.size() + "条数据";
+                msg += overWrite > 0 ? ", 覆盖" + overWrite + "条数据" : "";
                 Vocabulary[] vocabularies = result.toArray(new Vocabulary[count]);
                 vocabularyRepository.insert(vocabularies);
             } else {
-                msg = "解析失败，未导入数据";
+                if (overWrite > 0) {
+                    msg = "词库数据导入成功，共覆盖" + overWrite + "条数据";
+                } else {
+                    msg = "解析失败，未导入数据";
+                }
             }
             loadingDialog.dismiss();
             Snackbar.make(getView(), msg, Snackbar.LENGTH_LONG)

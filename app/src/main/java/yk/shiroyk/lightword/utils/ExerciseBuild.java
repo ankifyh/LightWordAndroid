@@ -26,7 +26,10 @@ import yk.shiroyk.lightword.repository.VocabDataRepository;
 import yk.shiroyk.lightword.repository.VocabularyRepository;
 
 public class ExerciseBuild extends ViewModel {
+    private static final String TAG = "ExerciseBuild";
+
     private MutableLiveData<List<Exercise>> exerciseList = new MutableLiveData<>();
+    private MutableLiveData<String> exerciseMsg = new MutableLiveData<>();
 
     private VocabDataRepository vocabDataRepository;
     private ExerciseRepository exerciseRepository;
@@ -95,7 +98,7 @@ public class ExerciseBuild extends ViewModel {
                 a = str_compare(s, w);
                 if (a != null) {
                     answerObject.answer = a;
-                    Log.d("一般匹配", answerObject.answer +
+                    Log.d(TAG, "一般匹配: " + answerObject.answer +
                             "  " + answerObject.answerIndex +
                             "  " + sentence);
                     break;
@@ -115,7 +118,7 @@ public class ExerciseBuild extends ViewModel {
                         if (a != null) {
                             answerObject.answer = a;
                             answerObject.answerIndex += sl;
-                            Log.d("字符匹配", answerObject.answer +
+                            Log.d(TAG, "字符匹配: " + answerObject.answer +
                                     "  " + answerObject.answerIndex +
                                     "  " + sentence);
                         } else {
@@ -138,7 +141,7 @@ public class ExerciseBuild extends ViewModel {
                     Matcher m = p.matcher(s);
                     if (m.find()) {
                         answerObject.answer = m.group();
-                        Log.d("后缀匹配", answerObject.answer +
+                        Log.d(TAG, "后缀匹配: " + answerObject.answer +
                                 "  " + answerObject.answerIndex +
                                 "  " + sentence);
                         break;
@@ -161,14 +164,15 @@ public class ExerciseBuild extends ViewModel {
                 exercise = new Exercise();
 
                 String word = vocabulary.getWord();
-
                 String ex = vocabularyDataManage.readFile(word);
-                if (ex != null) {
-                    exercise.setId(vocabulary.getId());
-                    exercise.setWord(word);
-                    exercise.setStatus(status);
 
-                    ExerciseList exampleList = parseJson(ex);
+                exercise.setId(vocabulary.getId());
+                exercise.setWord(word);
+                exercise.setStatus(status);
+
+                ExerciseList exampleList = parseJson(ex);
+                if (exampleList != null) {
+
                     List<String> inflection = exampleList.getInflection();
                     exercise.setInflection(inflection);
 
@@ -185,38 +189,49 @@ public class ExerciseBuild extends ViewModel {
                         exercise.setTranslation(example.getTranslation());
                         exercise.setAnswer(answer.answer);
                         exercise.setAnswerIndex(answer.answerIndex);
-                        Log.d("answerIndex", answer.answerIndex + "");
+                        Log.d(TAG, "answerIndex: " + answer.answerIndex + "");
                     } else {
-                        Log.e("未匹配到", "Word: " + word + " Sentence: " + sentence);
+                        Log.e(TAG, "未匹配到: " + "Word: " + word + " Sentence: " + sentence);
                         continue;
                     }
 
 
                     exerciseList.add(exercise);
                 } else {
-                    continue;
+                    Log.e(TAG, "词库例句缺失: " + "Word: " + word);
                 }
-                exercise = null;
             }
         }
 
         return exerciseList;
     }
 
+    public LiveData<String> getExerciseMsg() {
+        return exerciseMsg;
+    }
+
     public LiveData<List<Exercise>> newExercise(Long vtypeId, Integer limit) {
         List<Long> wordIdList = vocabDataRepository.loadNewWord(vtypeId, this.byFrequency, limit);
+        if (wordIdList.size() == 0) {
+            exerciseMsg.setValue("未查询到词汇数据，\n请先导入词汇数据。");
+        }
         exerciseList.setValue(buildExercise(wordIdList, false));
         return exerciseList;
     }
 
     public LiveData<List<Exercise>> autoExercise(Long vtypeId, Integer limit) {
         List<Long> reviewList = exerciseRepository.loadReviewWord(vtypeId, limit);
+        List<Exercise> exercises;
         if (reviewList.size() < limit) {
             return newExercise(vtypeId, limit);
         } else {
-            exerciseList.setValue(buildExercise(reviewList, true));
-            return exerciseList;
+            exercises = buildExercise(reviewList, true);
+            if (exercises.size() == 0) {
+                exerciseMsg.setValue("解析词库例句失败，\n请尝试重新导入词库数据。");
+            }
         }
+        exerciseList.setValue(exercises);
+        return exerciseList;
     }
 
     private static class AnswerObject {

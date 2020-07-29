@@ -17,6 +17,8 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import androidx.annotation.AnimRes;
+import androidx.annotation.ColorRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.cardview.widget.CardView;
@@ -28,9 +30,13 @@ import yk.shiroyk.lightword.R;
 import yk.shiroyk.lightword.db.entity.exercise.Exercise;
 
 public class ExerciseCardView extends CardView {
+
+    private static final String TAG = "ExerciseCardView";
+
     public static final int DEFAULT_BASELINE = R.color.defaultAnswerBaseLineColor;
     public static final int CORRECT_BASELINE = R.color.correctAnswerBaseLineColor;
     public static final int ERROR_BASELINE = R.color.errorAnswerBaseLineColor;
+
     private Context context;
     private LinearLayout exercise_card_container;
     private ProgressBar card_progress_circle;
@@ -112,7 +118,7 @@ public class ExerciseCardView extends CardView {
                 answerParams.setMargins(x, y, 0, 0);
                 card_answer_layout.setLayoutParams(answerParams);
             } catch (IndexOutOfBoundsException ex) {
-                Log.e("ExerciseCard", "Set Answer Layout failed Answer: " + answer + " , Index: " +
+                Log.e(TAG, "Set Answer Layout failed Answer: " + answer + " , Index: " +
                         answerIndex + " ,  Sentence: " + tv_card_sentence.getText().toString());
                 ex.printStackTrace();
             }
@@ -150,17 +156,21 @@ public class ExerciseCardView extends CardView {
         return et_card_answer.getText().toString().trim().toLowerCase();
     }
 
+    public void requestAnswerFocus() {
+        et_card_answer.requestFocus();
+    }
+
     public void startAnswerAnim() {
         et_card_answer.startAnimation(AnimationUtils.loadAnimation(
                 context, R.anim.gradually
         ));
     }
 
-    public void setAnswerBaseLineColor(int color) {
+    public void setAnswerBaseLineColor(@ColorRes int color) {
         second_view_answer.setBackgroundResource(color);
     }
 
-    public void startAnswerBaseLineAnim(int anim) {
+    public void startAnswerBaseLineAnim(@AnimRes int anim) {
         second_view_answer.startAnimation(AnimationUtils.loadAnimation(
                 context, anim
         ));

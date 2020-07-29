@@ -36,6 +36,8 @@ import yk.shiroyk.lightword.utils.ExerciseBuild;
 
 public class ExerciseFragment extends Fragment {
 
+    private static final String TAG = "ExerciseFragment";
+
     private Context context;
     private ExerciseRepository exerciseRepository;
     private ExerciseBuild exerciseBuild;
@@ -87,7 +89,7 @@ public class ExerciseFragment extends Fragment {
         return root;
     }
 
-    public void updateTarget() {
+    private void updateTarget() {
         int target = sp.getInt("todayTarget", 0);
         long timestamp = new Date().getTime();
         long lastUpdateTarget = sp.getLong("lastUpdateTarget", timestamp);
@@ -101,7 +103,7 @@ public class ExerciseFragment extends Fragment {
         sharedViewModel.setTarget(target);
     }
 
-    public void initTarget() {
+    private void initTarget() {
         int todayTarget = sp.getInt("todayTarget", 0);
         if (dailyTarget.equals("0")) {
             tv_daily_target.setVisibility(View.INVISIBLE);
@@ -111,7 +113,7 @@ public class ExerciseFragment extends Fragment {
         }
     }
 
-    public void setUptargetDialog() {
+    private void setUptargetDialog() {
         sharedViewModel.getTarget().observe(getViewLifecycleOwner(), integer -> {
             int parseInt = Integer.parseInt(dailyTarget);
             if (parseInt != 0) {
@@ -129,7 +131,7 @@ public class ExerciseFragment extends Fragment {
         });
     }
 
-    public void init(View root) {
+    private void init(View root) {
         exercise_container = root.findViewById(R.id.exercise_container);
         tv_tip = root.findViewById(R.id.tv_tip);
         tv_e_data = root.findViewById(R.id.tv_e_data);
@@ -189,7 +191,7 @@ public class ExerciseFragment extends Fragment {
         });
     }
 
-    public void reDialog(View view) {
+    private void reDialog(View view) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setIcon(R.drawable.ic_edit)
                 .setTitle("是否排除该单词？")
@@ -211,20 +213,20 @@ public class ExerciseFragment extends Fragment {
         }
     }
 
-    public void remember(Long wordId, Long vtypeId) {
+    private void remember(Long wordId, Long vtypeId) {
         exerciseRepository.defaultForgetTime();
         exerciseRepository.remember(wordId, vtypeId);
         updateTarget();
 //        getWordDetail();
     }
 
-    public void forget(Long wordId, Long vtypeId) {
+    private void forget(Long wordId, Long vtypeId) {
         exerciseRepository.defaultForgetTime();
         exerciseRepository.forget(wordId, vtypeId);
 //        getWordDetail();
     }
 
-    public void remembered(Long wordId, Long vtypeId) {
+    private void remembered(Long wordId, Long vtypeId) {
         exerciseRepository.defaultForgetTime();
         exerciseRepository.remembered(wordId, vtypeId);
         updateTarget();
@@ -275,8 +277,8 @@ public class ExerciseFragment extends Fragment {
         }
     }
 
-    public void playVoice() {
-        new CountDownTimer(3000, 1000) {
+    private void playVoice() {
+        new CountDownTimer(1000, 1000) {
             @Override
             public void onTick(long l) {
             }
@@ -299,27 +301,33 @@ public class ExerciseFragment extends Fragment {
         }.start();
     }
 
-    public void getCardData(Integer limit) {
+    private void getCardData(Integer limit) {
         cardIndex = 0;
         currentCard = 0;
         exerciseBuild.autoExercise(vtypeId, limit).observe(getViewLifecycleOwner(), exercises -> {
             if (exercises.size() > 0) {
+                tv_tip.setVisibility(View.GONE);
+                exercise_container.setVisibility(View.VISIBLE);
                 exerciseList = exercises;
                 setCardData(cardIndex);
                 btn_prev_card.setVisibility(View.INVISIBLE);
             } else {
-                tv_tip.setVisibility(View.VISIBLE);
                 exercise_container.setVisibility(View.GONE);
+                exerciseBuild.getExerciseMsg().observe(getViewLifecycleOwner(), msg -> {
+                    tv_tip.setText(msg);
+                    tv_tip.setVisibility(View.VISIBLE);
+                });
             }
         });
     }
 
-    public void setCardData(Integer cardIndex) {
+    private void setCardData(Integer cardIndex) {
         Exercise exercise = exerciseList.get(cardIndex);
         inflection = exercise.getInflection();
         answer = exercise.getAnswer();
         sentence = exercise.getSentence();
-        Log.d("Answer", answer + " Word: " + exercise.getWord() + "  Sentence: " + exercise.getSentence());
+        Log.d(TAG, "vtypeId: " + vtypeId + " Answer: " + answer + " Word: " +
+                exercise.getWord() + "\nSentence: " + exercise.getSentence());
         wordId = exercise.getId();
 
         tv_translation.setText(exercise.getTranslation());

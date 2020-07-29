@@ -33,7 +33,7 @@
             app:useSimpleSummaryProvider="true" />
 
         <EditTextPreference
-            app:defaultValue="100"
+            app:defaultValue="0"
             app:dialogTitle="设置每日目标"
             app:key="dailyTarget"
             app:title="每日目标"

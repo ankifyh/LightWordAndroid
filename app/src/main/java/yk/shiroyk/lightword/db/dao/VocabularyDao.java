@@ -25,6 +25,9 @@ public interface VocabularyDao {
     @Query("SELECT * FROM vocabulary WHERE word = :word")
     Vocabulary getWord(String word);
 
+    @Query("SELECT word FROM vocabulary")
+    List<String> getWordStringIM();
+
     @Transaction
     @Query("SELECT * FROM vocabulary WHERE id IN (:Id)")
     Vocabulary[] getWordListById(List<Long> Id);
