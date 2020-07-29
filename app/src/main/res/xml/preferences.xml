@@ -1,0 +1,64 @@
+<androidx.preference.PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        app:key="theme_category"
+        app:title="主题">
+
+        <ListPreference
+            app:defaultValue="light"
+            app:dialogTitle="选择主题"
+            app:entries="@array/themeListArray"
+            app:entryValues="@array/themeEntryArray"
+            app:key="themePref"
+            app:title="选择主题"
+            app:useSimpleSummaryProvider="true" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:key="navigationBarBg"
+            app:summary="开启关闭导航栏背景"
+            app:title="导航栏背景" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:key="exercise_category"
+        app:title="练习设置">
+
+        <ListPreference
+            app:defaultValue="1"
+            app:dialogTitle="选择练习单词分类"
+            app:key="vtypeId"
+            app:title="练习单词分类"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
+            app:defaultValue="100"
+            app:dialogTitle="设置每日目标"
+            app:key="dailyTarget"
+            app:title="每日目标"
+            app:useSimpleSummaryProvider="true" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="true"
+            app:key="byFrequency"
+            app:summary="词频数据来自与COCA"
+            app:title="按单词词频练习新单词" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:key="backup"
+        app:title="备份数据">
+
+        <Preference
+            app:key="import_data"
+            app:title="导入数据" />
+
+        <Preference
+            app:key="export_data"
+            app:title="导出数据" />
+
+    </PreferenceCategory>
+
+</androidx.preference.PreferenceScreen>

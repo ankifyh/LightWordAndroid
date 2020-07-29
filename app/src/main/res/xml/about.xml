@@ -1,0 +1,31 @@
+<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <Preference android:layout="@layout/header_about_view" />
+
+    <Preference
+        android:icon="@drawable/ic_android"
+        android:summary="@string/versionName"
+        app:key="about_version"
+        app:title="版本" />
+
+    <Preference
+        android:icon="@drawable/ic_run"
+        android:summary="Shiroyk"
+        app:key="about_author"
+        app:title="作者" />
+
+    <Preference
+        android:icon="@drawable/ic_github"
+        android:summary="https://github.com/shiroyk/LightWord"
+        app:key="about_source"
+        app:title="项目地址" />
+
+    <Preference
+        android:icon="@drawable/ic_money"
+        android:summary="请我喝杯奶茶"
+        app:key="about_donate"
+        app:title="支持我" />
+
+</androidx.preference.PreferenceScreen>
+

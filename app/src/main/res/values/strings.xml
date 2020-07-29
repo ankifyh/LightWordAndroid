@@ -1,0 +1,28 @@
+<resources>
+    <string name="app_name">LightWord</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Light Word</string>
+    <string name="nav_header_subtitle">共计学习233小时, 练习114154次</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+    <string name="res_image">Image Description</string>
+
+    <string name="title_home">主页</string>
+    <string name="title_import">导入</string>
+    <string name="title_setting">设置</string>
+    <string name="title_exercise">练习</string>
+    <string name="title_about">关于</string>
+
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="exercise_card_translation">这种麻醉状态不仅在法庭起了作用，而且还使我看到汉娜好像把我当成另一个爱过并渴望过她的人，一个我很熟悉但却不是我的那么一个人。</string>
+    <string name="exercise_card_sentence">The anesthetic functioned not only in the courtroom, and not only to allow me to see Hanna as if it was someone else who had loved and desired her, someone I knew well but who wasn`t me.</string>
+    <string name="exercise_card_meaning">麻醉的；感觉缺失的</string>
+    <string name="exercise_tips">暂无数据,请先导入词库与词汇数据</string>
+    <string name="exercise_data_tips">未找到该单词之前练习的数据</string>
+    <string name="string_home_progress">0/4598</string>
+    <string name="string_home_vtype">CET4</string>
+    <string name="exercise_card_pos">形容词</string>
+    <string name="string_target">今日: 0/100</string>
+    <string name="versionName">1.0</string>
+</resources>

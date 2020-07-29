@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">@android:color/holo_blue_dark</color>
+    <color name="colorPrimaryDark">@android:color/holo_blue_dark</color>
+    <color name="colorAccent">@android:color/holo_blue_dark</color>
+    <color name="toolbarColor">@android:color/holo_blue_dark</color>
+    <color name="cardColor">@android:color/white</color>
+    <color name="cardTextColor">@android:color/secondary_text_light</color>
+    <color name="transparent">@android:color/transparent</color>
+    <color name="reviewStatusColor">#FFD600</color>
+    <color name="rememberStatusColor">#00C853</color>
+    <color name="defaultAnswerBaseLineColor">@color/colorPrimary</color>
+    <color name="errorAnswerBaseLineColor">#F48FB1</color>
+    <color name="correctAnswerBaseLineColor">#A5D6A7</color>
+</resources>
