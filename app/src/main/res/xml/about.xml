@@ -17,7 +17,7 @@
 
     <Preference
         android:icon="@drawable/ic_github"
-        android:summary="https://github.com/shiroyk/LightWord"
+        android:summary="https://github.com/shiroyk/LightWordAndroid"
         app:key="about_source"
         app:title="项目地址" />
 

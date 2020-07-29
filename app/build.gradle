@@ -11,7 +11,7 @@ android {
         versionCode 1
         versionName "v1.0"
 
-        archivesBaseName = "$applicationId-v$versionCode"
+        archivesBaseName = "$applicationId-v$versionCode($versionName)"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
