@@ -122,7 +122,7 @@ public class ExerciseBuild extends ViewModel {
                                     "  " + answerObject.answerIndex +
                                     "  " + sentence);
                         } else {
-                            sl += 1;
+                            sl += c.length() > 0 ? c.length() : 1;
                         }
                     }
                     if (answerObject.answer != null) {

@@ -2,6 +2,8 @@ package yk.shiroyk.lightword.ui.about;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.widget.ImageView;
@@ -24,6 +26,16 @@ public class AboutFragment extends PreferenceFragmentCompat {
     }
 
     private void init() {
+        Preference about_version = findPreference("about_version");
+        try {
+            PackageManager manager = context.getPackageManager();
+            PackageInfo info = manager.getPackageInfo(
+                    context.getPackageName(), 0);
+            about_version.setSummary(info.versionName);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+
         Preference about_source = findPreference("about_source");
         about_source.setOnPreferenceClickListener(preference -> {
             startActivity(new Intent(Intent.ACTION_VIEW)

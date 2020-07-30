@@ -297,6 +297,7 @@ public class ExerciseFragment extends Fragment {
                 }
                 exercise_card.startExerciseCardAnim();
                 correctFlag = true;
+                exercise_card.hideAnswer();
             }
         }.start();
     }
