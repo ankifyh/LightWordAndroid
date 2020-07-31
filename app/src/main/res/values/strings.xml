@@ -18,7 +18,7 @@
     <string name="exercise_card_translation">这种麻醉状态不仅在法庭起了作用，而且还使我看到汉娜好像把我当成另一个爱过并渴望过她的人，一个我很熟悉但却不是我的那么一个人。</string>
     <string name="exercise_card_sentence">The anesthetic functioned not only in the courtroom, and not only to allow me to see Hanna as if it was someone else who had loved and desired her, someone I knew well but who wasn`t me.</string>
     <string name="exercise_card_meaning">麻醉的；感觉缺失的</string>
-    <string name="exercise_tips">暂无数据,请先导入词库与词汇数据</string>
+    <string name="exercise_tips">未查询到数据,\n请尝试重新导入词库与词汇数据</string>
     <string name="exercise_data_tips">未找到该单词之前练习的数据</string>
     <string name="string_home_progress">0/4598</string>
     <string name="string_home_vtype">CET4</string>

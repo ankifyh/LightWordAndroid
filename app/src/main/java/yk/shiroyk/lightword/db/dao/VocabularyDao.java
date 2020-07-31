@@ -20,13 +20,13 @@ public interface VocabularyDao {
     void insertMany(Vocabulary[] vocabularies);
 
     @Query("SELECT * FROM vocabulary WHERE id = :wordId")
-    Vocabulary getWordById(Long wordId);
+    LiveData<Vocabulary> getWordById(Long wordId);
 
     @Query("SELECT * FROM vocabulary WHERE word = :word")
-    Vocabulary getWord(String word);
+    LiveData<Vocabulary> getWord(String word);
 
     @Query("SELECT word FROM vocabulary")
-    List<String> getWordStringIM();
+    LiveData<List<String>> getWordStringIM();
 
     @Transaction
     @Query("SELECT * FROM vocabulary WHERE id IN (:Id)")
@@ -34,7 +34,7 @@ public interface VocabularyDao {
 
     @Transaction
     @Query("SELECT word FROM vocabulary")
-    LiveData<List<String>> getWordString();
+    List<String> getWordString();
 
     @Transaction
     @Query("SELECT word FROM vocabulary WHERE id IN (:Id)")
@@ -42,7 +42,7 @@ public interface VocabularyDao {
 
     @Transaction
     @Query("SELECT * FROM vocabulary")
-    Vocabulary[] getAllWord();
+    LiveData<List<Vocabulary>> getAllWord();
 
     @Query("SELECT COUNT(word) FROM vocabulary")
     LiveData<Integer> getCount();

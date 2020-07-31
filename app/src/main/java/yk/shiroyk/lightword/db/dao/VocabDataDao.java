@@ -1,5 +1,6 @@
 package yk.shiroyk.lightword.db.dao;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
@@ -19,10 +20,10 @@ public interface VocabDataDao {
     void insertMany(VocabData[] vocabData);
 
     @Query("SELECT COUNT(word_id) FROM vocab_data WHERE vtype_id = :vtypeId")
-    Integer getCount(Long vtypeId);
+    LiveData<Integer> getCount(Long vtypeId);
 
     @Query("SELECT word_id FROM vocab_data WHERE vtype_id = :vtypeId")
-    List<Long> getAllWordId(Long vtypeId);
+    LiveData<List<Long>> getAllWordId(Long vtypeId);
 
     @Query("SELECT vocab_data.word_id " +
             "FROM vocab_data LEFT OUTER JOIN (" +

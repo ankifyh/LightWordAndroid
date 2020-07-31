@@ -22,6 +22,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelProviders;
 
@@ -33,7 +34,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import yk.shiroyk.lightword.R;
 import yk.shiroyk.lightword.db.entity.VocabData;
@@ -43,6 +43,7 @@ import yk.shiroyk.lightword.repository.VocabTypeRepository;
 import yk.shiroyk.lightword.repository.VocabularyRepository;
 import yk.shiroyk.lightword.ui.viewmodel.SharedViewModel;
 import yk.shiroyk.lightword.utils.FileUtils;
+import yk.shiroyk.lightword.utils.ThreadTask;
 
 
 public class ImportVdataFragment extends Fragment {
@@ -86,19 +87,22 @@ public class ImportVdataFragment extends Fragment {
         setHasOptionsMenu(true);
         init(root);
 
-        setVdataList();
+        setDefaultTitle();
         return root;
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        if (firstLoad) {
-            vdataViewModel.setWordMap(vocabularyRepository.getIdToWordMap());
-            setDefaultTitle();
-            firstLoad = false;
-        }
-        sharedViewModel.setSubTitle(title.get(defualtVocabType));
+        vocabularyRepository.getIdToWordMap().observe(this, map -> {
+            if (firstLoad) {
+                vdataViewModel.setWordMap(map);
+                setDefaultTitle();
+                firstLoad = false;
+            } else {
+                sharedViewModel.setSubTitle(title.get(defualtVocabType));
+            }
+        });
     }
 
     @Override
@@ -109,38 +113,45 @@ public class ImportVdataFragment extends Fragment {
     }
 
     private void setDefaultTitle() {
-        List<VocabType> v = vocabTypeRepository.getAllVocabType();
-        if (v.size() > 0) {
-            defualtVocabType = v.get(0);
-            sharedViewModel.setSubTitle(title.get(defualtVocabType));
-            vdataViewModel.setWordList(vocabDataRepository.getAllWordId(defualtVocabType.getId()));
-        } else {
-            defualtVocabType = new VocabType();
-            defualtVocabType.setVocabtype("");
-            defualtVocabType.setAmount(0);
-        }
+        vocabTypeRepository.getAllVocabType().observe(getViewLifecycleOwner(), vocabTypes -> {
+            if (vocabTypes.size() > 0) {
+                defualtVocabType = vocabTypes.get(0);
+                setWordList(defualtVocabType.getId());
+                sharedViewModel.setSubTitle(title.get(defualtVocabType));
+            } else {
+                defualtVocabType = new VocabType();
+                defualtVocabType.setVocabtype("");
+                defualtVocabType.setAmount(0);
+            }
+        });
     }
 
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        List<VocabType> vocabTypes = vocabTypeRepository.getAllVocabType();
         SubMenu vType = menu.addSubMenu("词汇数据");
-
-        for (final VocabType v : vocabTypes) {
-            final String s = title.get(v);
-            final MenuItem item = vType.add(s);
-            if (v.getId() == 1L) {
-                item.setChecked(true);
+        vocabTypeRepository.getAllVocabType().observe(getViewLifecycleOwner(), new Observer<List<VocabType>>() {
+            @Override
+            public void onChanged(List<VocabType> vocabTypes) {
+                if (vocabTypes.size() > vType.size()) {
+                    vType.clear();
+                    for (VocabType v : vocabTypes) {
+                        String s = title.get(v);
+                        MenuItem item = vType.add(s);
+                        if (v.getId().equals(defualtVocabType.getId())) {
+                            item.setChecked(true);
+                        }
+                        item.setOnMenuItemClickListener(menuItem -> {
+                            item.setChecked(true);
+                            setWordList(v.getId());
+                            sharedViewModel.setSubTitle(s);
+                            return false;
+                        });
+                    }
+                    vocabTypeRepository.getAllVocabType().removeObserver(this);
+                    vType.setGroupCheckable(0, true, true);
+                }
             }
-            item.setOnMenuItemClickListener(menuItem -> {
-                item.setChecked(true);
-                sharedViewModel.setSubTitle(s);
-                vdataViewModel.setWordList(vocabDataRepository.getAllWordId(v.getId()));
-                return false;
-            });
-        }
-
-        vType.setGroupCheckable(0, true, true);
+        });
         inflater.inflate(R.menu.main, menu);
         super.onCreateOptionsMenu(menu, inflater);
     }
@@ -152,9 +163,9 @@ public class ImportVdataFragment extends Fragment {
 //            item.setVisible(true);
 //    }
 
-    private void setVdataList() {
-        vdataViewModel.getWordList().observe(getViewLifecycleOwner(), strings -> {
-            if (strings.size() > 0) {
+    private void setWordList(Long id) {
+        vdataViewModel.getWordList(id).observe(getViewLifecycleOwner(), strings -> {
+            if (strings != null) {
                 vdata_list.setVisibility(View.VISIBLE);
                 tv_vdata_msg.setVisibility(View.GONE);
                 ArrayAdapter adapter = new ArrayAdapter<String>(context,
@@ -184,7 +195,7 @@ public class ImportVdataFragment extends Fragment {
         this.startActivityForResult(intent, REQUEST_VOCABDATA);
     }
 
-    private VocabType insertVocabType(String filename) throws ExecutionException, InterruptedException {
+    private VocabType insertVocabType(String filename) {
         VocabType vocabType = new VocabType();
         vocabType.setVocabtype(filename);
         vocabType.setAmount(0);
@@ -203,28 +214,24 @@ public class ImportVdataFragment extends Fragment {
 
     private void importVocabData(Uri uri, String fname, boolean overWrite) {
         Integer lines = new FileUtils(context).countLines(uri);
-        Map<String, Long[]> wordMap = vocabularyRepository.getWordToFrequencyMap();
-
-        try {
+        vocabularyRepository.getWordToFrequencyMap().observe(getViewLifecycleOwner(), wordMap -> {
             VocabType vocabType = insertVocabType(fname);
             vocabType.setAmount(lines);
-            new ImportVdataFragment.ImportVocabData(vocabType, wordMap, overWrite).execute(uri);
+            new ImportVocabData(vocabType, wordMap, overWrite).execute(uri);
             Log.d(TAG, "vtypeId: " + vocabType.getId() + " Count: " + vocabType.getAmount());
-        } catch (ExecutionException | InterruptedException e) {
-            e.printStackTrace();
-        }
+        });
     }
 
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        Uri uri = null;
         if (requestCode == REQUEST_VOCABDATA && resultCode == Activity.RESULT_OK) {
             if (data != null) {
-                uri = data.getData();
+                Uri uri = data.getData();
                 String fname = new FileUtils(context).getFileName(uri);
-                VocabType vocabType = vocabTypeRepository.getVocabType(fname);
+                VocabType vocabType = ThreadTask.runOnThreadCall(null,
+                        n -> vocabTypeRepository.getVocabType(fname));
                 if (vocabType != null) {
                     setEnsureDialog(uri, fname, vocabType);
                 } else {
@@ -255,7 +262,16 @@ public class ImportVdataFragment extends Fragment {
             this.wordMap = wordMap;
 
             if (overWrite) {
-                this.wordIdList = vocabDataRepository.getAllWordId(vocabType.getId());
+                Long id = vocabType.getId();
+                vocabDataRepository.getAllWordId(id).observe(getViewLifecycleOwner(),
+                        new Observer<List<Long>>() {
+                            @Override
+                            public void onChanged(List<Long> idList) {
+                                wordIdList = idList;
+                                vocabDataRepository.getAllWordId(id).removeObserver(this);
+                            }
+                        });
+
             }
             AlertDialog.Builder builder = new AlertDialog.Builder(context);
             loadingDialog = builder.setCancelable(false)
@@ -297,6 +313,7 @@ public class ImportVdataFragment extends Fragment {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
             return vocabDataList.toArray(new VocabData[count]);
         }
 
@@ -304,6 +321,7 @@ public class ImportVdataFragment extends Fragment {
         protected void onPostExecute(VocabData[] result) {
             String msg;
             if (count > 0) {
+
                 vocabDataRepository.insert(result);
                 msg = "词汇数据导入成功,";
                 if (ignoreWord > 0) {
@@ -311,15 +329,14 @@ public class ImportVdataFragment extends Fragment {
                     count += ignoreWord;
                 } else {
                     if (vdataViewModel.getWordMapSize() == 0) {
-                        vdataViewModel.setWordMap(vocabularyRepository.getIdToWordMap());
+                        vocabularyRepository.getIdToWordMap().observe(getViewLifecycleOwner(),
+                                wordMap -> vdataViewModel.setWordMap(wordMap));
                     }
-                    vdataViewModel.setVocabData(result);
-                    defualtVocabType = vocabType;
-                    sharedViewModel.setSubTitle(title.get(defualtVocabType));
                     msg += "共导入" + count + "条数据";
+                    vocabType.setAmount(count);
+                    vocabTypeRepository.update(vocabType);
+                    getActivity().invalidateOptionsMenu();
                 }
-                vocabType.setAmount(count);
-                vocabTypeRepository.update(vocabType);
             } else {
                 msg = ignoreWord > 0 ? "没有可新增的数据" : "解析失败，未导入数据！";
             }

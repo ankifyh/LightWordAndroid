@@ -211,22 +211,30 @@ public class ExerciseBuild extends ViewModel {
     }
 
     public LiveData<List<Exercise>> newExercise(Long vtypeId, Integer limit) {
-        List<Long> wordIdList = vocabDataRepository.loadNewWord(vtypeId, this.byFrequency, limit);
+        List<Long> wordIdList = ThreadTask.runOnThreadCall(null,
+                n -> vocabDataRepository.loadNewWord(vtypeId, this.byFrequency, limit));
         if (wordIdList.size() == 0) {
             exerciseMsg.setValue("未查询到词汇数据，\n请先导入词汇数据。");
         }
-        exerciseList.setValue(buildExercise(wordIdList, false));
+        List<Exercise> exercises = ThreadTask.runOnThreadCall(null,
+                n -> buildExercise(wordIdList, false));
+        if (wordIdList.size() != 0 && exercises.size() == 0) {
+            exerciseMsg.setValue("解析词库例句失败，\n请尝试重新导入词库数据。");
+        }
+        exerciseList.setValue(exercises);
         return exerciseList;
     }
 
     public LiveData<List<Exercise>> autoExercise(Long vtypeId, Integer limit) {
-        List<Long> reviewList = exerciseRepository.loadReviewWord(vtypeId, limit);
+        List<Long> reviewList = ThreadTask.runOnThreadCall(null,
+                n -> exerciseRepository.loadReviewWord(vtypeId, limit));
         List<Exercise> exercises;
         if (reviewList.size() < limit) {
             return newExercise(vtypeId, limit);
         } else {
-            exercises = buildExercise(reviewList, true);
-            if (exercises.size() == 0) {
+            exercises = ThreadTask.runOnThreadCall(null,
+                    n -> buildExercise(reviewList, true));
+            if (reviewList.size() != 0 && exercises.size() == 0) {
                 exerciseMsg.setValue("解析词库例句失败，\n请尝试重新导入词库数据。");
             }
         }

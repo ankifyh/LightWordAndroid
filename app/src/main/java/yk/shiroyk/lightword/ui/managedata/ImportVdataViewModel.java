@@ -1,21 +1,32 @@
 package yk.shiroyk.lightword.ui.managedata;
 
+import android.app.Application;
+
+import androidx.annotation.NonNull;
+import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Transformations;
-import androidx.lifecycle.ViewModel;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import yk.shiroyk.lightword.db.entity.VocabData;
+import yk.shiroyk.lightword.repository.VocabDataRepository;
+import yk.shiroyk.lightword.utils.ThreadTask;
 
-public class ImportVdataViewModel extends ViewModel {
+public class ImportVdataViewModel extends AndroidViewModel {
+    private VocabDataRepository vocabDataRepository;
+
     private Map<Long, String> idToWordMap;
-    private MutableLiveData<List<String>> wordList = new MutableLiveData<>();
 
-    private LiveData<List<String>> mWordList = Transformations.map(wordList, input -> input);
+    public ImportVdataViewModel(@NonNull Application application) {
+        super(application);
+        vocabDataRepository = new VocabDataRepository(application);
+    }
+
+    public LiveData<List<Long>> getAllWordId(Long id) {
+        return vocabDataRepository.getAllWordId(id);
+    }
 
     public void setWordMap(Map<Long, String> wordMap) {
         this.idToWordMap = wordMap;
@@ -25,25 +36,17 @@ public class ImportVdataViewModel extends ViewModel {
         return idToWordMap != null ? this.idToWordMap.size() : 0;
     }
 
-    public void setVocabData(VocabData[] vocabDataList) {
-        List<Long> idList = new ArrayList<>();
-        for (VocabData v : vocabDataList) {
-            idList.add(v.getWordId());
-        }
-        setWordList(idList);
-    }
-
-    public LiveData<List<String>> getWordList() {
-        return mWordList;
-    }
-
-    public void setWordList(List<Long> wordId) {
-        List<String> strings = new ArrayList<>();
-        if (wordId.size() > 0) {
-            for (Long w : wordId) {
-                strings.add(idToWordMap.get(w));
-            }
-        }
-        wordList.setValue(strings);
+    public LiveData<List<String>> getWordList(Long vtypeId) {
+        return Transformations.map(vocabDataRepository.getAllWordId(vtypeId),
+                idList -> ThreadTask.runOnThreadCall(idList, wordId -> {
+                    if (idToWordMap != null) {
+                        List<String> strings = new ArrayList<>();
+                        for (Long w : idList) {
+                            strings.add(idToWordMap.get(w));
+                        }
+                        return strings;
+                    }
+                    return null;
+                }));
     }
 }

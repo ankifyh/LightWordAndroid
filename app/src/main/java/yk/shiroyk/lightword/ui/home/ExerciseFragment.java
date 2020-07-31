@@ -314,9 +314,10 @@ public class ExerciseFragment extends Fragment {
                 btn_prev_card.setVisibility(View.INVISIBLE);
             } else {
                 exercise_container.setVisibility(View.GONE);
+                tv_translation.setVisibility(View.GONE);
+                tv_tip.setVisibility(View.VISIBLE);
                 exerciseBuild.getExerciseMsg().observe(getViewLifecycleOwner(), msg -> {
                     tv_tip.setText(msg);
-                    tv_tip.setVisibility(View.VISIBLE);
                 });
             }
         });

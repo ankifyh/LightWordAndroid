@@ -1,11 +1,9 @@
 package yk.shiroyk.lightword.repository;
 
 import android.app.Application;
-import android.os.AsyncTask;
 
 import androidx.lifecycle.LiveData;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -15,6 +13,7 @@ import yk.shiroyk.lightword.db.dao.ExerciseDao;
 import yk.shiroyk.lightword.db.entity.ExerciseData;
 import yk.shiroyk.lightword.db.entity.Profile;
 import yk.shiroyk.lightword.utils.CalDate;
+import yk.shiroyk.lightword.utils.ThreadTask;
 
 public class ExerciseRepository {
     private ExerciseDao exerciseDao;
@@ -26,16 +25,7 @@ public class ExerciseRepository {
     }
 
     public List<Long> loadReviewWord(long vtypeId, Integer limit) {
-        List<ExerciseData> userWordList = exerciseDao.LoadReviewWord(vtypeId, limit);
-        List<Long> availableList = new ArrayList<>();
-        Long now = new Date().getTime();
-        for (ExerciseData e : userWordList
-        ) {
-            if (e.getTimestamp().getTime() <= now) {
-                availableList.add(e.getWordId());
-            }
-        }
-        return availableList;
+        return exerciseDao.LoadReviewWord(vtypeId, limit);
     }
 
     public void setForgetTime(List<Integer> minList) {
@@ -54,20 +44,16 @@ public class ExerciseRepository {
     }
 
     public ExerciseData getWord(Long wordId, Long vtypeId) {
-        ExerciseData exerciseData;
-        try {
-            exerciseData = exerciseDao.getSingleWord(wordId, vtypeId);
-        } catch (NullPointerException ex) {
-            exerciseData = null;
-        }
-        return exerciseData;
+        return ThreadTask.runOnThreadCall(null
+                , n -> exerciseDao.getSingleWord(wordId, vtypeId));
     }
+
 
     public void remember(Long wordId, Long vtypeId) {
         ExerciseData exerciseData;
         Date now = new Date();
         try {
-            exerciseData = exerciseDao.getSingleWord(wordId, vtypeId);
+            exerciseData = getWord(wordId, vtypeId);
             Integer stage = exerciseData.getStage();
             Integer correct = exerciseData.getCorrect();
             Date timestamp = exerciseData.getTimestamp();
@@ -78,7 +64,7 @@ public class ExerciseRepository {
             }
             exerciseData.setLastPractice(now);
             exerciseData.setCorrect(correct + 1);
-            exerciseDao.update(exerciseData);
+            ThreadTask.runOnThread(exerciseData, (e) -> exerciseDao.update(e));
         } catch (NullPointerException ex) {
             exerciseData = new ExerciseData();
             exerciseData.setTimestamp(new Date(now.getTime() + minList.get(0) * 60 * 1000));
@@ -95,7 +81,7 @@ public class ExerciseRepository {
     public void forget(Long wordId, Long vtypeId) {
         ExerciseData exerciseData;
         try {
-            exerciseData = exerciseDao.getSingleWord(wordId, vtypeId);
+            exerciseData = getWord(wordId, vtypeId);
             Integer stage = exerciseData.getStage();
             Integer wrong = exerciseData.getWrong();
             Date timestamp = exerciseData.getTimestamp();
@@ -106,7 +92,7 @@ public class ExerciseRepository {
             }
             exerciseData.setLastPractice(new Date());
             exerciseData.setWrong(wrong + 1);
-            exerciseDao.update(exerciseData);
+            ThreadTask.runOnThread(exerciseData, (e) -> exerciseDao.update(e));
         } catch (NullPointerException ignored) {
         }
     }
@@ -116,7 +102,7 @@ public class ExerciseRepository {
         Date now = new Date();
         long tenYears = now.getTime() + 5126400L * 60 * 1000;
         try {
-            exerciseData = exerciseDao.getSingleWord(wordId, vtypeId);
+            exerciseData = getWord(wordId, vtypeId);
             Integer stage = exerciseData.getStage();
             Integer correct = exerciseData.getCorrect();
             if (stage < 10) {
@@ -125,7 +111,7 @@ public class ExerciseRepository {
             }
             exerciseData.setLastPractice(now);
             exerciseData.setCorrect(correct + 1);
-            exerciseDao.update(exerciseData);
+            ThreadTask.runOnThread(exerciseData, (e) -> exerciseDao.update(e));
         } catch (NullPointerException ex) {
             exerciseData = new ExerciseData();
             exerciseData.setTimestamp(new Date(tenYears));
@@ -144,19 +130,6 @@ public class ExerciseRepository {
     }
 
     public void insert(ExerciseData exerciseData) {
-        new ExerciseRepository.insertAsyncTask(exerciseDao).execute(exerciseData);
-    }
-
-    public static class insertAsyncTask extends AsyncTask<ExerciseData, Void, Long> {
-        private ExerciseDao mAsyncTaskDao;
-
-        insertAsyncTask(ExerciseDao dao) {
-            mAsyncTaskDao = dao;
-        }
-
-        @Override
-        protected Long doInBackground(ExerciseData... exerciseData) {
-            return mAsyncTaskDao.insert(exerciseData[0]);
-        }
+        ThreadTask.runOnThread(exerciseData, (e) -> exerciseDao.update(e));
     }
 }

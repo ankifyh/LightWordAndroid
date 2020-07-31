@@ -33,7 +33,7 @@ public abstract class LightWordDatabase extends RoomDatabase {
                             context.getApplicationContext(),
                             LightWordDatabase.class,
                             DATABASE_NAME
-                    ).allowMainThreadQueries().build();
+                    ).build();
                 }
             }
         }

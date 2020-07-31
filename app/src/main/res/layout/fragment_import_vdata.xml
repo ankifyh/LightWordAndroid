@@ -9,15 +9,17 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
+        android:layout_marginTop="30dp"
         android:text="暂无数据"
         android:textSize="20sp"
-        android:visibility="gone" />
+        android:visibility="visible" />
 
     <ListView
         android:id="@+id/vdata_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fastScrollEnabled="true" />
+        android:fastScrollEnabled="true"
+        android:visibility="gone" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_import_vdata"

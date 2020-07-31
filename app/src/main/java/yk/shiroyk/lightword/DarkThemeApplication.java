@@ -29,7 +29,7 @@ public class DarkThemeApplication extends Application {
         super.onCreate();
         SharedPreferences sharedPreferences =
                 PreferenceManager.getDefaultSharedPreferences(this);
-        String themePref = sharedPreferences.getString("themePref", ThemeHelper.DEFAULT_MODE);
+        String themePref = sharedPreferences.getString("themePref", ThemeHelper.LIGHT_MODE);
         ThemeHelper.applyTheme(themePref);
     }
 }

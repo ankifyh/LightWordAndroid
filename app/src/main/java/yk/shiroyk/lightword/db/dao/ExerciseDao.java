@@ -30,9 +30,10 @@ public interface ExerciseDao {
             "AND exercise_data.vtype_id = :vtypeId ")
     ExerciseData getSingleWord(long wordId, long vtypeId);
 
-    @Query("SELECT * FROM exercise_data " +
+    @Query("SELECT word_id FROM exercise_data " +
             "WHERE exercise_data.vtype_id = :vtypeId " +
+            "AND timestamp <= strftime('%s','now') * 1000 " +
             "ORDER BY exercise_data.timestamp " +
             "LIMIT :limit")
-    List<ExerciseData> LoadReviewWord(long vtypeId, Integer limit);
+    List<Long> LoadReviewWord(long vtypeId, Integer limit);
 }

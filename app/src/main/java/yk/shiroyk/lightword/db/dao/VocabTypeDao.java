@@ -23,7 +23,10 @@ public interface VocabTypeDao {
     int delete(VocabType vocabtype);
 
     @Query("SELECT * FROM vocab_type")
-    List<VocabType> getAllVocabType();
+    LiveData<List<VocabType>> getAllVocabType();
+
+    @Query("SELECT * FROM vocab_type")
+    List<VocabType> getAllVocabTypes();
 
     @Query("SELECT * FROM vocab_type WHERE id = :vtypeId")
     LiveData<VocabType> getVocabTypeById(Long vtypeId);

@@ -32,6 +32,7 @@ import yk.shiroyk.lightword.db.entity.Vocabulary;
 import yk.shiroyk.lightword.repository.VocabularyRepository;
 import yk.shiroyk.lightword.ui.viewmodel.SharedViewModel;
 import yk.shiroyk.lightword.utils.FileUtils;
+import yk.shiroyk.lightword.utils.ThreadTask;
 import yk.shiroyk.lightword.utils.VocabularyDataManage;
 
 
@@ -64,15 +65,14 @@ public class ImportVocabFragment extends Fragment {
         context = root.getContext();
         setHasOptionsMenu(true);
         init(root);
-        setVocabList();
+        updateVocabList();
         return root;
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        vocabularyRepository.getCount().observe(getViewLifecycleOwner(),
-                integer -> sharedViewModel.setSubTitle("共" + integer + "条"));
+        updateTitle();
     }
 
     @Override
@@ -88,7 +88,7 @@ public class ImportVocabFragment extends Fragment {
         root.findViewById(R.id.fab_import_vocab).setOnClickListener(view -> pickVocabulary());
     }
 
-    public void pickVocabulary() {
+    private void pickVocabulary() {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("text/*");
@@ -97,20 +97,25 @@ public class ImportVocabFragment extends Fragment {
         this.startActivityForResult(intent, REQUEST_VOCABULARY);
     }
 
-    private void setVocabList() {
-        vocabularyRepository.getWordString().observe(getViewLifecycleOwner(), wordList -> {
-            if (wordList.size() > 0) {
-                vocab_list.setVisibility(View.VISIBLE);
-                tv_vocab_msg.setVisibility(View.GONE);
-                ArrayAdapter adapter = new ArrayAdapter<String>(context,
-                        android.R.layout.simple_list_item_1, wordList);
-                vocab_list.setAdapter(adapter);
-                vocab_list.setFastScrollEnabled(true);
-            } else {
-                vocab_list.setVisibility(View.GONE);
-                tv_vocab_msg.setVisibility(View.VISIBLE);
-            }
-        });
+    private void updateTitle() {
+        vocabularyRepository.getCount().observe(this,
+                integer -> sharedViewModel.setSubTitle("共" + integer + "条"));
+    }
+
+    private void updateVocabList() {
+        List<String> strings = ThreadTask.runOnThreadCall(null,
+                list -> vocabularyRepository.getWordString());
+        if (strings.size() > 0) {
+            vocab_list.setVisibility(View.VISIBLE);
+            tv_vocab_msg.setVisibility(View.GONE);
+            ArrayAdapter adapter = new ArrayAdapter<String>(context,
+                    android.R.layout.simple_list_item_1, strings);
+            vocab_list.setAdapter(adapter);
+            vocab_list.setFastScrollEnabled(true);
+        } else {
+            vocab_list.setVisibility(View.GONE);
+            tv_vocab_msg.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
@@ -121,15 +126,15 @@ public class ImportVocabFragment extends Fragment {
             if (data != null) {
                 FileUtils fileUtils = new FileUtils(context);
                 uri = data.getData();
-                List<String> wordString = vocabularyRepository.getWordStringIM();
                 Integer lines = fileUtils.countLines(uri);
-                new ImportVocabFragment.ImportVocabulary(lines, wordString).execute(uri);
-
+                List<String> stringList = ThreadTask.runOnThreadCall(null,
+                        list -> vocabularyRepository.getWordString());
+                new ImportVocabulary(lines, stringList).execute(uri);
             }
         }
     }
 
-    public class ImportVocabulary extends AsyncTask<Uri, Void, List<Vocabulary>> {
+    private class ImportVocabulary extends AsyncTask<Uri, Void, List<Vocabulary>> {
         int count = 0;
         int lines;
         int overWrite = 0;
@@ -197,6 +202,8 @@ public class ImportVocabFragment extends Fragment {
                 }
             }
             loadingDialog.dismiss();
+            updateTitle();
+            updateVocabList();
             Snackbar.make(getView(), msg, Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show();
         }

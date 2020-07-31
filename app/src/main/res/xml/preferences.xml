@@ -40,7 +40,7 @@
             app:useSimpleSummaryProvider="true" />
 
         <SwitchPreferenceCompat
-            app:defaultValue="true"
+            app:defaultValue="false"
             app:key="byFrequency"
             app:summary="词频数据来自与COCA"
             app:title="按单词词频练习新单词" />

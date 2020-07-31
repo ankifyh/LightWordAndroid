@@ -47,7 +47,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         });
 
         VocabTypeRepository vocabTypeRepository = new VocabTypeRepository(this.getActivity().getApplication());
-        List<VocabType> vocabTypes = vocabTypeRepository.getAllVocabType();
+        List<VocabType> vocabTypes = vocabTypeRepository.getAllVocabTypes();
         List<String> entries = new ArrayList<>();
         List<String> entryValues = new ArrayList<>();
 
