@@ -4,6 +4,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.OpenableColumns;
+import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,6 +12,7 @@ import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 
 public class FileUtils {
+    private static final String TAG = "FileUtils";
     private Context context;
 
     public FileUtils(Context context) {
@@ -33,11 +35,13 @@ public class FileUtils {
 
     public String getFileName(Uri uri) {
         String result = null;
+        Log.d(TAG, "Uri - " + uri);
         if (uri.getScheme().equals("content")) {
             Cursor cursor = context.getContentResolver().query(uri, null, null, null, null);
             try {
                 if (cursor != null && cursor.moveToFirst()) {
                     result = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
+                    Log.d(TAG, "FileName - " + result);
                 }
             } finally {
                 cursor.close();
@@ -49,7 +53,9 @@ public class FileUtils {
             if (cut != -1) {
                 result = result.substring(cut + 1);
             }
+            result = result.split("\\.(?=[^\\.]+$)")[0];
+            Log.d(TAG, "FileName - " + result);
         }
-        return result.split("\\.(?=[^\\.]+$)")[0];
+        return result;
     }
 }

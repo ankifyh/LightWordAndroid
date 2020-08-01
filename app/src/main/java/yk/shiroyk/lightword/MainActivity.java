@@ -4,11 +4,13 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatToggleButton;
 import androidx.appcompat.widget.Toolbar;
@@ -21,6 +23,10 @@ import androidx.navigation.ui.NavigationUI;
 import androidx.preference.PreferenceManager;
 
 import com.google.android.material.navigation.NavigationView;
+import com.microsoft.appcenter.AppCenter;
+import com.microsoft.appcenter.analytics.Analytics;
+import com.microsoft.appcenter.crashes.AbstractCrashesListener;
+import com.microsoft.appcenter.crashes.Crashes;
 
 import yk.shiroyk.lightword.ui.viewmodel.SharedViewModel;
 import yk.shiroyk.lightword.utils.ThemeHelper;
@@ -62,6 +68,27 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupWithNavController(navigationView, navController);
 
         setUpSwitchTheme(navigationView);
+
+        if (!BuildConfig.APPSECRET.isEmpty() && !BuildConfig.DEBUG) {
+            AppCenter.setLogLevel(Log.VERBOSE);
+            AppCenter.start(getApplication(),
+                    BuildConfig.APPSECRET,
+                    Analytics.class,
+                    Crashes.class);
+            Crashes.setListener(new AbstractCrashesListener() {
+                @Override
+                public boolean shouldAwaitUserConfirmation() {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                    builder
+                            .setTitle("检测到APP上次发生崩溃")
+                            .setMessage("是否发送崩溃日志？")
+                            .setPositiveButton("是", (dialog, which) -> Crashes.notifyUserConfirmation(Crashes.SEND))
+                            .setNegativeButton("否", (dialog, which) -> Crashes.notifyUserConfirmation(Crashes.DONT_SEND));
+                    builder.create().show();
+                    return true;
+                }
+            });
+        }
     }
 
     private void setUpSwitchTheme(NavigationView nv) {

@@ -203,7 +203,7 @@ public class ImportVdataFragment extends Fragment {
         return vocabType;
     }
 
-    private void setEnsureDialog(Uri uri, String fname, VocabType vocabType) {
+    private void setEnsureDialog(Uri uri, String fname) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle("该词汇分类已存在")
                 .setMessage("是否新增该词汇分类的单词？")
@@ -233,7 +233,7 @@ public class ImportVdataFragment extends Fragment {
                 VocabType vocabType = ThreadTask.runOnThreadCall(null,
                         n -> vocabTypeRepository.getVocabType(fname));
                 if (vocabType != null) {
-                    setEnsureDialog(uri, fname, vocabType);
+                    setEnsureDialog(uri, fname);
                 } else {
                     importVocabData(uri, fname, false);
                 }
@@ -276,6 +276,7 @@ public class ImportVdataFragment extends Fragment {
             AlertDialog.Builder builder = new AlertDialog.Builder(context);
             loadingDialog = builder.setCancelable(false)
                     .setView(R.layout.layout_loading).create();
+            Log.d(TAG, "Ready to import vocab data");
         }
 
         @Override
