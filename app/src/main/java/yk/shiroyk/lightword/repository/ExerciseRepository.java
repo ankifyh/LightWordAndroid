@@ -130,6 +130,6 @@ public class ExerciseRepository {
     }
 
     public void insert(ExerciseData exerciseData) {
-        ThreadTask.runOnThread(exerciseData, (e) -> exerciseDao.update(e));
+        ThreadTask.runOnThread(exerciseData, (e) -> exerciseDao.insert(e));
     }
 }
