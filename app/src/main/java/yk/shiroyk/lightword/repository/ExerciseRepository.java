@@ -49,7 +49,7 @@ public class ExerciseRepository {
     }
 
 
-    public void remember(Long wordId, Long vtypeId) {
+    public boolean remember(Long wordId, Long vtypeId) {
         ExerciseData exerciseData;
         Date now = new Date();
         try {
@@ -65,6 +65,7 @@ public class ExerciseRepository {
             exerciseData.setLastPractice(now);
             exerciseData.setCorrect(correct + 1);
             ThreadTask.runOnThread(exerciseData, (e) -> exerciseDao.update(e));
+            return false;
         } catch (NullPointerException ex) {
             exerciseData = new ExerciseData();
             exerciseData.setTimestamp(new Date(now.getTime() + minList.get(0) * 60 * 1000));
@@ -75,6 +76,7 @@ public class ExerciseRepository {
             exerciseData.setCorrect(1);
             exerciseData.setWrong(0);
             insert(exerciseData);
+            return true;
         }
     }
 
@@ -97,7 +99,7 @@ public class ExerciseRepository {
         }
     }
 
-    public void remembered(Long wordId, Long vtypeId) {
+    public boolean remembered(Long wordId, Long vtypeId) {
         ExerciseData exerciseData;
         Date now = new Date();
         long tenYears = now.getTime() + 5126400L * 60 * 1000;
@@ -112,6 +114,7 @@ public class ExerciseRepository {
             exerciseData.setLastPractice(now);
             exerciseData.setCorrect(correct + 1);
             ThreadTask.runOnThread(exerciseData, (e) -> exerciseDao.update(e));
+            return false;
         } catch (NullPointerException ex) {
             exerciseData = new ExerciseData();
             exerciseData.setTimestamp(new Date(tenYears));
@@ -122,6 +125,7 @@ public class ExerciseRepository {
             exerciseData.setCorrect(1);
             exerciseData.setWrong(0);
             insert(exerciseData);
+            return true;
         }
     }
 

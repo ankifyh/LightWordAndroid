@@ -215,8 +215,9 @@ public class ExerciseFragment extends Fragment {
 
     private void remember(Long wordId, Long vtypeId) {
         exerciseRepository.defaultForgetTime();
-        exerciseRepository.remember(wordId, vtypeId);
-        updateTarget();
+        if (exerciseRepository.remember(wordId, vtypeId)) {
+            updateTarget();
+        }
 //        getWordDetail();
     }
 
@@ -228,8 +229,9 @@ public class ExerciseFragment extends Fragment {
 
     private void remembered(Long wordId, Long vtypeId) {
         exerciseRepository.defaultForgetTime();
-        exerciseRepository.remembered(wordId, vtypeId);
-        updateTarget();
+        if (exerciseRepository.remembered(wordId, vtypeId)) {
+            updateTarget();
+        }
 //        getWordDetail();
     }
 
