@@ -41,7 +41,6 @@ public class FileUtils {
             try {
                 if (cursor != null && cursor.moveToFirst()) {
                     result = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
-                    Log.d(TAG, "FileName - " + result);
                 }
             } finally {
                 cursor.close();
@@ -53,9 +52,7 @@ public class FileUtils {
             if (cut != -1) {
                 result = result.substring(cut + 1);
             }
-            result = result.split("\\.(?=[^\\.]+$)")[0];
-            Log.d(TAG, "FileName - " + result);
         }
-        return result;
+        return result.split("\\.(?=[^\\.]+$)")[0];
     }
 }

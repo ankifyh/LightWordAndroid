@@ -19,27 +19,16 @@ public class VocabTypeRepository {
         this.vocabTypeDao = db.vocabTypeDao();
     }
 
-    public Long vtypeInsert(VocabType vocabType) {
-        Long id = ThreadTask.runOnThreadCall(vocabType,
-                v -> vocabTypeDao.getVocabTypeId(v.getVocabtype()));
-        if (id != null) {
-            return id;
-        } else {
-            return ThreadTask.runOnThreadCall(vocabType, v -> vocabTypeDao.insert(v));
-        }
+    public int update(VocabType v) {
+        return vocabTypeDao.update(v);
     }
 
-    public int update(VocabType vocabType) {
-        return ThreadTask.runOnThreadCall(null, v -> vocabTypeDao.update(vocabType));
-    }
-
-    public int delete(VocabType vocabType) {
-        return ThreadTask.runOnThreadCall(null, v -> vocabTypeDao.delete(vocabType));
+    public void delete(VocabType v) {
+        ThreadTask.runOnThread(v, n -> vocabTypeDao.delete(n));
     }
 
     public List<VocabType> getAllVocabTypes() {
-        return ThreadTask.runOnThreadCall(null,
-                n -> vocabTypeDao.getAllVocabTypes());
+        return vocabTypeDao.getAllVocabTypes();
     }
 
     public LiveData<List<VocabType>> getAllVocabType() {
@@ -50,8 +39,12 @@ public class VocabTypeRepository {
         return vocabTypeDao.getVocabTypeById(vtypeId);
     }
 
-    public VocabType getVocabType(String vocabtype) {
-        return vocabTypeDao.getVocabType(vocabtype);
+    public VocabType getVocabType(String name) {
+        return vocabTypeDao.getVocabType(name);
+    }
+
+    public Long insert(VocabType v) {
+        return vocabTypeDao.insert(v);
     }
 
 }

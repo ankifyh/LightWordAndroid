@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -16,25 +15,32 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelProviders;
 
 import com.google.android.material.snackbar.Snackbar;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.ObservableOnSubscribe;
+import io.reactivex.rxjava3.disposables.CompositeDisposable;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import yk.shiroyk.lightword.R;
 import yk.shiroyk.lightword.db.entity.VocabData;
 import yk.shiroyk.lightword.db.entity.VocabType;
@@ -43,8 +49,6 @@ import yk.shiroyk.lightword.repository.VocabTypeRepository;
 import yk.shiroyk.lightword.repository.VocabularyRepository;
 import yk.shiroyk.lightword.ui.viewmodel.SharedViewModel;
 import yk.shiroyk.lightword.utils.FileUtils;
-import yk.shiroyk.lightword.utils.ThreadTask;
-
 
 public class ImportVdataFragment extends Fragment {
 
@@ -56,12 +60,15 @@ public class ImportVdataFragment extends Fragment {
     private ImportVdataViewModel vdataViewModel;
 
     private Context context;
+    private ProgressBar vdata_loading;
     private TextView tv_vdata_msg;
     private ListView vdata_list;
 
     private VocabTypeRepository vocabTypeRepository;
     private VocabularyRepository vocabularyRepository;
     private VocabDataRepository vocabDataRepository;
+
+    private CompositeDisposable compositeDisposable;
 
     private VocabType defualtVocabType;
     private TitleString title = (VocabType v) -> v.getVocabtype() + " (" + v.getAmount() + ")";
@@ -75,6 +82,8 @@ public class ImportVdataFragment extends Fragment {
         vocabularyRepository = new VocabularyRepository(getActivity().getApplication());
         vocabTypeRepository = new VocabTypeRepository(getActivity().getApplication());
         vocabDataRepository = new VocabDataRepository(getActivity().getApplication());
+
+        compositeDisposable = new CompositeDisposable();
     }
 
     @Override
@@ -94,15 +103,11 @@ public class ImportVdataFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        vocabularyRepository.getIdToWordMap().observe(this, map -> {
-            if (firstLoad) {
-                vdataViewModel.setWordMap(map);
-                setDefaultTitle();
-                firstLoad = false;
-            } else {
-                sharedViewModel.setSubTitle(title.get(defualtVocabType));
-            }
-        });
+        if (firstLoad) {
+            setWordMap();
+        } else {
+            sharedViewModel.setSubTitle(title.get(defualtVocabType));
+        }
     }
 
     @Override
@@ -110,6 +115,7 @@ public class ImportVdataFragment extends Fragment {
         super.onDestroyView();
         firstLoad = true;
         sharedViewModel.setSubTitle("");
+        compositeDisposable.dispose();
     }
 
     private void setDefaultTitle() {
@@ -122,36 +128,51 @@ public class ImportVdataFragment extends Fragment {
                 defualtVocabType = new VocabType();
                 defualtVocabType.setVocabtype("");
                 defualtVocabType.setAmount(0);
+                tv_vdata_msg.setVisibility(View.VISIBLE);
+                vdata_loading.setVisibility(View.GONE);
             }
         });
     }
 
+    private void setWordMap() {
+        Disposable disposable = Observable.create(
+                (ObservableOnSubscribe<Map<Long, String>>) emitter -> {
+                    emitter.onNext(vocabularyRepository.getIdToWordMap());
+                    emitter.onComplete();
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(map -> {
+                    vdataViewModel.setWordMap(map);
+                    setDefaultTitle();
+                    firstLoad = false;
+                });
+        compositeDisposable.add(disposable);
+    }
+
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        SubMenu vType = menu.addSubMenu("词汇数据");
-        vocabTypeRepository.getAllVocabType().observe(getViewLifecycleOwner(), new Observer<List<VocabType>>() {
-            @Override
-            public void onChanged(List<VocabType> vocabTypes) {
-                if (vocabTypes.size() > vType.size()) {
-                    vType.clear();
-                    for (VocabType v : vocabTypes) {
-                        String s = title.get(v);
-                        MenuItem item = vType.add(s);
-                        if (v.getId().equals(defualtVocabType.getId())) {
-                            item.setChecked(true);
+        SubMenu vType = menu.addSubMenu(R.string.import_vdata_submenu);
+        vocabTypeRepository.getAllVocabType().observe(getViewLifecycleOwner(),
+                vocabTypes -> {
+                    if (vocabTypes.size() > vType.size()) {
+                        vType.clear();
+                        for (VocabType v : vocabTypes) {
+                            String s = title.get(v);
+                            MenuItem item = vType.add(s);
+                            if (v.getId().equals(defualtVocabType.getId())) {
+                                item.setChecked(true);
+                            }
+                            item.setOnMenuItemClickListener(menuItem -> {
+                                item.setChecked(true);
+                                setWordList(v.getId());
+                                sharedViewModel.setSubTitle(s);
+                                return false;
+                            });
                         }
-                        item.setOnMenuItemClickListener(menuItem -> {
-                            item.setChecked(true);
-                            setWordList(v.getId());
-                            sharedViewModel.setSubTitle(s);
-                            return false;
-                        });
+                        vType.setGroupCheckable(0, true, true);
                     }
-                    vocabTypeRepository.getAllVocabType().removeObserver(this);
-                    vType.setGroupCheckable(0, true, true);
-                }
-            }
-        });
+                });
         inflater.inflate(R.menu.main, menu);
         super.onCreateOptionsMenu(menu, inflater);
     }
@@ -164,8 +185,9 @@ public class ImportVdataFragment extends Fragment {
 //    }
 
     private void setWordList(Long id) {
-        vdataViewModel.getWordList(id).observe(getViewLifecycleOwner(), strings -> {
-            if (strings != null) {
+        vdataViewModel.setWordList(id);
+        vdataViewModel.getWordList().observe(getViewLifecycleOwner(), strings -> {
+            if (strings.size() > 0) {
                 vdata_list.setVisibility(View.VISIBLE);
                 tv_vdata_msg.setVisibility(View.GONE);
                 ArrayAdapter adapter = new ArrayAdapter<String>(context,
@@ -176,10 +198,12 @@ public class ImportVdataFragment extends Fragment {
                 vdata_list.setVisibility(View.GONE);
                 tv_vdata_msg.setVisibility(View.VISIBLE);
             }
+            vdata_loading.setVisibility(View.GONE);
         });
     }
 
     private void init(View root) {
+        vdata_loading = root.findViewById(R.id.vdata_loading);
         tv_vdata_msg = root.findViewById(R.id.tv_vdata_msg);
         vdata_list = root.findViewById(R.id.vdata_list);
 
@@ -195,33 +219,121 @@ public class ImportVdataFragment extends Fragment {
         this.startActivityForResult(intent, REQUEST_VOCABDATA);
     }
 
-    private VocabType insertVocabType(String filename) {
-        VocabType vocabType = new VocabType();
-        vocabType.setVocabtype(filename);
-        vocabType.setAmount(0);
-        vocabType.setId(vocabTypeRepository.vtypeInsert(vocabType));
-        return vocabType;
-    }
-
-    private void setEnsureDialog(Uri uri, String fname) {
+    private void setEnsureDialog(VocabType v, Uri uri) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle("该词汇分类已存在")
-                .setMessage("是否新增该词汇分类的单词？")
-                .setPositiveButton("确认", (dialogInterface, i) ->
-                        importVocabData(uri, fname, true))
-                .setNegativeButton("取消", null).create().show();
+        builder.setTitle(R.string.import_vdata_type_exist_title)
+                .setMessage(R.string.import_vdata_type_exist_message)
+                .setPositiveButton(R.string.dialog_ensure, (dialogInterface, i) ->
+                        compositeDisposable.add(insertVData(v, uri, true)))
+                .setNegativeButton(R.string.dialog_cancel, null).create().show();
     }
 
-    private void importVocabData(Uri uri, String fname, boolean overWrite) {
-        Integer lines = new FileUtils(context).countLines(uri);
-        vocabularyRepository.getWordToFrequencyMap().observe(getViewLifecycleOwner(), wordMap -> {
-            VocabType vocabType = insertVocabType(fname);
-            vocabType.setAmount(lines);
-            new ImportVocabData(vocabType, wordMap, overWrite).execute(uri);
-            Log.d(TAG, "vtypeId: " + vocabType.getId() + " Count: " + vocabType.getAmount());
-        });
+    private Disposable insertVData(VocabType v, Uri uri, boolean overWrite) {
+        FileUtils fileUtils = new FileUtils(context);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        AlertDialog loadingDialog = builder.setCancelable(false)
+                .setView(R.layout.layout_loading).create();
+
+        loadingDialog.show();
+
+        return Observable.create(
+                (ObservableOnSubscribe<Map<String, Long[]>>) emitter -> {
+                    emitter.onNext(vocabularyRepository.getWordToFrequencyMap());
+                    emitter.onComplete();
+                }).subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
+                .map(wordMap -> {
+                    List<Long> wordIdList = new ArrayList<>();
+                    Integer lines = fileUtils.countLines(uri);
+
+                    if (overWrite) {
+                        wordIdList = vocabDataRepository
+                                .getAllWordId(v.getId());
+                    }
+                    v.setAmount(lines);
+                    return parseFile(uri, v, wordIdList, wordMap, lines);
+                })
+                .subscribe(r -> {
+                    String msg;
+                    if (r.count > 0) {
+                        VocabData[] vocabData =
+                                r.vocabDataList.toArray(new VocabData[r.count]);
+                        vocabDataRepository.insert(vocabData);
+                        msg = "词汇数据导入成功,";
+                        if (r.ignoreWord > 0) {
+                            msg += "新增" + r.count + "条";
+                            r.count += r.ignoreWord;
+                        } else {
+                            if (vdataViewModel.getWordMapSize() == 0) {
+                                setWordMap();
+                            }
+                            msg += "共导入" + r.count + "条数据";
+                            r.vocabType.setAmount(r.count);
+                            Disposable update = Observable.create((ObservableOnSubscribe<Integer>) emitter -> {
+                                emitter.onNext(vocabTypeRepository.update(r.vocabType));
+                                emitter.onComplete();
+                            })
+                                    .subscribeOn(Schedulers.io())
+                                    .observeOn(AndroidSchedulers.mainThread())
+                                    .subscribe(i -> {
+                                        if (i.equals(1)) {
+                                            setDefaultTitle();
+                                            getActivity().invalidateOptionsMenu();
+                                        }
+
+                                    });
+                            compositeDisposable.add(update);
+                        }
+                    } else {
+                        msg = r.ignoreWord > 0 ? "没有可新增的数据" : "解析失败，未导入数据！";
+                    }
+                    loadingDialog.dismiss();
+                    Snackbar.make(getView(), msg, Snackbar.LENGTH_LONG)
+                            .setAction("Action", null).show();
+                });
     }
 
+    private FileResult parseFile(Uri uri,
+                                 VocabType vocabType,
+                                 List<Long> wordIdList,
+                                 Map<String, Long[]> wordMap,
+                                 int lines) {
+
+        FileResult result = new FileResult();
+        List<VocabData> vocabDataList = new ArrayList<>();
+        try {
+
+            InputStream is = context.getContentResolver().openInputStream(uri);
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(is));
+            String str = null;
+            while ((str = bufferedReader.readLine()) != null) {
+                String line = str.trim();
+                if (!line.isEmpty()) {
+                    VocabData v = new VocabData();
+                    Long[] data = wordMap.get(line);
+                    if (data != null) {
+                        Long wordId = data[0];
+                        if (!wordIdList.contains(wordId)) {
+                            v.setWordId(wordId);
+                            v.setFrequency(data[1]);
+                            v.setVtypeId(vocabType.getId());
+                            vocabDataList.add(v);
+                        } else {
+                            result.ignoreWord += 1;
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        result.count = vocabDataList.size();
+        result.vocabType = vocabType;
+        result.vocabDataList = vocabDataList;
+        Log.d(TAG, "词汇数据初始化数量: " + result.count + "/" + lines);
+        return result;
+    }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -230,13 +342,38 @@ public class ImportVdataFragment extends Fragment {
             if (data != null) {
                 Uri uri = data.getData();
                 String fname = new FileUtils(context).getFileName(uri);
-                VocabType vocabType = ThreadTask.runOnThreadCall(null,
-                        n -> vocabTypeRepository.getVocabType(fname));
-                if (vocabType != null) {
-                    setEnsureDialog(uri, fname);
-                } else {
-                    importVocabData(uri, fname, false);
-                }
+                Disposable disposable = Observable.create(
+                        (ObservableOnSubscribe<QueryResult>) emitter -> {
+                            QueryResult r = new QueryResult();
+                            r.v = vocabTypeRepository.getVocabType(fname);
+                            if (r.v == null) {
+                                r.isExist = false;
+                                r.v = new VocabType();
+                                r.v.setAmount(0);
+                            }
+                            emitter.onNext(r);
+                            emitter.onComplete();
+                        })
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(r -> {
+                            if (r.isExist) {
+                                setEnsureDialog(r.v, uri);
+                            } else {
+                                r.v.setVocabtype(fname);
+                                Disposable create = Observable.create(
+                                        (ObservableOnSubscribe<Long>)
+                                                emitter -> emitter.onNext(vocabTypeRepository.insert(r.v)))
+                                        .subscribeOn(Schedulers.io())
+                                        .observeOn(AndroidSchedulers.mainThread())
+                                        .subscribe(id -> {
+                                            r.v.setId(id);
+                                            insertVData(r.v, uri, false);
+                                        });
+                                compositeDisposable.add(create);
+                            }
+                        });
+                compositeDisposable.add(disposable);
             }
         }
 
@@ -246,104 +383,15 @@ public class ImportVdataFragment extends Fragment {
         String get(VocabType v);
     }
 
-    private class ImportVocabData extends AsyncTask<Uri, Void, VocabData[]> {
+    private static class QueryResult {
+        VocabType v;
+        boolean isExist = true;
+    }
+
+    private static class FileResult {
         int count = 0;
-        int lines;
         int ignoreWord = 0;
         VocabType vocabType;
-        List<Long> wordIdList;
-        Map<String, Long[]> wordMap;
-        private AlertDialog loadingDialog;
-
-        public ImportVocabData(VocabType vocabType, Map<String, Long[]> wordMap, boolean overWrite) {
-            this.vocabType = vocabType;
-            this.wordIdList = new ArrayList<>();
-            this.lines = vocabType.getAmount();
-            this.wordMap = wordMap;
-
-            if (overWrite) {
-                Long id = vocabType.getId();
-                vocabDataRepository.getAllWordId(id).observe(getViewLifecycleOwner(),
-                        new Observer<List<Long>>() {
-                            @Override
-                            public void onChanged(List<Long> idList) {
-                                wordIdList = idList;
-                                vocabDataRepository.getAllWordId(id).removeObserver(this);
-                            }
-                        });
-
-            }
-            AlertDialog.Builder builder = new AlertDialog.Builder(context);
-            loadingDialog = builder.setCancelable(false)
-                    .setView(R.layout.layout_loading).create();
-            Log.d(TAG, "Ready to import vocab data");
-        }
-
-        @Override
-        protected void onPreExecute() {
-            loadingDialog.show();
-        }
-
-        @Override
-        protected VocabData[] doInBackground(Uri... uri) {
-            List<VocabData> vocabDataList = new ArrayList<>();
-            try {
-                InputStream is = context.getContentResolver().openInputStream(uri[0]);
-                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(is));
-                String str = null;
-                while ((str = bufferedReader.readLine()) != null) {
-                    String line = str.trim();
-                    if (!line.isEmpty()) {
-                        VocabData v = new VocabData();
-                        Long[] data = wordMap.get(line);
-                        if (data != null) {
-                            Long wordId = data[0];
-                            if (!wordIdList.contains(wordId)) {
-                                v.setWordId(wordId);
-                                v.setFrequency(data[1]);
-                                v.setVtypeId(vocabType.getId());
-                                vocabDataList.add(v);
-                            } else {
-                                ignoreWord += 1;
-                            }
-                        }
-                    }
-                }
-                count = vocabDataList.size();
-                Log.d(TAG, "词汇数据初始化数量: " + count + "/" + lines);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            return vocabDataList.toArray(new VocabData[count]);
-        }
-
-        @Override
-        protected void onPostExecute(VocabData[] result) {
-            String msg;
-            if (count > 0) {
-
-                vocabDataRepository.insert(result);
-                msg = "词汇数据导入成功,";
-                if (ignoreWord > 0) {
-                    msg += "新增" + count + "条";
-                    count += ignoreWord;
-                } else {
-                    if (vdataViewModel.getWordMapSize() == 0) {
-                        vocabularyRepository.getIdToWordMap().observe(getViewLifecycleOwner(),
-                                wordMap -> vdataViewModel.setWordMap(wordMap));
-                    }
-                    msg += "共导入" + count + "条数据";
-                    vocabType.setAmount(count);
-                    vocabTypeRepository.update(vocabType);
-                    getActivity().invalidateOptionsMenu();
-                }
-            } else {
-                msg = ignoreWord > 0 ? "没有可新增的数据" : "解析失败，未导入数据！";
-            }
-            loadingDialog.dismiss();
-            Snackbar.make(getView(), msg, Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).show();
-        }
+        List<VocabData> vocabDataList;
     }
 }

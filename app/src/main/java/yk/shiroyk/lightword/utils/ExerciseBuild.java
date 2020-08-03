@@ -16,6 +16,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.ObservableOnSubscribe;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import yk.shiroyk.lightword.db.entity.Vocabulary;
 import yk.shiroyk.lightword.db.entity.exercise.Collocation;
 import yk.shiroyk.lightword.db.entity.exercise.Example;
@@ -26,8 +29,10 @@ import yk.shiroyk.lightword.repository.VocabDataRepository;
 import yk.shiroyk.lightword.repository.VocabularyRepository;
 
 public class ExerciseBuild extends ViewModel {
-    private static final String TAG = "ExerciseBuild";
+    private static final String TAG = ExerciseBuild.class.getSimpleName();
 
+    private static final String not_found_vdata_msg = "未查询到词汇数据，\n请先导入词汇数据。";
+    private static final String parse_vocab_error_msg = "解析词库例句失败，\n请尝试重新导入词库数据。";
     private MutableLiveData<List<Exercise>> exerciseList = new MutableLiveData<>();
     private MutableLiveData<String> exerciseMsg = new MutableLiveData<>();
 
@@ -43,7 +48,9 @@ public class ExerciseBuild extends ViewModel {
         exerciseRepository = new ExerciseRepository(application);
         vocabularyRepository = new VocabularyRepository(application);
         vocabularyDataManage = new VocabularyDataManage(application.getBaseContext());
-        this.byFrequency = PreferenceManager.getDefaultSharedPreferences(application.getBaseContext()).getBoolean("byFrequency", false);
+        this.byFrequency = PreferenceManager.getDefaultSharedPreferences(application.getBaseContext())
+                .getBoolean("byFrequency", false);
+
     }
 
     private ExerciseList parseJson(String json) {
@@ -210,35 +217,48 @@ public class ExerciseBuild extends ViewModel {
         return exerciseMsg;
     }
 
-    public LiveData<List<Exercise>> newExercise(Long vtypeId, Integer limit) {
-        List<Long> wordIdList = ThreadTask.runOnThreadCall(null,
-                n -> vocabDataRepository.loadNewWord(vtypeId, this.byFrequency, limit));
-        if (wordIdList.size() == 0) {
-            exerciseMsg.setValue("未查询到词汇数据，\n请先导入词汇数据。");
-        }
-        List<Exercise> exercises = ThreadTask.runOnThreadCall(null,
-                n -> buildExercise(wordIdList, false));
-        if (wordIdList.size() != 0 && exercises.size() == 0) {
-            exerciseMsg.setValue("解析词库例句失败，\n请尝试重新导入词库数据。");
-        }
-        exerciseList.setValue(exercises);
-        return exerciseList;
+    public void newExercise(Long vtypeId, Integer limit) {
+        Observable.create((ObservableOnSubscribe<List<Long>>) emitter -> {
+            emitter.onNext(vocabDataRepository.loadNewWord(vtypeId, byFrequency, limit));
+            emitter.onComplete();
+        })
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
+                .map(longs -> {
+                    if (longs.size() == 0) {
+                        exerciseMsg.postValue(not_found_vdata_msg);
+                    }
+                    List<Exercise> exercises = buildExercise(longs, false);
+                    if (longs.size() != 0 && exercises.size() == 0) {
+                        exerciseMsg.postValue(parse_vocab_error_msg);
+                    }
+                    exerciseList.postValue(exercises);
+                    return exerciseList;
+                }).subscribe();
     }
 
-    public LiveData<List<Exercise>> autoExercise(Long vtypeId, Integer limit) {
-        List<Long> reviewList = ThreadTask.runOnThreadCall(null,
-                n -> exerciseRepository.loadReviewWord(vtypeId, limit));
-        List<Exercise> exercises;
-        if (reviewList.size() < limit) {
-            return newExercise(vtypeId, limit);
-        } else {
-            exercises = ThreadTask.runOnThreadCall(null,
-                    n -> buildExercise(reviewList, true));
-            if (reviewList.size() != 0 && exercises.size() == 0) {
-                exerciseMsg.setValue("解析词库例句失败，\n请尝试重新导入词库数据。");
-            }
-        }
-        exerciseList.setValue(exercises);
+    public void autoExercise(Long vtypeId, Integer limit) {
+        Observable.create((ObservableOnSubscribe<List<Long>>) emitter -> {
+            emitter.onNext(exerciseRepository.loadReviewWord(vtypeId, limit));
+            emitter.onComplete();
+        })
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
+                .map(longs -> {
+                    if (longs.size() < limit) {
+                        newExercise(vtypeId, limit);
+                    } else {
+                        List<Exercise> exercises = buildExercise(longs, true);
+                        if (longs.size() != 0 && exercises.size() == 0) {
+                            exerciseMsg.postValue(parse_vocab_error_msg);
+                        }
+                        exerciseList.postValue(exercises);
+                    }
+                    return exerciseList;
+                }).subscribe();
+    }
+
+    public LiveData<List<Exercise>> getExerciseList() {
         return exerciseList;
     }
 

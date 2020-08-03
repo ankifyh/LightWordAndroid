@@ -42,7 +42,7 @@ public interface VocabularyDao {
 
     @Transaction
     @Query("SELECT * FROM vocabulary")
-    LiveData<List<Vocabulary>> getAllWord();
+    List<Vocabulary> getAllWord();
 
     @Query("SELECT COUNT(word) FROM vocabulary")
     LiveData<Integer> getCount();

@@ -14,6 +14,7 @@ import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -27,7 +28,6 @@ import java.util.Date;
 import java.util.List;
 
 import yk.shiroyk.lightword.R;
-import yk.shiroyk.lightword.db.entity.ExerciseData;
 import yk.shiroyk.lightword.db.entity.exercise.Exercise;
 import yk.shiroyk.lightword.repository.ExerciseRepository;
 import yk.shiroyk.lightword.ui.viewmodel.SharedViewModel;
@@ -44,10 +44,10 @@ public class ExerciseFragment extends Fragment {
     private SharedViewModel sharedViewModel;
     private SharedPreferences sp;
 
+    private ProgressBar exercise_loading;
     private LinearLayout exercise_container;
     private TextView tv_tip;
     private ExerciseCardView exercise_card;
-    private TextView tv_e_data;
     private TextView tv_translation;
     private ImageView btn_prev_card;
     private TextView tv_daily_target;
@@ -71,6 +71,7 @@ public class ExerciseFragment extends Fragment {
         exerciseRepository = new ExerciseRepository(getActivity().getApplication());
         sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
         exerciseBuild = new ViewModelProvider(this).get(ExerciseBuild.class);
+        exerciseBuild.setApplication(this.getActivity().getApplication());
 
     }
 
@@ -82,7 +83,6 @@ public class ExerciseFragment extends Fragment {
         sp = PreferenceManager.getDefaultSharedPreferences(context);
         init(root);
 
-        exerciseBuild.setApplication(this.getActivity().getApplication());
         getCardData(10);
         initTarget();
         setUptargetDialog();
@@ -109,7 +109,8 @@ public class ExerciseFragment extends Fragment {
             tv_daily_target.setVisibility(View.INVISIBLE);
         } else {
             tv_daily_target.setVisibility(View.VISIBLE);
-            tv_daily_target.setText("今日: " + todayTarget + "/" + dailyTarget);
+            tv_daily_target.setText(String.format(getString(
+                    R.string.exercise_fragment_today_target), todayTarget, dailyTarget));
         }
     }
 
@@ -118,12 +119,14 @@ public class ExerciseFragment extends Fragment {
             int parseInt = Integer.parseInt(dailyTarget);
             if (parseInt != 0) {
                 tv_daily_target.setVisibility(View.VISIBLE);
-                tv_daily_target.setText("今日: " + integer + "/" + dailyTarget);
+                tv_daily_target.setText(String.format(getString(
+                        R.string.exercise_fragment_today_target), integer, dailyTarget));
                 if (integer == parseInt) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(context);
                     builder.setIcon(R.drawable.ic_edit)
-                            .setTitle("今日目标已完成！(" + integer + "/" + parseInt + ")")
-                            .setNegativeButton("确认", null).create().show();
+                            .setTitle(String.format(getString(
+                                    R.string.exercise_fragment_target_dialog_title), integer, parseInt))
+                            .setNegativeButton(R.string.dialog_ensure, null).create().show();
                 }
             } else {
                 tv_daily_target.setVisibility(View.INVISIBLE);
@@ -132,9 +135,9 @@ public class ExerciseFragment extends Fragment {
     }
 
     private void init(View root) {
+        exercise_loading = root.findViewById(R.id.exercise_loading);
         exercise_container = root.findViewById(R.id.exercise_container);
         tv_tip = root.findViewById(R.id.tv_tip);
-        tv_e_data = root.findViewById(R.id.tv_e_data);
         exercise_card = root.findViewById(R.id.exercise_card);
         tv_translation = root.findViewById(R.id.tv_translation);
         btn_prev_card = root.findViewById(R.id.btn_prev_card);
@@ -193,24 +196,14 @@ public class ExerciseFragment extends Fragment {
 
     private void reDialog(View view) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setIcon(R.drawable.ic_edit)
-                .setTitle("是否排除该单词？")
-                .setMessage("以后将不会再出现在复习计划中，\n如果想取消可在排除列表中移除。")
-                .setPositiveButton("确认", (dialogInterface, i) -> {
+        builder.setTitle(R.string.exercise_fragment_exclude_dialog_title)
+                .setMessage(R.string.exercise_fragment_exclude_dialog_message)
+                .setPositiveButton(R.string.dialog_ensure, (dialogInterface, i) -> {
                     remembered(wordId, vtypeId);
                     exercise_card.showAnswer();
                     playVoice();
                 })
-                .setNegativeButton("取消", null).create().show();
-    }
-
-    private void getWordDetail() {
-        try {
-            ExerciseData exerciseData = exerciseRepository.getWord(wordId, vtypeId);
-            tv_e_data.setText(exerciseData.toString());
-        } catch (NullPointerException ignored) {
-            tv_e_data.setText("未找到该单词之前练习的数据");
-        }
+                .setNegativeButton(R.string.dialog_cancel, null).create().show();
     }
 
     private void remember(Long wordId, Long vtypeId) {
@@ -218,13 +211,11 @@ public class ExerciseFragment extends Fragment {
         if (exerciseRepository.remember(wordId, vtypeId)) {
             updateTarget();
         }
-//        getWordDetail();
     }
 
     private void forget(Long wordId, Long vtypeId) {
         exerciseRepository.defaultForgetTime();
         exerciseRepository.forget(wordId, vtypeId);
-//        getWordDetail();
     }
 
     private void remembered(Long wordId, Long vtypeId) {
@@ -232,7 +223,6 @@ public class ExerciseFragment extends Fragment {
         if (exerciseRepository.remembered(wordId, vtypeId)) {
             updateTarget();
         }
-//        getWordDetail();
     }
 
     private void prevCard() {
@@ -307,22 +297,25 @@ public class ExerciseFragment extends Fragment {
     private void getCardData(Integer limit) {
         cardIndex = 0;
         currentCard = 0;
-        exerciseBuild.autoExercise(vtypeId, limit).observe(getViewLifecycleOwner(), exercises -> {
-            if (exercises.size() > 0) {
-                tv_tip.setVisibility(View.GONE);
-                exercise_container.setVisibility(View.VISIBLE);
-                exerciseList = exercises;
-                setCardData(cardIndex);
-                btn_prev_card.setVisibility(View.INVISIBLE);
-            } else {
-                exercise_container.setVisibility(View.GONE);
-                tv_translation.setVisibility(View.GONE);
-                tv_tip.setVisibility(View.VISIBLE);
-                exerciseBuild.getExerciseMsg().observe(getViewLifecycleOwner(), msg -> {
-                    tv_tip.setText(msg);
+        exercise_container.setVisibility(View.GONE);
+        tv_translation.setVisibility(View.GONE);
+        exerciseBuild.autoExercise(vtypeId, limit);
+        exerciseBuild.getExerciseList()
+                .observe(getViewLifecycleOwner(), exercises -> {
+                    if (exercises.size() > 0) {
+                        exerciseList = exercises;
+                        setCardData(cardIndex);
+                        tv_tip.setVisibility(View.GONE);
+                        exercise_container.setVisibility(View.VISIBLE);
+                        tv_translation.setVisibility(View.VISIBLE);
+                        btn_prev_card.setVisibility(View.INVISIBLE);
+                    } else {
+                        tv_tip.setVisibility(View.VISIBLE);
+                        exerciseBuild.getExerciseMsg().observe(getViewLifecycleOwner(), msg -> {
+                            tv_tip.setText(msg);
+                        });
+                    }
                 });
-            }
-        });
     }
 
     private void setCardData(Integer cardIndex) {
@@ -337,6 +330,5 @@ public class ExerciseFragment extends Fragment {
         tv_translation.setText(exercise.getTranslation());
         exercise_card.setCardData(exercise);
         exercise_card.setCardProgress((cardIndex + 1) * 100 / exerciseList.size());
-//        getWordDetail();
     }
 }

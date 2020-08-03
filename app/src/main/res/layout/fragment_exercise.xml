@@ -15,11 +15,20 @@
         android:textSize="20sp"
         android:visibility="gone" />
 
+    <ProgressBar
+        android:id="@+id/exercise_loading"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="80dp"
+        android:visibility="gone" />
+
     <LinearLayout
         android:id="@+id/exercise_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:visibility="gone">
 
         <ImageView
             android:id="@+id/btn_prev_card"
@@ -65,7 +74,7 @@
         android:paddingVertical="10dp"
         android:text="@string/exercise_card_translation"
         android:textColor="@color/cardTextColor"
-        android:visibility="visible"
+        android:visibility="gone"
         app:autoSizeMaxTextSize="18sp"
         app:autoSizeMinTextSize="14sp"
         app:autoSizeStepGranularity="1sp"

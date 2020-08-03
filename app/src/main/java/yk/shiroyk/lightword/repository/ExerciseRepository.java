@@ -8,6 +8,9 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.ObservableOnSubscribe;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import yk.shiroyk.lightword.db.LightWordDatabase;
 import yk.shiroyk.lightword.db.dao.ExerciseDao;
 import yk.shiroyk.lightword.db.entity.ExerciseData;
@@ -43,11 +46,14 @@ public class ExerciseRepository {
         this.minList = profile.getForgetTime();
     }
 
-    public ExerciseData getWord(Long wordId, Long vtypeId) {
-        return ThreadTask.runOnThreadCall(null
-                , n -> exerciseDao.getSingleWord(wordId, vtypeId));
+    private ExerciseData getWord(Long wordId, Long vtypeId) {
+        return Observable.create((ObservableOnSubscribe<ExerciseData>) emitter -> {
+            emitter.onNext(exerciseDao.getSingleWord(wordId, vtypeId));
+            emitter.onComplete();
+        })
+                .subscribeOn(Schedulers.io())
+                .blockingSingle();
     }
-
 
     public boolean remember(Long wordId, Long vtypeId) {
         ExerciseData exerciseData;
@@ -64,7 +70,7 @@ public class ExerciseRepository {
             }
             exerciseData.setLastPractice(now);
             exerciseData.setCorrect(correct + 1);
-            ThreadTask.runOnThread(exerciseData, (e) -> exerciseDao.update(e));
+            ThreadTask.runOnThread(exerciseData, e -> exerciseDao.update(e));
             return false;
         } catch (NullPointerException ex) {
             exerciseData = new ExerciseData();
@@ -94,7 +100,7 @@ public class ExerciseRepository {
             }
             exerciseData.setLastPractice(new Date());
             exerciseData.setWrong(wrong + 1);
-            ThreadTask.runOnThread(exerciseData, (e) -> exerciseDao.update(e));
+            ThreadTask.runOnThread(exerciseData, e -> exerciseDao.update(e));
         } catch (NullPointerException ignored) {
         }
     }
@@ -113,7 +119,7 @@ public class ExerciseRepository {
             }
             exerciseData.setLastPractice(now);
             exerciseData.setCorrect(correct + 1);
-            ThreadTask.runOnThread(exerciseData, (e) -> exerciseDao.update(e));
+            ThreadTask.runOnThread(exerciseData, e -> exerciseDao.update(e));
             return false;
         } catch (NullPointerException ex) {
             exerciseData = new ExerciseData();
@@ -134,6 +140,6 @@ public class ExerciseRepository {
     }
 
     public void insert(ExerciseData exerciseData) {
-        ThreadTask.runOnThread(exerciseData, (e) -> exerciseDao.insert(e));
+        ThreadTask.runOnThread(exerciseData, e -> exerciseDao.insert(e));
     }
 }

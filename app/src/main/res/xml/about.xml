@@ -7,7 +7,7 @@
         android:icon="@drawable/ic_android"
         android:summary="@string/versionName"
         app:key="about_version"
-        app:title="版本" />
+        app:title="检查更新" />
 
     <Preference
         android:icon="@drawable/ic_run"
@@ -17,7 +17,7 @@
 
     <Preference
         android:icon="@drawable/ic_github"
-        android:summary="https://github.com/shiroyk/LightWordAndroid"
+        android:summary="@string/source_url"
         app:key="about_source"
         app:title="项目地址" />
 

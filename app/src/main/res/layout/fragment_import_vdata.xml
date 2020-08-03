@@ -4,6 +4,13 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <ProgressBar
+        android:id="@+id/vdata_loading"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_gravity="center"
+        android:visibility="visible" />
+
     <TextView
         android:id="@+id/tv_vdata_msg"
         android:layout_width="match_parent"
@@ -12,7 +19,7 @@
         android:layout_marginTop="30dp"
         android:text="暂无数据"
         android:textSize="20sp"
-        android:visibility="visible" />
+        android:visibility="gone" />
 
     <ListView
         android:id="@+id/vdata_list"

@@ -19,7 +19,6 @@ import yk.shiroyk.lightword.ui.adapter.ImportDataPagerAdapter;
 
 public class ImportFragment extends Fragment {
 
-    private String[] titles = new String[]{"词库数据管理", "词汇数据管理"};
     private ArrayList<Fragment> fragments = new ArrayList<>();
 
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -41,6 +40,9 @@ public class ImportFragment extends Fragment {
         fragments.add(importVdataFragment);
 
         import_tabs.setupWithViewPager(import_viewpager, false);
+
+        String[] titles = new String[]{getString(R.string.import_fragment_title_vocab),
+                getString(R.string.import_fragment_title_vdata)};
 
         ImportDataPagerAdapter pagerAdapter = new ImportDataPagerAdapter(getChildFragmentManager(),
                 FragmentPagerAdapter.BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT,

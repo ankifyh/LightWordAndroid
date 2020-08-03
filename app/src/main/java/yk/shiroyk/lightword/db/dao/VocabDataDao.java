@@ -23,7 +23,7 @@ public interface VocabDataDao {
     LiveData<Integer> getCount(Long vtypeId);
 
     @Query("SELECT word_id FROM vocab_data WHERE vtype_id = :vtypeId")
-    LiveData<List<Long>> getAllWordId(Long vtypeId);
+    List<Long> getAllWordId(Long vtypeId);
 
     @Query("SELECT vocab_data.word_id " +
             "FROM vocab_data LEFT OUTER JOIN (" +

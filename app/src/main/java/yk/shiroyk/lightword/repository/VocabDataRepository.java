@@ -27,11 +27,11 @@ public class VocabDataRepository {
         return vocabDataDao.getCount(vtypeId);
     }
 
-    public LiveData<List<Long>> getAllWordId(Long vtypeId) {
+    public List<Long> getAllWordId(Long vtypeId) {
         return vocabDataDao.getAllWordId(vtypeId);
     }
 
     public void insert(VocabData[] vocabData) {
-        ThreadTask.runOnThread(vocabData, (v) -> vocabDataDao.insertMany(v));
+        ThreadTask.runOnThread(vocabData, v -> vocabDataDao.insertMany(v));
     }
 }

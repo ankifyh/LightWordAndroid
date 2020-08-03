@@ -3,8 +3,6 @@ package yk.shiroyk.lightword.repository;
 import android.app.Application;
 
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.Transformations;
 
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +22,7 @@ public class VocabularyRepository {
         this.vocabularyDao = db.vocabularyDao();
     }
 
-    public LiveData<List<Vocabulary>> getAllWords() {
+    public List<Vocabulary> getAllWord() {
         return vocabularyDao.getAllWord();
     }
 
@@ -56,43 +54,29 @@ public class VocabularyRepository {
         return vocabularyDao.getWord(word);
     }
 
-    public LiveData<Map<Long, String>> getIdToWordMap() {
-        return Transformations.switchMap(vocabularyDao.getAllWord(), wordList -> {
-            MutableLiveData<Map<Long, String>> result = new MutableLiveData<>();
-            Map<Long, String> wordMap = ThreadTask.runOnThreadCall(wordList, list -> {
-                Map<Long, String> map = new HashMap<>();
-                for (Vocabulary v : wordList
-                ) {
-                    map.put(v.getId(), v.getWord());
-                }
-                return map;
-            });
-            result.setValue(wordMap);
-            return result;
-        });
+    public Map<Long, String> getIdToWordMap() {
+        Map<Long, String> map = new HashMap<>();
+        for (Vocabulary v : vocabularyDao.getAllWord()
+        ) {
+            map.put(v.getId(), v.getWord());
+        }
+        return map;
     }
 
-    public LiveData<Map<String, Long[]>> getWordToFrequencyMap() {
-        return Transformations.switchMap(vocabularyDao.getAllWord(), wordList -> {
-            MutableLiveData<Map<String, Long[]>> result = new MutableLiveData<>();
-            Map<String, Long[]> wordMap = ThreadTask.runOnThreadCall(wordList, list -> {
-                Map<String, Long[]> map = new HashMap<>();
-                for (Vocabulary v : list
-                ) {
-                    Long[] data = new Long[2];
-                    data[0] = v.getId();
-                    data[1] = v.getFrequency();
-                    map.put(v.getWord(), data);
-                }
-                return map;
-            });
-            result.setValue(wordMap);
-            return result;
-        });
+    public Map<String, Long[]> getWordToFrequencyMap() {
+        Map<String, Long[]> map = new HashMap<>();
+        for (Vocabulary v : vocabularyDao.getAllWord()
+        ) {
+            Long[] data = new Long[2];
+            data[0] = v.getId();
+            data[1] = v.getFrequency();
+            map.put(v.getWord(), data);
+        }
+        return map;
     }
 
     public void insert(Vocabulary[] vocabulary) {
-        ThreadTask.runOnThread(vocabulary, (v) -> {
+        ThreadTask.runOnThread(vocabulary, v -> {
 //            int chunk = 1000;
 //            int len = vocabularies.length;
 //

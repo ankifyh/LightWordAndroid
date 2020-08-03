@@ -1,28 +1,49 @@
 <resources>
     <string name="app_name">LightWord</string>
-    <string name="navigation_drawer_open">Open navigation drawer</string>
-    <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="nav_header_title">Light Word</string>
-    <string name="nav_header_subtitle">共计学习233小时, 练习114154次</string>
-    <string name="nav_header_desc">Navigation header</string>
-    <string name="action_settings">Settings</string>
-    <string name="res_image">Image Description</string>
+    <string name="nav_header_subtitle" translatable="false">共计学习233小时, 练习114154次</string>
+    <string name="nav_header_desc" translatable="false">Navigation header</string>
+    <string name="action_settings" translatable="false">Settings</string>
+    <string name="res_image" translatable="false">Image Description</string>
 
-    <string name="title_home">主页</string>
-    <string name="title_import">导入</string>
-    <string name="title_setting">设置</string>
-    <string name="title_exercise">练习</string>
-    <string name="title_about">关于</string>
+    <string name="title_home" translatable="false">主页</string>
+    <string name="title_import" translatable="false">导入</string>
+    <string name="title_setting" translatable="false">设置</string>
+    <string name="title_exercise" translatable="false">练习</string>
+    <string name="title_about" translatable="false">关于</string>
+    <string name="versionName" translatable="false">1.1.1</string>
 
-    <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="exercise_card_translation">这种麻醉状态不仅在法庭起了作用，而且还使我看到汉娜好像把我当成另一个爱过并渴望过她的人，一个我很熟悉但却不是我的那么一个人。</string>
-    <string name="exercise_card_sentence">The anesthetic functioned not only in the courtroom, and not only to allow me to see Hanna as if it was someone else who had loved and desired her, someone I knew well but who wasn`t me.</string>
-    <string name="exercise_card_meaning">麻醉的；感觉缺失的</string>
-    <string name="exercise_tips">未查询到数据,\n请尝试重新导入词库与词汇数据</string>
-    <string name="exercise_data_tips">未找到该单词之前练习的数据</string>
-    <string name="string_home_progress">0/4598</string>
-    <string name="string_home_vtype">CET4</string>
-    <string name="exercise_card_pos">形容词</string>
-    <string name="string_target">今日: 0/100</string>
-    <string name="versionName">1.1.1</string>
+    <string name="exercise_card_translation" translatable="false">这种麻醉状态不仅在法庭起了作用，而且还使我看到汉娜好像把我当成另一个爱过并渴望过她的人，一个我很熟悉但却不是我的那么一个人。</string>
+    <string name="exercise_card_sentence" translatable="false">The anesthetic functioned not only in the courtroom, and not only to allow me to see Hanna as if it was someone else who had loved and desired her, someone I knew well but who wasn`t me.</string>
+    <string name="exercise_card_meaning" translatable="false">麻醉的；感觉缺失的</string>
+    <string name="exercise_card_pos" translatable="false">形容词</string>
+    <string name="exercise_tips" translatable="false">未查询到数据,\n请尝试重新导入词库与词汇数据</string>
+    <string name="exercise_data_tips" translatable="false">未找到该单词之前练习的数据</string>
+    <string name="exercise_fragment_exclude_dialog_title" translatable="false">是否排除该单词？</string>
+    <string name="exercise_fragment_exclude_dialog_message" translatable="false">以后将不会再出现在复习计划中，\n如果想取消可在排除列表中移除。</string>
+    <string name="string_target" translatable="false">今日: 0/100</string>
+    <string name="exercise_fragment_today_target" translatable="false">今日: %d/%s</string>
+    <string name="exercise_fragment_target_dialog_title" translatable="false">今日目标已完成！(%d/%d)</string>
+
+    <string name="home_fragment_card_not_found_data" translatable="false">暂无数据</string>
+    <string name="string_home_progress" translatable="false">0/4598</string>
+    <string name="string_home_vtype" translatable="false">CET4</string>
+
+    <string name="import_vdata_submenu" translatable="false">词汇数据</string>
+    <string name="import_fragment_title_vocab" translatable="false">词库数据管理</string>
+    <string name="import_fragment_title_vdata" translatable="false">词汇数据管理</string>
+    <string name="import_vdata_type_exist_title" translatable="false">该词汇分类已存在</string>
+    <string name="import_vdata_type_exist_message" translatable="false">是否新增该词汇分类的单词？</string>
+    <string name="dialog_ensure" translatable="false">确认</string>
+    <string name="dialog_cancel" translatable="false">取消</string>
+    <string name="dialog_url" translatable="false">下载地址</string>
+
+    <string name="crash_send_failed" translatable="false">发送崩溃日志失败！</string>
+    <string name="crash_send_succeeded" translatable="false">发送日志成功！</string>
+    <string name="crash_dialog_title" translatable="false">检测到APP上次发生崩溃</string>
+    <string name="crash_dialog_msg" translatable="false">是否发送崩溃日志？</string>
+    <string name="crash_dialog_send" translatable="false">是</string>
+    <string name="crash_dialog_dnot_send" translatable="false">否</string>
+
+    <string name="source_url" translatable="false">https://github.com/shiroyk/LightWordAndroid</string>
 </resources>

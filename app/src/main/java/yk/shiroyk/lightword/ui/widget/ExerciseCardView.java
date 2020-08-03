@@ -117,6 +117,7 @@ public class ExerciseCardView extends CardView {
                 FrameLayout.LayoutParams answerParams = new FrameLayout.LayoutParams(card_answer_layout.getLayoutParams());
                 answerParams.setMargins(x, y, 0, 0);
                 card_answer_layout.setLayoutParams(answerParams);
+                card_answer_layout.setVisibility(VISIBLE);
             } catch (IndexOutOfBoundsException ex) {
                 Log.e(TAG, "Set Answer Layout failed Answer: " + answer + " , Index: " +
                         answerIndex + " ,  Sentence: " + tv_card_sentence.getText().toString());
