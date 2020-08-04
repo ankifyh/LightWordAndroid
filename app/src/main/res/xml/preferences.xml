@@ -48,6 +48,25 @@
     </PreferenceCategory>
 
     <PreferenceCategory
+        app:key="tts_category"
+        app:title="例句发音">
+
+        <ListPreference
+            app:defaultValue="close"
+            app:dialogTitle="选择朗读"
+            app:entries="@array/ttsListArray"
+            app:entryValues="@array/ttsEntryArray"
+            app:key="ttsSpeech"
+            app:title="TTS朗读"
+            app:useSimpleSummaryProvider="true" />
+
+        <Preference
+            app:key="systemTTS"
+            app:title="前往系统TTS设置" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
         app:key="backup"
         app:title="备份数据">
 

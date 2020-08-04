@@ -1,6 +1,7 @@
 package yk.shiroyk.lightword.ui.setting;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
 import android.widget.Toast;
@@ -58,7 +59,8 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
         SwitchPreferenceCompat navBgPreference = findPreference("navigationBarBg");
         navBgPreference.setOnPreferenceClickListener(preference -> {
-            int color = preference.getSharedPreferences().getBoolean("navigationBarBg", false) ? R.color.colorPrimary : R.color.transparent;
+            int color = preference.getSharedPreferences()
+                    .getBoolean("navigationBarBg", false) ? R.color.colorPrimary : R.color.transparent;
             mActivity.getWindow().setNavigationBarColor(getResources().getColor(color));
             return false;
         });
@@ -66,7 +68,20 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         compositeDisposable.add(setVTypeEntry());
 
         EditTextPreference targetPreference = findPreference("dailyTarget");
-        targetPreference.setOnBindEditTextListener(editText -> editText.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED));
+        targetPreference.setOnBindEditTextListener(editText ->
+                editText.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED));
+
+        Preference systemTTS = findPreference("systemTTS");
+        systemTTS.setOnPreferenceClickListener(preference -> {
+            try {
+                Intent intent = new Intent();
+                intent.setAction("com.android.settings.TTS_SETTINGS");
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+            } catch (Exception ignored) {
+            }
+            return false;
+        });
 
         Preference import_data = findPreference("import_data");
         import_data.setOnPreferenceClickListener(preference -> {
@@ -88,34 +103,36 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(vList -> {
-                    List<String> entries = new ArrayList<>();
-                    List<String> entryValues = new ArrayList<>();
+                    if (vList.size() > 0) {
+                        List<String> entries = new ArrayList<>();
+                        List<String> entryValues = new ArrayList<>();
 
-                    ListPreference vtypePreference = findPreference("vtypeId");
-                    String preValue = vtypePreference.getValue();
+                        ListPreference vtypePreference = findPreference("vtypeId");
+                        String preValue = vtypePreference.getValue();
 
-                    for (VocabType v : vList) {
-                        Long id = v.getId();
-                        String vType = v.getVocabtype();
-                        entries.add(vType + " (" + v.getAmount() + ")");
-                        entryValues.add(id + "");
-                        if (id.toString().equals(preValue))
-                            vtypePreference.setSummaryProvider(p -> vType);
+                        for (VocabType v : vList) {
+                            Long id = v.getId();
+                            String vType = v.getVocabtype();
+                            entries.add(vType + " (" + v.getAmount() + ")");
+                            entryValues.add(id + "");
+                            if (id.toString().equals(preValue))
+                                vtypePreference.setSummaryProvider(p -> vType);
+                        }
+                        CharSequence[] vtype = entries.toArray(new CharSequence[entries.size()]);
+                        CharSequence[] vtypeId = entryValues.toArray(new CharSequence[entryValues.size()]);
+
+                        vtypePreference.setEntries(vtype);
+                        vtypePreference.setEntryValues(vtypeId);
+
+                        vtypePreference.setOnPreferenceChangeListener(
+                                (preference, newValue) -> {
+                                    vtypePreference.setValue(newValue.toString());
+                                    if (vtype.length > 0)
+                                        vtypePreference.setSummaryProvider(p ->
+                                                vtype[Integer.parseInt(newValue.toString()) - 1]);
+                                    return false;
+                                });
                     }
-                    CharSequence[] vtype = entries.toArray(new CharSequence[entries.size()]);
-                    CharSequence[] vtypeId = entryValues.toArray(new CharSequence[entryValues.size()]);
-
-                    vtypePreference.setEntries(vtype);
-                    vtypePreference.setEntryValues(vtypeId);
-
-                    vtypePreference.setOnPreferenceChangeListener(
-                            (preference, newValue) -> {
-                                vtypePreference.setValue(newValue.toString());
-                                if (vtype.length > 0)
-                                    vtypePreference.setSummaryProvider(p ->
-                                            vtype[Integer.parseInt(newValue.toString()) - 1]);
-                                return false;
-                            });
                 });
     }
 }

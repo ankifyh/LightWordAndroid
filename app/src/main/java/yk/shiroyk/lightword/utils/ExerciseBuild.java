@@ -190,18 +190,18 @@ public class ExerciseBuild extends ViewModel {
                     Example example = rdExample(collocation);
                     String sentence = example.getExample();
 
-                    AnswerObject answer = getAnswer(inflection, sentence);
-                    if (answer.answer != null) {
-                        exercise.setSentence(sentence);
-                        exercise.setTranslation(example.getTranslation());
-                        exercise.setAnswer(answer.answer);
-                        exercise.setAnswerIndex(answer.answerIndex);
-                        Log.d(TAG, "answerIndex: " + answer.answerIndex + "");
-                    } else {
-                        Log.e(TAG, "未匹配到: " + "Word: " + word + " Sentence: " + sentence);
-                        continue;
+                    AnswerObject answerObject = getAnswer(inflection, sentence);
+                    String answer = answerObject.answer;
+                    int answerIndex = answerObject.answerIndex;
+                    if (answer == null) {
+                        answer = word;
+                        sentence = word;
+                        answerIndex = 0;
                     }
-
+                    exercise.setSentence(sentence);
+                    exercise.setTranslation(example.getTranslation());
+                    exercise.setAnswer(answer);
+                    exercise.setAnswerIndex(answerIndex);
 
                     exerciseList.add(exercise);
                 } else {

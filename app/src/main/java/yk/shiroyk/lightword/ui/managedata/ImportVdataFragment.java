@@ -254,6 +254,7 @@ public class ImportVdataFragment extends Fragment {
                     v.setAmount(lines);
                     return parseFile(uri, v, wordIdList, wordMap, lines);
                 })
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(r -> {
                     String msg;
                     if (r.count > 0) {

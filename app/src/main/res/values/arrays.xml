@@ -13,4 +13,16 @@
         <item>default</item>
     </string-array>
 
+    <string-array name="ttsListArray">
+        <item>关闭</item>
+        <item>词汇</item>
+        <item>句子</item>
+    </string-array>
+
+    <string-array name="ttsEntryArray">
+        <item>close</item>
+        <item>vocabulary</item>
+        <item>sentence</item>
+    </string-array>
+
 </resources>

@@ -198,7 +198,6 @@ public class ImportVocabFragment extends Fragment {
                     Log.d(TAG, "词汇例句初始化数量: " + vocabularyList.size() + "/" + lines);
                     return result;
                 })
-                .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(r -> {
                     String msg;
