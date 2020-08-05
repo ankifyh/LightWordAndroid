@@ -28,6 +28,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceManager;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -121,12 +122,7 @@ public class ExerciseFragment extends Fragment {
     private void updateTarget() {
         int target = sp.getInt("todayTarget", 0);
         long timestamp = new Date().getTime();
-        long lastUpdateTarget = sp.getLong("lastUpdateTarget", timestamp);
-        if (timestamp - lastUpdateTarget > 86400000) {
-            target = 0;
-        } else {
-            target += 1;
-        }
+        target += 1;
         sp.edit().putLong("lastUpdateTarget", timestamp).apply();
         sp.edit().putInt("todayTarget", target).apply();
         sharedViewModel.setTarget(target);
@@ -134,6 +130,15 @@ public class ExerciseFragment extends Fragment {
 
     private void initTarget() {
         int todayTarget = sp.getInt("todayTarget", 0);
+        SimpleDateFormat formatter = new SimpleDateFormat("dd", Locale.CHINA);
+        long timestamp = new Date().getTime();
+        long lastUpdate = sp.getLong("lastUpdateTarget", timestamp);
+        String nowDay = formatter.format(timestamp);
+        String lastDay = formatter.format(new Date(lastUpdate));
+        if (Integer.parseInt(nowDay) > Integer.parseInt(lastDay)) {
+            sharedViewModel.setTarget(0);
+            sp.edit().putInt("todayTarget", 0).apply();
+        }
         if (dailyTarget.equals("0")) {
             tv_daily_target.setVisibility(View.INVISIBLE);
         } else {
