@@ -28,6 +28,8 @@
         <ListPreference
             app:defaultValue="1"
             app:dialogTitle="选择练习单词分类"
+            app:entries="@array/vtypeListArray"
+            app:entryValues="@array/vtypeEntryArray"
             app:key="vtypeId"
             app:title="练习单词分类"
             app:useSimpleSummaryProvider="true" />

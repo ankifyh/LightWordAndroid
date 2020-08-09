@@ -13,6 +13,10 @@
         <item>default</item>
     </string-array>
 
+    <string-array name="vtypeListArray" />
+
+    <string-array name="vtypeEntryArray" />
+
     <string-array name="ttsListArray">
         <item>关闭</item>
         <item>词汇</item>
