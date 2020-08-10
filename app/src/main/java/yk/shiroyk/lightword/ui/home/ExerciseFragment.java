@@ -132,9 +132,8 @@ public class ExerciseFragment extends Fragment {
         int todayTarget = sp.getInt("todayTarget", 0);
         SimpleDateFormat formatter = new SimpleDateFormat("dd", Locale.CHINA);
         long timestamp = new Date().getTime();
-        long lastUpdate = sp.getLong("lastUpdateTarget", timestamp);
         String nowDay = formatter.format(timestamp);
-        String lastDay = formatter.format(new Date(lastUpdate));
+        String lastDay = formatter.format(new Date(sp.getLong("lastUpdateTarget", timestamp)));
         if (Integer.parseInt(nowDay) > Integer.parseInt(lastDay)) {
             sharedViewModel.setTarget(0);
             sp.edit().putInt("todayTarget", 0).apply();

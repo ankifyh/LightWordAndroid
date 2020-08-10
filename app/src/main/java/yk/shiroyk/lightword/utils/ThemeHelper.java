@@ -16,10 +16,15 @@
 
 package yk.shiroyk.lightword.utils;
 
+import android.app.Activity;
+import android.content.SharedPreferences;
 import android.os.Build;
+import android.util.TypedValue;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatDelegate;
+
+import yk.shiroyk.lightword.R;
 
 public class ThemeHelper {
 
@@ -46,5 +51,21 @@ public class ThemeHelper {
                 break;
             }
         }
+    }
+
+    public static void setPrimaryColor(Activity activity, SharedPreferences sp) {
+        String theme = sp.getString("primaryColor", "AppTheme");
+        activity.getTheme().applyStyle(activity.getResources().
+                        getIdentifier("AppTheme_" + theme, "style", activity.getPackageName()),
+                true);
+    }
+
+    public static void setNavigationBarColor(Activity activity, SharedPreferences sp) {
+        TypedValue typedValue = new TypedValue();
+        int color = R.color.transparent;
+        if (activity.getTheme().resolveAttribute(android.R.attr.colorPrimary, typedValue, true)) {
+            color = sp.getBoolean("navigationBarBg", false) ? typedValue.resourceId : R.color.transparent;
+        }
+        activity.getWindow().setNavigationBarColor(activity.getResources().getColor(color));
     }
 }

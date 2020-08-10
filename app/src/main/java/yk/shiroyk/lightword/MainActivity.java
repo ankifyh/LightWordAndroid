@@ -45,7 +45,8 @@ public class MainActivity extends AppCompatActivity {
         sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
 
         setStatusBarTransparent();
-        setNavgationBarColor();
+        ThemeHelper.setPrimaryColor(this, sp);
+        ThemeHelper.setNavigationBarColor(this, sp);
 
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -118,11 +119,6 @@ public class MainActivity extends AppCompatActivity {
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         return NavigationUI.navigateUp(navController, mAppBarConfiguration)
                 || super.onSupportNavigateUp();
-    }
-
-    public void setNavgationBarColor() {
-        int color = sp.getBoolean("navigationBarBg", false) ? R.color.colorPrimary : R.color.transparent;
-        getWindow().setNavigationBarColor(getResources().getColor(color));
     }
 
     private void setStatusBarTransparent() {

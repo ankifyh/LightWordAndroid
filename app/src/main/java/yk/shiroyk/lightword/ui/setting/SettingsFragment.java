@@ -1,9 +1,13 @@
 package yk.shiroyk.lightword.ui.setting;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.InputType;
+import android.view.View;
+import android.widget.GridView;
 import android.widget.Toast;
 
 import androidx.preference.EditTextPreference;
@@ -24,6 +28,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 import yk.shiroyk.lightword.R;
 import yk.shiroyk.lightword.db.entity.VocabType;
 import yk.shiroyk.lightword.repository.VocabTypeRepository;
+import yk.shiroyk.lightword.ui.adapter.ColorPickAdapter;
 import yk.shiroyk.lightword.utils.ThemeHelper;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
@@ -57,11 +62,15 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                     return true;
                 });
 
+        Preference primaryColor = findPreference("primaryColor");
+        primaryColor.setOnPreferenceClickListener(preference -> {
+            setColorPickView(preference.getSharedPreferences());
+            return false;
+        });
+
         SwitchPreferenceCompat navBgPreference = findPreference("navigationBarBg");
         navBgPreference.setOnPreferenceClickListener(preference -> {
-            int color = preference.getSharedPreferences()
-                    .getBoolean("navigationBarBg", false) ? R.color.colorPrimary : R.color.transparent;
-            mActivity.getWindow().setNavigationBarColor(getResources().getColor(color));
+            ThemeHelper.setNavigationBarColor(getActivity(), preference.getSharedPreferences());
             return false;
         });
 
@@ -134,5 +143,39 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                                 });
                     }
                 });
+    }
+
+    private void setColorPickView(SharedPreferences sp) {
+        final String[] theme = new String[1];
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        View dialogView = getLayoutInflater().inflate(R.layout.layout_color_picker, null);
+
+        GridView gridView = dialogView.findViewById(R.id.color_grid);
+        ColorPickAdapter adapter = new ColorPickAdapter(
+                getContext(),
+                R.layout.item_color_btn,
+                getResources().obtainTypedArray(R.array.primary_colors),
+                newTheme -> {
+                    theme[0] = newTheme;
+                });
+        gridView.setAdapter(adapter);
+        builder.setTitle("选择主色调")
+                .setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+        dialogView.findViewById(R.id.btn_color_default).setOnClickListener(view -> {
+            sp.edit().putString("primaryColor", "default").apply();
+            dialog.dismiss();
+            getActivity().recreate();
+        });
+
+        dialogView.findViewById(R.id.btn_color_ensure).setOnClickListener(view -> {
+            sp.edit().putString("primaryColor", theme[0]).apply();
+            dialog.dismiss();
+            getActivity().recreate();
+        });
+        dialogView.findViewById(R.id.btn_color_cancel)
+                .setOnClickListener(view -> dialog.dismiss());
+        dialog.show();
     }
 }

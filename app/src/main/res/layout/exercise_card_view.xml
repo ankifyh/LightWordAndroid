@@ -76,6 +76,7 @@
                     android:background="@color/cardColor"
                     android:hint=""
                     android:imeOptions="actionDone"
+                    android:textCursorDrawable="@drawable/et_answer_cursor"
                     android:padding="0dp"
                     android:paddingStart="0dp"
                     android:paddingEnd="0dp"

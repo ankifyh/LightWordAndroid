@@ -12,4 +12,20 @@
     <color name="defaultAnswerBaseLineColor">@color/colorPrimary</color>
     <color name="errorAnswerBaseLineColor">#F48FB1</color>
     <color name="correctAnswerBaseLineColor">#A5D6A7</color>
+
+
+    <color name="color1">#ff8a80</color>
+    <color name="color2">#ff7299</color>
+    <color name="color3">#b39ddb</color>
+    <color name="color4">#7986cb</color>
+
+    <color name="color5">#64b5f6</color>
+    <color name="color6">#0277bd</color>
+    <color name="color7">#0097a7</color>
+    <color name="color8">#00897b</color>
+
+    <color name="color9">#fb8c00</color>
+    <color name="color10">#ff7043</color>
+    <color name="color11">#37474f</color>
+    <color name="color12">#212121</color>
 </resources>

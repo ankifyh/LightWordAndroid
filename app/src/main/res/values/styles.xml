@@ -20,4 +20,87 @@
         <item name="android:windowExitAnimation">@android:anim/fade_out</item>
     </style>
 
+    <style name="NavigationViewStyle" parent="ThemeOverlay.AppCompat.Dark">
+        <item name="colorPrimary">@color/colorPrimary</item>
+    </style>
+
+    <style name="AppTheme_default" parent="@style/AppTheme">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimary</item>
+        <item name="colorAccent">@color/colorPrimary</item>
+    </style>
+
+    <style name="AppTheme_color1" parent="@style/AppTheme">
+        <item name="colorPrimary">@color/color1</item>
+        <item name="colorPrimaryDark">@color/color1</item>
+        <item name="colorAccent">@color/color1</item>
+    </style>
+
+    <style name="AppTheme_color2" parent="@style/AppTheme">
+        <item name="colorPrimary">@color/color2</item>
+        <item name="colorPrimaryDark">@color/color2</item>
+        <item name="colorAccent">@color/color2</item>
+    </style>
+
+    <style name="AppTheme_color3" parent="@style/AppTheme">
+        <item name="colorPrimary">@color/color3</item>
+        <item name="colorPrimaryDark">@color/color3</item>
+        <item name="colorAccent">@color/color3</item>
+    </style>
+
+    <style name="AppTheme_color4" parent="@style/AppTheme">
+        <item name="colorPrimary">@color/color4</item>
+        <item name="colorPrimaryDark">@color/color4</item>
+        <item name="colorAccent">@color/color4</item>
+    </style>
+
+    <style name="AppTheme_color5" parent="@style/AppTheme">
+        <item name="colorPrimary">@color/color5</item>
+        <item name="colorPrimaryDark">@color/color5</item>
+        <item name="colorAccent">@color/color5</item>
+    </style>
+
+    <style name="AppTheme_color6" parent="@style/AppTheme">
+        <item name="colorPrimary">@color/color6</item>
+        <item name="colorPrimaryDark">@color/color6</item>
+        <item name="colorAccent">@color/color6</item>
+    </style>
+
+    <style name="AppTheme_color7" parent="@style/AppTheme">
+        <item name="colorPrimary">@color/color7</item>
+        <item name="colorPrimaryDark">@color/color7</item>
+        <item name="colorAccent">@color/color7</item>
+    </style>
+
+    <style name="AppTheme_color8" parent="@style/AppTheme">
+        <item name="colorPrimary">@color/color8</item>
+        <item name="colorPrimaryDark">@color/color8</item>
+        <item name="colorAccent">@color/color8</item>
+    </style>
+
+    <style name="AppTheme_color9" parent="@style/AppTheme">
+        <item name="colorPrimary">@color/color9</item>
+        <item name="colorPrimaryDark">@color/color9</item>
+        <item name="colorAccent">@color/color9</item>
+    </style>
+
+    <style name="AppTheme_color10" parent="@style/AppTheme">
+        <item name="colorPrimary">@color/color10</item>
+        <item name="colorPrimaryDark">@color/color10</item>
+        <item name="colorAccent">@color/color10</item>
+    </style>
+
+    <style name="AppTheme_color11" parent="@style/AppTheme">
+        <item name="colorPrimary">@color/color11</item>
+        <item name="colorPrimaryDark">@color/color11</item>
+        <item name="colorAccent">?attr/colorOnBackground</item>
+        <item name="tabSelectedTextColor">?attr/colorOnBackground</item>
+    </style>
+
+    <style name="AppTheme_color12" parent="@style/AppTheme">
+        <item name="colorPrimary">@color/color12</item>
+        <item name="colorPrimaryDark">@color/color12</item>
+        <item name="colorAccent">?attr/colorOnBackground</item>
+        <item name="tabSelectedTextColor">?attr/colorOnBackground</item>
+    </style>
 </resources>

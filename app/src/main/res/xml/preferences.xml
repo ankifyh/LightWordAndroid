@@ -13,6 +13,10 @@
             app:title="选择主题"
             app:useSimpleSummaryProvider="true" />
 
+        <Preference
+            app:key="primaryColor"
+            app:title="选择主色调" />
+
         <SwitchPreferenceCompat
             app:defaultValue="false"
             app:key="navigationBarBg"

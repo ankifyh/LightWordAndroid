@@ -36,6 +36,7 @@
     <string name="import_vdata_type_exist_message" translatable="false">是否新增该词汇分类的单词？</string>
     <string name="dialog_ensure" translatable="false">确认</string>
     <string name="dialog_cancel" translatable="false">取消</string>
+    <string name="dialog_default" translatable="false">默认</string>
     <string name="dialog_url" translatable="false">下载地址</string>
 
     <string name="crash_send_failed" translatable="false">发送崩溃日志失败！</string>
