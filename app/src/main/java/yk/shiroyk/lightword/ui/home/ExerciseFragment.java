@@ -28,8 +28,6 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceManager;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -42,6 +40,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 import yk.shiroyk.lightword.R;
 import yk.shiroyk.lightword.db.entity.exercise.Exercise;
 import yk.shiroyk.lightword.repository.ExerciseRepository;
+import yk.shiroyk.lightword.repository.UserStatisticRepository;
 import yk.shiroyk.lightword.ui.viewmodel.SharedViewModel;
 import yk.shiroyk.lightword.ui.widget.ExerciseCardView;
 import yk.shiroyk.lightword.utils.ExerciseBuild;
@@ -52,6 +51,7 @@ public class ExerciseFragment extends Fragment {
 
     private Context context;
     private ExerciseRepository exerciseRepository;
+    private UserStatisticRepository statisticRepository;
     private ExerciseBuild exerciseBuild;
     private SharedViewModel sharedViewModel;
     private SharedPreferences sp;
@@ -87,6 +87,7 @@ public class ExerciseFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         exerciseRepository = new ExerciseRepository(getActivity().getApplication());
+        statisticRepository = new UserStatisticRepository(getActivity().getApplication());
         sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
         exerciseBuild = new ViewModelProvider(this).get(ExerciseBuild.class);
         exerciseBuild.setApplication(this.getActivity().getApplication());
@@ -103,7 +104,7 @@ public class ExerciseFragment extends Fragment {
 
         getCardData(10);
         initTarget();
-        setUptargetDialog();
+        setTargetDialog();
         initTTS();
         return root;
     }
@@ -119,25 +120,9 @@ public class ExerciseFragment extends Fragment {
         compositeDisposable.dispose();
     }
 
-    private void updateTarget() {
-        int target = sp.getInt("todayTarget", 0);
-        long timestamp = new Date().getTime();
-        target += 1;
-        sp.edit().putLong("lastUpdateTarget", timestamp).apply();
-        sp.edit().putInt("todayTarget", target).apply();
-        sharedViewModel.setTarget(target);
-    }
-
     private void initTarget() {
-        int todayTarget = sp.getInt("todayTarget", 0);
-        SimpleDateFormat formatter = new SimpleDateFormat("dd", Locale.CHINA);
-        long timestamp = new Date().getTime();
-        String nowDay = formatter.format(timestamp);
-        String lastDay = formatter.format(new Date(sp.getLong("lastUpdateTarget", timestamp)));
-        if (Integer.parseInt(nowDay) > Integer.parseInt(lastDay)) {
-            sharedViewModel.setTarget(0);
-            sp.edit().putInt("todayTarget", 0).apply();
-        }
+        int todayTarget = statisticRepository.getTodayCount();
+        sharedViewModel.setTarget(todayTarget);
         if (dailyTarget.equals("0")) {
             tv_daily_target.setVisibility(View.INVISIBLE);
         } else {
@@ -147,7 +132,7 @@ public class ExerciseFragment extends Fragment {
         }
     }
 
-    private void setUptargetDialog() {
+    private void setTargetDialog() {
         sharedViewModel.getTarget().observe(getViewLifecycleOwner(), integer -> {
             int parseInt = Integer.parseInt(dailyTarget);
             if (parseInt != 0) {
@@ -243,7 +228,6 @@ public class ExerciseFragment extends Fragment {
                 s = ttsSpeech;
             }
             isSpeech = !isSpeech;
-            Log.d("ns", s + " t " + ttsSpeech + " is " + isSpeech);
             sp.edit().putString("ttsSpeech", s).apply();
 
         });
@@ -265,20 +249,25 @@ public class ExerciseFragment extends Fragment {
     private void remember(Long wordId, Long vtypeId) {
         exerciseRepository.defaultForgetTime();
         if (exerciseRepository.remember(wordId, vtypeId)) {
-            updateTarget();
+            statisticRepository.updateCount();
+            sharedViewModel.setTarget(statisticRepository.getTodayCount());
         }
+        statisticRepository.updateCorrect();
     }
 
     private void forget(Long wordId, Long vtypeId) {
         exerciseRepository.defaultForgetTime();
         exerciseRepository.forget(wordId, vtypeId);
+        statisticRepository.updateWrong();
     }
 
     private void remembered(Long wordId, Long vtypeId) {
         exerciseRepository.defaultForgetTime();
         if (exerciseRepository.remembered(wordId, vtypeId)) {
-            updateTarget();
+            statisticRepository.updateCount();
+            sharedViewModel.setTarget(statisticRepository.getTodayCount());
         }
+        statisticRepository.updateCorrect();
     }
 
     private void prevCard() {

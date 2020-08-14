@@ -1,0 +1,11 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/week"
+        android:title="@string/home_chart_menu_title_week" />
+    <item
+        android:id="@+id/two_week"
+        android:title="@string/home_chart_menu_title_tow_week" />
+    <item
+        android:id="@+id/month"
+        android:title="@string/home_chart_menu_title_month" />
+</menu>

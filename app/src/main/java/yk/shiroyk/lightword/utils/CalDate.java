@@ -21,7 +21,8 @@ public class CalDate {
             int calStage = minus && (stage > 1) ? 2 : 0;
             long time = Long.valueOf(minList.get(stage - calStage)) * 60 * 1000;
             timestamp = new Date(new Date().getTime() + time);
-            Log.d("Calculate Date", minList.get(stage - calStage) + " Time: " + timestamp.toString());
+            Log.d("Calculate-Date", "Minutes: " + minList.get(stage - calStage)
+                    + " Next Review Time: " + timestamp.toString());
         }
         return timestamp;
     }

@@ -170,7 +170,10 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         });
 
         dialogView.findViewById(R.id.btn_color_ensure).setOnClickListener(view -> {
-            sp.edit().putString("primaryColor", theme[0]).apply();
+            String newTheme = theme[0];
+            if (newTheme != null) {
+                sp.edit().putString("primaryColor", newTheme).apply();
+            }
             dialog.dismiss();
             getActivity().recreate();
         });

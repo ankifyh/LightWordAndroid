@@ -12,6 +12,8 @@
     <color name="defaultAnswerBaseLineColor">@color/colorPrimary</color>
     <color name="errorAnswerBaseLineColor">#F48FB1</color>
     <color name="correctAnswerBaseLineColor">#A5D6A7</color>
+    <color name="errorColor">#ff5252</color>
+    <color name="correctColor">#b2ff59</color>
 
 
     <color name="color1">#ff8a80</color>

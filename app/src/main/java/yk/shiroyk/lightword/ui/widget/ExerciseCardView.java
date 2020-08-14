@@ -91,6 +91,7 @@ public class ExerciseCardView extends CardView {
             et_card_answer.setHint(exercise.getAnswer());
             tv_card_pos.setText(exercise.getPartOfSpeech());
             tv_card_meaning.setText(exercise.getMeaning());
+            startExerciseCardAnim();
             setAnswerInputStyle(exercise.getAnswerIndex(), exercise.getAnswer());
             setStatusColor(exercise.getStatus());
         }
@@ -109,16 +110,15 @@ public class ExerciseCardView extends CardView {
             et_card_answer.setMaxWidth(width);
 
             Layout layout = tv_card_sentence.getLayout();
-            int line = layout.getLineForOffset(answerIndex);
             try {
+                int line = layout.getLineForOffset(answerIndex);
                 int x = Math.round(layout.getPrimaryHorizontal(answerIndex));
                 int y = layout.getLineTop(line);
 
                 FrameLayout.LayoutParams answerParams = new FrameLayout.LayoutParams(card_answer_layout.getLayoutParams());
                 answerParams.setMargins(x, y, 0, 0);
                 card_answer_layout.setLayoutParams(answerParams);
-                card_answer_layout.setVisibility(VISIBLE);
-            } catch (IndexOutOfBoundsException ex) {
+            } catch (Exception ex) {
                 Log.e(TAG, "Set Answer Layout failed Answer: " + answer + " , Index: " +
                         answerIndex + " ,  Sentence: " + tv_card_sentence.getText().toString());
                 ex.printStackTrace();
