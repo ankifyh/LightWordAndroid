@@ -3,11 +3,13 @@
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/shiroyk/LightWordAndroid)<br/>
 
 ## Make vocabulary csv file
+There are some examples in [example folder](https://github.com/shiroyk/LightWordAndroid/tree/master/example).
+
 Vocabulary csv document composition: 
+vocabulary, word frequency, json
 
 You can look up word frequency from [COCA](https://corpus.byu.edu/coca/).
 ```
-vocabulary, word frequency, json
 abandon,11338,{"pronounce": ["əbændən", "əˈbændən"], "inflection": ["abandoning"..... 
 ability,107124,{"pronounce": ["əbɪlɪti", "əˈbɪləti"], "inflection": ["ability"......
 ```
