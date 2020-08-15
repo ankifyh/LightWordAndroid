@@ -103,6 +103,7 @@ public class ExerciseFragment extends Fragment {
         init(root);
 
         getCardData(10);
+        setExerciseListObserve();
         initTarget();
         setTargetDialog();
         initTTS();
@@ -241,7 +242,11 @@ public class ExerciseFragment extends Fragment {
                 .setPositiveButton(R.string.dialog_ensure, (dialogInterface, i) -> {
                     remembered(wordId, vtypeId);
                     exercise_card.showAnswer();
-                    tts.speak(speakString, TextToSpeech.QUEUE_FLUSH, null, "");
+                    if (isSpeech && initTTSSuccess) {
+                        tts.speak(speakString, TextToSpeech.QUEUE_FLUSH, null, "");
+                    } else {
+                        getNextCardSync();
+                    }
                 })
                 .setNegativeButton(R.string.dialog_cancel, null).create().show();
     }
@@ -275,7 +280,7 @@ public class ExerciseFragment extends Fragment {
             cardIndex -= 1;
             setCardData(cardIndex);
             exercise_card.startExerciseCardAnim();
-            exercise_card.setAnswerVisibility(View.GONE);
+            exercise_card.setAnswerVisibility(View.INVISIBLE);
             if (cardIndex == 0) {
                 btn_prev_card.setVisibility(View.INVISIBLE);
             }
@@ -311,26 +316,24 @@ public class ExerciseFragment extends Fragment {
             setCardData(cardIndex);
             exercise_card.startExerciseCardAnim();
             btn_prev_card.setVisibility(View.VISIBLE);
-            if (currentCard > cardIndex) {
-                exercise_card.setAnswerVisibility(View.GONE);
-            } else {
+            if (!(currentCard > cardIndex)) {
                 exercise_card.setAnswerVisibility(View.VISIBLE);
             }
         }
     }
 
     private void getNextCard() {
-        exercise_card.clearAnswer();
         exercise_card.setAnswerBaseLineColor(ExerciseCardView.DEFAULT_BASELINE);
         if (cardIndex < exerciseList.size() - 1) {
             cardIndex += 1;
             currentCard = cardIndex;
             setCardData(cardIndex);
             btn_prev_card.setVisibility(View.VISIBLE);
+            exercise_card.clearAnswer();
+            exercise_card.startExerciseCardAnim();
         } else {
             getCardData(10);
         }
-        exercise_card.startExerciseCardAnim();
         correctFlag = true;
         exercise_card.hideAnswer();
     }
@@ -351,20 +354,25 @@ public class ExerciseFragment extends Fragment {
     private void getCardData(Integer limit) {
         cardIndex = 0;
         currentCard = 0;
-        exercise_container.setVisibility(View.GONE);
-        tv_translation.setVisibility(View.GONE);
         exerciseBuild.autoExercise(vtypeId, limit);
+    }
+
+    private void setExerciseListObserve() {
         exerciseBuild.getExerciseList()
                 .observe(getViewLifecycleOwner(), exercises -> {
                     if (exercises.size() > 0) {
                         exerciseList = exercises;
-                        setCardData(cardIndex);
                         tv_tip.setVisibility(View.GONE);
                         exercise_container.setVisibility(View.VISIBLE);
                         tv_translation.setVisibility(View.VISIBLE);
                         btn_prev_card.setVisibility(View.INVISIBLE);
+                        setCardData(cardIndex);
+                        exercise_card.clearAnswer();
+                        exercise_card.startExerciseCardAnim();
                     } else {
                         tv_tip.setVisibility(View.VISIBLE);
+                        exercise_container.setVisibility(View.GONE);
+                        tv_translation.setVisibility(View.GONE);
                         exerciseBuild.getExerciseMsg()
                                 .observe(getViewLifecycleOwner(),
                                         msg -> tv_tip.setText(msg));

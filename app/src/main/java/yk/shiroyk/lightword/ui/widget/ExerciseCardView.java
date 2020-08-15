@@ -91,7 +91,6 @@ public class ExerciseCardView extends CardView {
             et_card_answer.setHint(exercise.getAnswer());
             tv_card_pos.setText(exercise.getPartOfSpeech());
             tv_card_meaning.setText(exercise.getMeaning());
-            startExerciseCardAnim();
             setAnswerInputStyle(exercise.getAnswerIndex(), exercise.getAnswer());
             setStatusColor(exercise.getStatus());
         }
@@ -122,6 +121,8 @@ public class ExerciseCardView extends CardView {
                 Log.e(TAG, "Set Answer Layout failed Answer: " + answer + " , Index: " +
                         answerIndex + " ,  Sentence: " + tv_card_sentence.getText().toString());
                 ex.printStackTrace();
+                tv_card_sentence.setText(answer);
+                et_card_answer.setHint(answer);
             }
         });
     }
