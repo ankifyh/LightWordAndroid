@@ -36,6 +36,11 @@ public class UserStatistic {
         return formatter.format(timestamp);
     }
 
+    public String getFormatDay() {
+        SimpleDateFormat formatter = new SimpleDateFormat("MM/dd", Locale.CHINA);
+        return formatter.format(timestamp);
+    }
+
     public Integer getCorrect() {
         return correct;
     }

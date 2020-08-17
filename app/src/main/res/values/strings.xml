@@ -50,4 +50,6 @@
     <string name="home_chart_menu_title_week" translatable="false">7天</string>
     <string name="home_chart_menu_title_tow_week" translatable="false">14天</string>
     <string name="home_chart_menu_title_month" translatable="false">30天</string>
+    <string name="home_timeline_date_string" translatable="false">8/17 共323张</string>
+    <string name="home_timeline_statistic_string" translatable="false">266｜57｜82%</string>
 </resources>

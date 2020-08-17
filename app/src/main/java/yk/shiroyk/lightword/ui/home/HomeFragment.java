@@ -18,6 +18,8 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.Navigation;
 import androidx.preference.PreferenceManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.XAxis;
@@ -29,6 +31,7 @@ import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
@@ -42,6 +45,7 @@ import yk.shiroyk.lightword.db.entity.UserStatistic;
 import yk.shiroyk.lightword.repository.ExerciseRepository;
 import yk.shiroyk.lightword.repository.UserStatisticRepository;
 import yk.shiroyk.lightword.repository.VocabTypeRepository;
+import yk.shiroyk.lightword.ui.adapter.TimeLineAdapter;
 
 public class HomeFragment extends Fragment {
 
@@ -57,6 +61,7 @@ public class HomeFragment extends Fragment {
     private TextView tv_home_subtitle;
     private LineChart home_chart;
     private AppCompatButton home_chart_menu;
+    private RecyclerView home_timeline;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -82,6 +87,7 @@ public class HomeFragment extends Fragment {
         tv_home_subtitle = root.findViewById(R.id.tv_home_subtitle);
         home_chart = root.findViewById(R.id.home_chart);
         home_chart_menu = root.findViewById(R.id.home_chart_menu);
+        home_timeline = root.findViewById(R.id.home_timeline);
 
         root.findViewById(R.id.btn_start_exercise).setOnClickListener(
                 view -> Navigation.findNavController(view).navigate(R.id.action_to_exercise));
@@ -189,6 +195,7 @@ public class HomeFragment extends Fragment {
         YAxis yAxis = home_chart.getAxisLeft();
         yAxis.setTextColor(white);
         yAxis.setGridColor(white);
+        yAxis.setPosition(YAxis.YAxisLabelPosition.INSIDE_CHART);
         yAxis.setAxisLineColor(white);
         home_chart.getAxisRight().setEnabled(false);
         home_chart.getLegend().setEnabled(false);
@@ -199,8 +206,9 @@ public class HomeFragment extends Fragment {
                 (ObservableOnSubscribe<List<UserStatistic>>)
                         emitter -> emitter.onNext(statisticRepository.getStatistic(days)))
                 .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
                 .filter(statistics -> statistics.size() > 0)
+                .doOnNext(this::setTimeLine)
                 .map(this::setChartData)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -229,6 +237,20 @@ public class HomeFragment extends Fragment {
             });
             menu.show();
         });
+    }
+
+    private void setTimeLine(List<UserStatistic> statistics) {
+        if (statistics.size() > 0) {
+            home_timeline.setVisibility(View.VISIBLE);
+            List<UserStatistic> ns = new ArrayList<>(statistics);
+            Collections.sort(ns,
+                    (s1, s2) -> s2.getTimestamp().compareTo(s1.getTimestamp()));
+            TimeLineAdapter adapter = new TimeLineAdapter(context, ns);
+            home_timeline.setLayoutManager(new LinearLayoutManager(context));
+            home_timeline.setAdapter(adapter);
+        } else {
+            home_timeline.setVisibility(View.INVISIBLE);
+        }
     }
 
     @Override
