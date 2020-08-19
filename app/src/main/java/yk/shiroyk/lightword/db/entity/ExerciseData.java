@@ -111,14 +111,13 @@ public class ExerciseData {
 
     @Override
     public String toString() {
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd-FF  HH:mm:ss");
-        return "单词数据: \n" +
-                "单词ID: " + wordId +
+        SimpleDateFormat df = new SimpleDateFormat("MM/dd  HH:mm");
+        return "单词ID: " + wordId +
                 ", 种类ID: " + vtypeId +
-                "\n下一次练习时间: " + df.format(timestamp) +
-                "\n最后练习时间: " + df.format(lastPractice) +
-                "\n复习阶段: " + stage +
-                ", 正确数: " + correct +
-                ", 错误数: " + wrong;
+                "\n下次复习时间: " + df.format(timestamp) +
+                "\n最后复习时间: " + df.format(lastPractice) +
+                "\n复习阶段: " + stage + "/10" +
+                "\n正确次数: " + correct +
+                ", 错误次数: " + wrong;
     }
 }

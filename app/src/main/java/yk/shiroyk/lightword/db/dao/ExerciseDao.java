@@ -28,6 +28,11 @@ public interface ExerciseDao {
     @Query("SELECT * FROM exercise_data " +
             "WHERE exercise_data.word_id = :wordId " +
             "AND exercise_data.vtype_id = :vtypeId ")
+    LiveData<ExerciseData> getWordDetail(long wordId, long vtypeId);
+
+    @Query("SELECT * FROM exercise_data " +
+            "WHERE exercise_data.word_id = :wordId " +
+            "AND exercise_data.vtype_id = :vtypeId ")
     ExerciseData getSingleWord(long wordId, long vtypeId);
 
     @Query("SELECT word_id FROM exercise_data " +

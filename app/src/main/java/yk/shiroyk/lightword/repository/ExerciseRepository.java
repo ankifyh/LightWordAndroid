@@ -46,6 +46,10 @@ public class ExerciseRepository {
         this.minList = profile.getForgetTime();
     }
 
+    public LiveData<ExerciseData> getWordDetail(Long wordId, Long vtypeId) {
+        return exerciseDao.getWordDetail(wordId, vtypeId);
+    }
+
     private ExerciseData getWord(Long wordId, Long vtypeId) {
         return Observable.create((ObservableOnSubscribe<ExerciseData>) emitter -> {
             emitter.onNext(exerciseDao.getSingleWord(wordId, vtypeId));

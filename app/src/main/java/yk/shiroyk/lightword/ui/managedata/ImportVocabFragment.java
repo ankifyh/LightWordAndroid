@@ -7,19 +7,24 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.SearchView;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.google.android.material.snackbar.Snackbar;
+import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -36,6 +41,7 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 import yk.shiroyk.lightword.R;
 import yk.shiroyk.lightword.db.entity.Vocabulary;
 import yk.shiroyk.lightword.repository.VocabularyRepository;
+import yk.shiroyk.lightword.ui.adapter.VocabularyAdapter;
 import yk.shiroyk.lightword.ui.viewmodel.SharedViewModel;
 import yk.shiroyk.lightword.utils.FileUtils;
 import yk.shiroyk.lightword.utils.VocabularyDataManage;
@@ -51,7 +57,8 @@ public class ImportVocabFragment extends Fragment {
     private Context context;
     private ProgressBar vocab_loading;
     private TextView tv_vocab_msg;
-    private ListView vocab_list;
+    private FastScrollRecyclerView vocab_list;
+    private VocabularyAdapter adapter;
 
     private VocabularyRepository vocabularyRepository;
     private VocabularyDataManage vocabularyDataManage;
@@ -75,14 +82,14 @@ public class ImportVocabFragment extends Fragment {
         context = root.getContext();
         setHasOptionsMenu(true);
         init(root);
-        updateVocabList();
+        setVocabList();
         return root;
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        updateTitle();
+        setTitle();
     }
 
     @Override
@@ -90,6 +97,47 @@ public class ImportVocabFragment extends Fragment {
         super.onDestroyView();
         sharedViewModel.setSubTitle("");
         compositeDisposable.dispose();
+    }
+
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        vocabularyRepository.getCount().observe(getViewLifecycleOwner(), i -> {
+            MenuItem searchMenuItem = menu.findItem(R.id.action_search);
+            SearchView searchView = (SearchView) searchMenuItem.getActionView();
+            if (i > 0) {
+                searchMenuItem.setVisible(true);
+                setSearchView(searchView);
+                inflater.inflate(R.menu.main, menu);
+            } else {
+                searchMenuItem.setVisible(false);
+            }
+        });
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    private void setSearchView(SearchView searchView) {
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String s) {
+                getResults(s);
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String s) {
+                getResults(s);
+                return true;
+            }
+
+            private void getResults(String newText) {
+                vocabularyRepository.searchWord(
+                        "%" + newText + "%").observe(
+                        getViewLifecycleOwner(), words -> {
+                            if (words == null) return;
+                            adapter.setWords(words);
+                        });
+            }
+        });
     }
 
     private void init(View root) {
@@ -109,34 +157,38 @@ public class ImportVocabFragment extends Fragment {
         this.startActivityForResult(intent, REQUEST_VOCABULARY);
     }
 
-    private void updateTitle() {
+    private void setTitle() {
         vocabularyRepository.getCount().observe(this,
                 integer -> sharedViewModel.setSubTitle("共" + integer + "条"));
     }
 
-    private void updateVocabList() {
-        Disposable disposable = Observable.create(
-                (ObservableOnSubscribe<List<String>>) emitter -> {
-                    emitter.onNext(vocabularyRepository.getWordString());
-                    emitter.onComplete();
-                })
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(stringList -> {
-                    if (stringList.size() > 0) {
-                        vocab_list.setVisibility(View.VISIBLE);
-                        tv_vocab_msg.setVisibility(View.GONE);
-                        ArrayAdapter adapter = new ArrayAdapter<String>(context,
-                                android.R.layout.simple_list_item_1, stringList);
-                        vocab_list.setAdapter(adapter);
-                        vocab_list.setFastScrollEnabled(true);
-                    } else {
-                        vocab_list.setVisibility(View.GONE);
-                        tv_vocab_msg.setVisibility(View.VISIBLE);
-                    }
-                    vocab_loading.setVisibility(View.GONE);
+    private void setVocabList() {
+        vocabularyRepository.getAllWordList().observe(getViewLifecycleOwner(), v -> {
+            if (v.size() > 0) {
+                vocab_list.setVisibility(View.VISIBLE);
+                tv_vocab_msg.setVisibility(View.GONE);
+                adapter = new VocabularyAdapter(
+                        context, v, vocabulary -> {
+                    showDetail(vocabulary.getWord(),
+                            vocabularyDataManage.readFile(vocabulary.getWord()));
                 });
-        compositeDisposable.add(disposable);
+
+                vocab_list.setLayoutManager(new LinearLayoutManager(context));
+                vocab_list.setAdapter(adapter);
+            } else {
+                vocab_list.setVisibility(View.GONE);
+                tv_vocab_msg.setVisibility(View.VISIBLE);
+            }
+            vocab_loading.setVisibility(View.GONE);
+        });
+    }
+
+    private void showDetail(String title, String detail) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(title)
+                .setMessage(detail)
+                .setPositiveButton(R.string.dialog_cancel, null)
+                .create().show();
     }
 
     @Override
@@ -215,8 +267,6 @@ public class ImportVocabFragment extends Fragment {
                         }
                     }
                     loadingDialog.dismiss();
-                    updateTitle();
-                    updateVocabList();
                     Snackbar.make(getView(), msg, Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
                 });

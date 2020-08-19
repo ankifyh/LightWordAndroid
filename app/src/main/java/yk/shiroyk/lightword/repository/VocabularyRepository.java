@@ -26,20 +26,16 @@ public class VocabularyRepository {
         return vocabularyDao.getAllWord();
     }
 
+    public LiveData<List<Vocabulary>> getAllWordList() {
+        return vocabularyDao.getAllWordList();
+    }
+
     public LiveData<Integer> getCount() {
         return vocabularyDao.getCount();
     }
 
     public LiveData<Vocabulary> getWordById(Long wordId) {
         return vocabularyDao.getWordById(wordId);
-    }
-
-    public LiveData<List<String>> getWordStringById(List<Long> wordId) {
-        return vocabularyDao.getWordStringById(wordId);
-    }
-
-    public LiveData<List<String>> getWordStringIM() {
-        return vocabularyDao.getWordStringIM();
     }
 
     public List<String> getWordString() {
@@ -54,13 +50,8 @@ public class VocabularyRepository {
         return vocabularyDao.getWord(word);
     }
 
-    public Map<Long, String> getIdToWordMap() {
-        Map<Long, String> map = new HashMap<>();
-        for (Vocabulary v : vocabularyDao.getAllWord()
-        ) {
-            map.put(v.getId(), v.getWord());
-        }
-        return map;
+    public LiveData<List<Vocabulary>> searchWord(String word) {
+        return vocabularyDao.searchWord(word);
     }
 
     public Map<String, Long[]> getWordToFrequencyMap() {

@@ -9,6 +9,7 @@ import java.util.List;
 import yk.shiroyk.lightword.db.LightWordDatabase;
 import yk.shiroyk.lightword.db.dao.VocabDataDao;
 import yk.shiroyk.lightword.db.entity.VocabData;
+import yk.shiroyk.lightword.db.entity.Vocabulary;
 import yk.shiroyk.lightword.utils.ThreadTask;
 
 public class VocabDataRepository {
@@ -29,6 +30,14 @@ public class VocabDataRepository {
 
     public List<Long> getAllWordId(Long vtypeId) {
         return vocabDataDao.getAllWordId(vtypeId);
+    }
+
+    public LiveData<List<Vocabulary>> getAllWord(Long vtypeId) {
+        return vocabDataDao.getAllWord(vtypeId);
+    }
+
+    public LiveData<List<Vocabulary>> searchWord(Long vtypeId, String word) {
+        return vocabDataDao.searchWord(vtypeId, word);
     }
 
     public void insert(VocabData[] vocabData) {

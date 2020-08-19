@@ -25,9 +25,6 @@ public interface VocabularyDao {
     @Query("SELECT * FROM vocabulary WHERE word = :word")
     LiveData<Vocabulary> getWord(String word);
 
-    @Query("SELECT word FROM vocabulary")
-    LiveData<List<String>> getWordStringIM();
-
     @Transaction
     @Query("SELECT * FROM vocabulary WHERE id IN (:Id)")
     Vocabulary[] getWordListById(List<Long> Id);
@@ -36,14 +33,15 @@ public interface VocabularyDao {
     @Query("SELECT word FROM vocabulary")
     List<String> getWordString();
 
-    @Transaction
-    @Query("SELECT word FROM vocabulary WHERE id IN (:Id)")
-    LiveData<List<String>> getWordStringById(List<Long> Id);
-
-    @Transaction
     @Query("SELECT * FROM vocabulary")
     List<Vocabulary> getAllWord();
 
+    @Query("SELECT * FROM vocabulary")
+    LiveData<List<Vocabulary>> getAllWordList();
+
     @Query("SELECT COUNT(word) FROM vocabulary")
     LiveData<Integer> getCount();
+
+    @Query("SELECT * FROM vocabulary WHERE word like :word")
+    LiveData<List<Vocabulary>> searchWord(String word);
 }

@@ -9,6 +9,7 @@ import androidx.room.Transaction;
 import java.util.List;
 
 import yk.shiroyk.lightword.db.entity.VocabData;
+import yk.shiroyk.lightword.db.entity.Vocabulary;
 
 @Dao
 public interface VocabDataDao {
@@ -24,6 +25,14 @@ public interface VocabDataDao {
 
     @Query("SELECT word_id FROM vocab_data WHERE vtype_id = :vtypeId")
     List<Long> getAllWordId(Long vtypeId);
+
+    @Query("SELECT vocabulary.* FROM vocab_data, vocabulary " +
+            "WHERE vtype_id = :vtypeId and vocab_data.word_id = vocabulary.id")
+    LiveData<List<Vocabulary>> getAllWord(Long vtypeId);
+
+    @Query("SELECT vocabulary.* FROM vocab_data, vocabulary " +
+            "WHERE vtype_id = :vtypeId and vocab_data.word_id = vocabulary.id and word LIKE :word")
+    LiveData<List<Vocabulary>> searchWord(Long vtypeId, String word);
 
     @Query("SELECT vocab_data.word_id " +
             "FROM vocab_data LEFT OUTER JOIN (" +

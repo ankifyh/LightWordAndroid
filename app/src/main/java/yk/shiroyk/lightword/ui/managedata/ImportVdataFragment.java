@@ -13,19 +13,20 @@ import android.view.MenuItem;
 import android.view.SubMenu;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.SearchView;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelProviders;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.google.android.material.snackbar.Snackbar;
+import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -42,11 +43,14 @@ import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import yk.shiroyk.lightword.R;
+import yk.shiroyk.lightword.db.entity.ExerciseData;
 import yk.shiroyk.lightword.db.entity.VocabData;
 import yk.shiroyk.lightword.db.entity.VocabType;
+import yk.shiroyk.lightword.repository.ExerciseRepository;
 import yk.shiroyk.lightword.repository.VocabDataRepository;
 import yk.shiroyk.lightword.repository.VocabTypeRepository;
 import yk.shiroyk.lightword.repository.VocabularyRepository;
+import yk.shiroyk.lightword.ui.adapter.VocabularyAdapter;
 import yk.shiroyk.lightword.ui.viewmodel.SharedViewModel;
 import yk.shiroyk.lightword.utils.FileUtils;
 
@@ -54,7 +58,6 @@ public class ImportVdataFragment extends Fragment {
 
     private static final String TAG = "ImportVdataFragment";
     private static int REQUEST_VOCABDATA = 10002;
-    private boolean firstLoad = true;
 
     private SharedViewModel sharedViewModel;
     private ImportVdataViewModel vdataViewModel;
@@ -62,15 +65,17 @@ public class ImportVdataFragment extends Fragment {
     private Context context;
     private ProgressBar vdata_loading;
     private TextView tv_vdata_msg;
-    private ListView vdata_list;
+    private FastScrollRecyclerView vdata_list;
+    private VocabularyAdapter adapter;
 
     private VocabTypeRepository vocabTypeRepository;
     private VocabularyRepository vocabularyRepository;
     private VocabDataRepository vocabDataRepository;
+    private ExerciseRepository exerciseRepository;
 
     private CompositeDisposable compositeDisposable;
 
-    private VocabType defualtVocabType;
+    private VocabType defaultVocabType;
     private TitleString title = (VocabType v) -> v.getVocabtype() + " (" + v.getAmount() + ")";
 
     @Override
@@ -82,6 +87,7 @@ public class ImportVdataFragment extends Fragment {
         vocabularyRepository = new VocabularyRepository(getActivity().getApplication());
         vocabTypeRepository = new VocabTypeRepository(getActivity().getApplication());
         vocabDataRepository = new VocabDataRepository(getActivity().getApplication());
+        exerciseRepository = new ExerciseRepository(getActivity().getApplication());
 
         compositeDisposable = new CompositeDisposable();
     }
@@ -95,59 +101,33 @@ public class ImportVdataFragment extends Fragment {
 
         setHasOptionsMenu(true);
         init(root);
-
-        setDefaultTitle();
+        setWordList();
         return root;
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        if (firstLoad) {
-            setWordMap();
-        } else {
-            sharedViewModel.setSubTitle(title.get(defualtVocabType));
-        }
+        vdataViewModel.getVocabType().observe(getViewLifecycleOwner(),
+                v -> sharedViewModel.setSubTitle(title.get(v)));
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        firstLoad = true;
         sharedViewModel.setSubTitle("");
         compositeDisposable.dispose();
     }
 
-    private void setDefaultTitle() {
-        vocabTypeRepository.getAllVocabType().observe(getViewLifecycleOwner(), vocabTypes -> {
-            if (vocabTypes.size() > 0) {
-                defualtVocabType = vocabTypes.get(0);
-                setWordList(defualtVocabType.getId());
-                sharedViewModel.setSubTitle(title.get(defualtVocabType));
-            } else {
-                defualtVocabType = new VocabType();
-                defualtVocabType.setVocabtype("");
-                defualtVocabType.setAmount(0);
-                tv_vdata_msg.setVisibility(View.VISIBLE);
-                vdata_loading.setVisibility(View.GONE);
-            }
-        });
-    }
-
-    private void setWordMap() {
-        Disposable disposable = Observable.create(
-                (ObservableOnSubscribe<Map<Long, String>>) emitter -> {
-                    emitter.onNext(vocabularyRepository.getIdToWordMap());
-                    emitter.onComplete();
-                })
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(map -> {
-                    vdataViewModel.setWordMap(map);
-                    setDefaultTitle();
-                    firstLoad = false;
-                });
-        compositeDisposable.add(disposable);
+    private void setDefaultTitle(List<VocabType> vocabTypes) {
+        if (vocabTypes.size() > 0) {
+            defaultVocabType = vocabTypes.get(0);
+            vdataViewModel.setVocabType(defaultVocabType);
+            sharedViewModel.setSubTitle(title.get(defaultVocabType));
+        } else {
+            tv_vdata_msg.setVisibility(View.VISIBLE);
+            vdata_loading.setVisibility(View.GONE);
+        }
     }
 
     @Override
@@ -155,51 +135,97 @@ public class ImportVdataFragment extends Fragment {
         SubMenu vType = menu.addSubMenu(R.string.import_vdata_submenu);
         vocabTypeRepository.getAllVocabType().observe(getViewLifecycleOwner(),
                 vocabTypes -> {
-                    if (vocabTypes.size() > vType.size()) {
-                        vType.clear();
-                        for (VocabType v : vocabTypes) {
-                            String s = title.get(v);
-                            MenuItem item = vType.add(s);
-                            if (v.getId().equals(defualtVocabType.getId())) {
-                                item.setChecked(true);
+                    setDefaultTitle(vocabTypes);
+                    MenuItem searchMenuItem = menu.findItem(R.id.action_search);
+                    SearchView searchView = (SearchView) searchMenuItem.getActionView();
+                    if (vocabTypes.size() > 0) {
+                        if (vocabTypes.size() > vType.size()) {
+                            vType.clear();
+                            for (VocabType v : vocabTypes) {
+                                String s = title.get(v);
+                                MenuItem item = vType.add(s);
+                                if (v.getId().equals(defaultVocabType.getId())) {
+                                    item.setChecked(true);
+                                }
+                                item.setOnMenuItemClickListener(menuItem -> {
+                                    item.setChecked(true);
+                                    vdataViewModel.setVocabType(v);
+                                    sharedViewModel.setSubTitle(s);
+                                    return false;
+                                });
                             }
-                            item.setOnMenuItemClickListener(menuItem -> {
-                                item.setChecked(true);
-                                setWordList(v.getId());
-                                sharedViewModel.setSubTitle(s);
-                                return false;
-                            });
+                            vType.setGroupCheckable(0, true, true);
                         }
-                        vType.setGroupCheckable(0, true, true);
+                        searchMenuItem.setVisible(true);
+                        setSearchView(searchView);
+                    } else {
+                        searchMenuItem.setVisible(false);
                     }
                 });
         inflater.inflate(R.menu.main, menu);
         super.onCreateOptionsMenu(menu, inflater);
     }
 
-//    @Override
-//    public void onPrepareOptionsMenu(@NonNull Menu menu) {
-//        MenuItem item = menu.findItem(R.id.action_search);
-//        if(item != null)
-//            item.setVisible(true);
-//    }
+    private void setSearchView(SearchView searchView) {
+        vdataViewModel.getVocabType().observe(getViewLifecycleOwner(), v -> {
+            searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                @Override
+                public boolean onQueryTextSubmit(String s) {
+                    getResults(s);
+                    return true;
+                }
 
-    private void setWordList(Long id) {
-        vdataViewModel.setWordList(id);
-        vdataViewModel.getWordList().observe(getViewLifecycleOwner(), strings -> {
-            if (strings.size() > 0) {
-                vdata_list.setVisibility(View.VISIBLE);
-                tv_vdata_msg.setVisibility(View.GONE);
-                ArrayAdapter adapter = new ArrayAdapter<String>(context,
-                        android.R.layout.simple_list_item_1, strings);
-                vdata_list.setAdapter(adapter);
-                vdata_list.setFastScrollEnabled(true);
-            } else {
-                vdata_list.setVisibility(View.GONE);
-                tv_vdata_msg.setVisibility(View.VISIBLE);
-            }
-            vdata_loading.setVisibility(View.GONE);
+                @Override
+                public boolean onQueryTextChange(String s) {
+                    getResults(s);
+                    return true;
+                }
+
+                private void getResults(String newText) {
+                    vocabDataRepository.searchWord(v.getId(),
+                            "%" + newText + "%").observe(
+                            getViewLifecycleOwner(), words -> {
+                                if (words == null) return;
+                                adapter.setWords(words);
+                            });
+                }
+            });
         });
+    }
+
+    private void setWordList() {
+        vdataViewModel.getVocabType().observe(getViewLifecycleOwner(), v -> {
+            vocabDataRepository.getAllWord(v.getId()).observe(getViewLifecycleOwner(), vList -> {
+                if (vList.size() > 0) {
+                    vdata_list.setVisibility(View.VISIBLE);
+                    tv_vdata_msg.setVisibility(View.GONE);
+                    adapter = new VocabularyAdapter(
+                            context, vList, vocabulary ->
+                            exerciseRepository.getWordDetail(vocabulary.getId(), v.getId()).observe(
+                                    getViewLifecycleOwner(),
+                                    data -> showDetail(vocabulary.getWord(), data)
+                            ));
+                    vdata_list.setLayoutManager(new LinearLayoutManager(context));
+                    vdata_list.setAdapter(adapter);
+                } else {
+                    vdata_list.setVisibility(View.GONE);
+                    tv_vdata_msg.setVisibility(View.VISIBLE);
+                }
+                vdata_loading.setVisibility(View.GONE);
+            });
+        });
+    }
+
+    private void showDetail(String title, ExerciseData data) {
+        String detail = "暂无练习数据";
+        if (data != null) {
+            detail = data.toString();
+        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(title)
+                .setMessage(detail)
+                .setPositiveButton(R.string.dialog_cancel, null)
+                .create().show();
     }
 
     private void init(View root) {
@@ -266,9 +292,6 @@ public class ImportVdataFragment extends Fragment {
                             msg += "新增" + r.count + "条";
                             r.count += r.ignoreWord;
                         } else {
-                            if (vdataViewModel.getWordMapSize() == 0) {
-                                setWordMap();
-                            }
                             msg += "共导入" + r.count + "条数据";
                             r.vocabType.setAmount(r.count);
                             Disposable update = Observable.create((ObservableOnSubscribe<Integer>) emitter -> {
@@ -279,10 +302,8 @@ public class ImportVdataFragment extends Fragment {
                                     .observeOn(AndroidSchedulers.mainThread())
                                     .subscribe(i -> {
                                         if (i.equals(1)) {
-                                            setDefaultTitle();
                                             getActivity().invalidateOptionsMenu();
                                         }
-
                                     });
                             compositeDisposable.add(update);
                         }

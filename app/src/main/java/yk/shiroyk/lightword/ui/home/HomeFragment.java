@@ -97,19 +97,18 @@ public class HomeFragment extends Fragment {
     private void setHomeCard() {
         String preValue = sp.getString("vtypeId", "1");
 
-        vocabTypeRepository.getVocabTypeById(Long.valueOf(preValue)).observe(getViewLifecycleOwner(), vocabType -> {
-            exerciseRepository.getExerciseProgress(Long.valueOf(preValue)).observe(getViewLifecycleOwner(), integer -> {
-                if (vocabType != null) {
-                    tv_home_title.setText(vocabType.getVocabtype());
-                    tv_home_subtitle.setVisibility(View.VISIBLE);
-                    tv_home_subtitle.setText(integer + "/" + vocabType.getAmount());
-                } else {
-                    tv_home_title.setText("暂无数据");
-                    tv_home_subtitle.setVisibility(View.INVISIBLE);
-                }
+        vocabTypeRepository.getVocabTypeById(Long.valueOf(preValue)).observe(getViewLifecycleOwner(), vocabType ->
+                exerciseRepository.getExerciseProgress(Long.valueOf(preValue)).observe(getViewLifecycleOwner(), integer -> {
+                    if (vocabType != null) {
+                        tv_home_title.setText(vocabType.getVocabtype());
+                        tv_home_subtitle.setVisibility(View.VISIBLE);
+                        tv_home_subtitle.setText(integer + "/" + vocabType.getAmount());
+                    } else {
+                        tv_home_title.setText("暂无数据");
+                        tv_home_subtitle.setVisibility(View.INVISIBLE);
+                    }
 
-            });
-        });
+                }));
     }
 
     private LineData setChartData(List<UserStatistic> recentDays) {
@@ -123,7 +122,7 @@ public class HomeFragment extends Fragment {
             correct.add(new Entry(d, day.getCorrect()));
             wrong.add(new Entry(d, day.getWrong()));
             count.add(new Entry(d, day.getCount()));
-            Log.d(TAG, "day " + d + "count " + day.getCount() + " correct "
+            Log.d(TAG, "day " + d + " count " + day.getCount() + " correct "
                     + day.getCorrect() + " wrong " + day.getWrong());
         }
         int correctColor = ContextCompat.getColor(context, R.color.correctColor);
@@ -210,8 +209,6 @@ public class HomeFragment extends Fragment {
                 .filter(statistics -> statistics.size() > 0)
                 .doOnNext(this::setTimeLine)
                 .map(this::setChartData)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(this::showChart);
         compositeDisposable.add(disposable);
     }
@@ -240,17 +237,13 @@ public class HomeFragment extends Fragment {
     }
 
     private void setTimeLine(List<UserStatistic> statistics) {
-        if (statistics.size() > 0) {
-            home_timeline.setVisibility(View.VISIBLE);
-            List<UserStatistic> ns = new ArrayList<>(statistics);
-            Collections.sort(ns,
-                    (s1, s2) -> s2.getTimestamp().compareTo(s1.getTimestamp()));
-            TimeLineAdapter adapter = new TimeLineAdapter(context, ns);
-            home_timeline.setLayoutManager(new LinearLayoutManager(context));
-            home_timeline.setAdapter(adapter);
-        } else {
-            home_timeline.setVisibility(View.INVISIBLE);
-        }
+        home_timeline.setVisibility(View.VISIBLE);
+        List<UserStatistic> ns = new ArrayList<>(statistics);
+        Collections.sort(ns,
+                (s1, s2) -> s2.getTimestamp().compareTo(s1.getTimestamp()));
+        TimeLineAdapter adapter = new TimeLineAdapter(context, ns);
+        home_timeline.setLayoutManager(new LinearLayoutManager(context));
+        home_timeline.setAdapter(adapter);
     }
 
     @Override
