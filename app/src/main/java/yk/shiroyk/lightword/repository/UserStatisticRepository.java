@@ -34,14 +34,13 @@ public class UserStatisticRepository {
     }
 
     public void getTodayStatistic() {
-        SimpleDateFormat formatter = new SimpleDateFormat("MMdd", Locale.CHINA);
-        Date today = new Date();
-        int day = Integer.parseInt(formatter.format(today));
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd", Locale.CHINA);
+        Date date = new Date();
         statistic = Observable.create((ObservableOnSubscribe<UserStatistic>) emitter -> {
-            UserStatistic s = userStatisticDao.getTodayStatistic(day);
+            UserStatistic s = userStatisticDao.getTodayStatistic(formatter.format(date));
             if (s == null) {
                 s = new UserStatistic();
-                s.setTimestamp(today);
+                s.setTimestamp(date);
                 s.setCorrect(0);
                 s.setWrong(0);
                 s.setCount(0);
