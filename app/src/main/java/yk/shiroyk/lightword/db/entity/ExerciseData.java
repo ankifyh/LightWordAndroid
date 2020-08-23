@@ -109,6 +109,14 @@ public class ExerciseData {
         this.wrong = wrong;
     }
 
+    public String toMasterString() {
+        return "单词ID: " + wordId +
+                ", 种类ID: " + vtypeId +
+                "\n复习阶段: " + "已掌握" +
+                "\n正确次数: " + correct +
+                ", 错误次数: " + wrong;
+    }
+
     @Override
     public String toString() {
         SimpleDateFormat df = new SimpleDateFormat("MM/dd  HH:mm");

@@ -29,7 +29,34 @@
         android:id="@+id/nav_import"
         android:name="yk.shiroyk.lightword.ui.managedata.ImportFragment"
         android:label="@string/title_import"
-        tools:layout="@layout/fragment_import_data" />
+        tools:layout="@layout/fragment_import_data"></fragment>
+
+    <fragment
+        android:id="@+id/nav_master_word"
+        android:name="yk.shiroyk.lightword.ui.managedata.MasterWordFragment"
+        android:label="@string/title_master_word"
+        tools:layout="@layout/fragment_master_word"></fragment>
+
+    <fragment
+        android:id="@+id/nav_data"
+        android:name="yk.shiroyk.lightword.ui.managedata.ManageDataFragment"
+        android:label="@string/title_data"
+        tools:layout="@layout/fragment_manage_data">
+        <action
+            android:id="@+id/action_to_import"
+            app:destination="@id/nav_import"
+            app:enterAnim="@anim/fragment_open_enter"
+            app:exitAnim="@anim/fragment_open_exit"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+        <action
+            android:id="@+id/action_to_master_word"
+            app:destination="@id/nav_master_word"
+            app:enterAnim="@anim/fragment_open_enter"
+            app:exitAnim="@anim/fragment_open_exit"
+            app:popEnterAnim="@anim/nav_default_pop_enter_anim"
+            app:popExitAnim="@anim/nav_default_pop_exit_anim" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_setting"

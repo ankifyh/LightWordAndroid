@@ -9,6 +9,7 @@ import androidx.room.Update;
 import java.util.List;
 
 import yk.shiroyk.lightword.db.entity.ExerciseData;
+import yk.shiroyk.lightword.db.entity.Vocabulary;
 
 @Dao
 public interface ExerciseDao {
@@ -22,13 +23,21 @@ public interface ExerciseDao {
     @Query("SELECT * FROM exercise_data")
     ExerciseData getAllData();
 
+    @Query("SELECT vocabulary.* FROM exercise_data, vocabulary WHERE " +
+            "stage = 11 AND vtype_id = :vtypeId AND exercise_data.word_id = vocabulary.id")
+    LiveData<List<Vocabulary>> getMasterWord(long vtypeId);
+
+    @Query("SELECT vocabulary.* FROM exercise_data, vocabulary WHERE " +
+            "stage = 11 AND vtype_id = :vtypeId AND exercise_data.word_id = vocabulary.id AND word LIKE :word")
+    LiveData<List<Vocabulary>> searchMasterWord(long vtypeId, String word);
+
     @Query("SELECT count(word_id) FROM exercise_data WHERE vtype_id = :vtypeId")
     LiveData<Integer> getExerciseProgress(long vtypeId);
 
     @Query("SELECT * FROM exercise_data " +
             "WHERE exercise_data.word_id = :wordId " +
             "AND exercise_data.vtype_id = :vtypeId ")
-    LiveData<ExerciseData> getWordDetail(long wordId, long vtypeId);
+    ExerciseData getWordDetail(long wordId, long vtypeId);
 
     @Query("SELECT * FROM exercise_data " +
             "WHERE exercise_data.word_id = :wordId " +

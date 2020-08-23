@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:padding="20dp"
+    tools:context=".ui.managedata.ManageDataFragment">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_import_data"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_alignParentStart="true"
+            android:backgroundTint="?attr/colorPrimary"
+            android:elevation="2dp"
+            android:text="@string/import_data"
+            android:textColor="@android:color/white"
+            app:cornerRadius="10dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_master_word"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_centerInParent="true"
+            android:backgroundTint="?attr/colorPrimary"
+            android:elevation="2dp"
+            android:text="@string/mastered"
+            android:textColor="@android:color/white"
+            app:cornerRadius="10dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_create_vocab"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_alignParentEnd="true"
+            android:backgroundTint="@android:color/darker_gray"
+            android:clickable="false"
+            android:elevation="2dp"
+            android:focusable="false"
+            android:text="@string/create_vocab"
+            android:textColor="@android:color/white"
+            app:cornerRadius="10dp" />
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginVertical="10dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_create_vdata"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_alignParentStart="true"
+            android:backgroundTint="@android:color/darker_gray"
+            android:clickable="false"
+            android:elevation="2dp"
+            android:focusable="false"
+            android:text="@string/create_vdata"
+            android:textColor="@android:color/white"
+            app:cornerRadius="10dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_data_clone"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:layout_centerInParent="true"
+            android:backgroundTint="@android:color/darker_gray"
+            android:clickable="false"
+            android:elevation="2dp"
+            android:focusable="false"
+            android:text="@string/data_clone"
+            android:textColor="@android:color/white"
+            app:cornerRadius="10dp" />
+
+    </RelativeLayout>
+
+</LinearLayout>

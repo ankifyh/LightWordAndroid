@@ -48,7 +48,7 @@
         <SwitchPreferenceCompat
             app:defaultValue="false"
             app:key="byFrequency"
-            app:summary="词频数据来自与COCA"
+            app:summary="按照单词的使用频率来练习新单词"
             app:title="按单词词频练习新单词" />
 
     </PreferenceCategory>
@@ -69,20 +69,6 @@
         <Preference
             app:key="systemTTS"
             app:title="前往系统TTS设置" />
-
-    </PreferenceCategory>
-
-    <PreferenceCategory
-        app:key="backup"
-        app:title="备份数据">
-
-        <Preference
-            app:key="import_data"
-            app:title="导入数据" />
-
-        <Preference
-            app:key="export_data"
-            app:title="导出数据" />
 
     </PreferenceCategory>
 

@@ -8,7 +8,6 @@ import android.os.Bundle;
 import android.text.InputType;
 import android.view.View;
 import android.widget.GridView;
-import android.widget.Toast;
 
 import androidx.preference.EditTextPreference;
 import androidx.preference.ListPreference;
@@ -89,17 +88,6 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                 startActivity(intent);
             } catch (Exception ignored) {
             }
-            return false;
-        });
-
-        Preference import_data = findPreference("import_data");
-        import_data.setOnPreferenceClickListener(preference -> {
-            Toast.makeText(getContext(), "导入", Toast.LENGTH_LONG).show();
-            return false;
-        });
-        Preference export_data = findPreference("export_data");
-        export_data.setOnPreferenceClickListener(preference -> {
-            Toast.makeText(getContext(), "导出", Toast.LENGTH_LONG).show();
             return false;
         });
 

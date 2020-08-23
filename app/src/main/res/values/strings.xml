@@ -8,9 +8,11 @@
 
     <string name="title_home" translatable="false">主页</string>
     <string name="title_import" translatable="false">导入</string>
+    <string name="title_data" translatable="false">数据</string>
     <string name="title_setting" translatable="false">设置</string>
     <string name="title_exercise" translatable="false">练习</string>
     <string name="title_about" translatable="false">关于</string>
+    <string name="title_master_word" translatable="false">已经掌握</string>
     <string name="versionName" translatable="false">1.1.1</string>
 
     <string name="exercise_card_translation" translatable="false">这种麻醉状态不仅在法庭起了作用，而且还使我看到汉娜好像把我当成另一个爱过并渴望过她的人，一个我很熟悉但却不是我的那么一个人。</string>
@@ -19,8 +21,8 @@
     <string name="exercise_card_pos" translatable="false">形容词</string>
     <string name="exercise_tips" translatable="false">未查询到数据,\n请尝试重新导入词库与词汇数据</string>
     <string name="exercise_data_tips" translatable="false">未找到该单词之前练习的数据</string>
-    <string name="exercise_fragment_exclude_dialog_title" translatable="false">是否排除该单词？</string>
-    <string name="exercise_fragment_exclude_dialog_message" translatable="false">以后将不会再出现在复习计划中，\n如果想取消可在排除列表中移除。</string>
+    <string name="exercise_fragment_exclude_dialog_title" translatable="false">是否已掌握该单词？</string>
+    <string name="exercise_fragment_exclude_dialog_message" translatable="false">以后将不会再出现在复习计划中，\n如果想取消可在已掌握列表中删除。</string>
     <string name="string_target" translatable="false">今日: 0/100</string>
     <string name="exercise_fragment_today_target" translatable="false">今日: %d/%s</string>
     <string name="exercise_fragment_target_dialog_title" translatable="false">今日目标已完成！(%d/%d)</string>
@@ -38,6 +40,7 @@
     <string name="dialog_cancel" translatable="false">取消</string>
     <string name="dialog_default" translatable="false">默认</string>
     <string name="dialog_url" translatable="false">下载地址</string>
+    <string name="dialog_delete" translatable="false">删除</string>
 
     <string name="crash_send_failed" translatable="false">发送崩溃日志失败！</string>
     <string name="crash_send_succeeded" translatable="false">发送日志成功！</string>
@@ -53,4 +56,14 @@
     <string name="home_timeline_date_string" translatable="false">8/17 共323张</string>
     <string name="home_timeline_statistic_string" translatable="false">266｜57｜82%</string>
     <string name="tv_vocab_word_string" translatable="false">abandon</string>
+    <string name="import_data" translatable="false">管理数据</string>
+    <string name="mastered" translatable="false">已经掌握</string>
+    <string name="create_vocab" translatable="false">新建词库</string>
+    <string name="create_vdata" translatable="false">新建词汇</string>
+    <string name="data_clone" translatable="false">数据克隆</string>
+    <string name="delete_master_word_msg" translatable="false">是否将该词汇从已掌握列表删除？</string>
+    <string name="dialog_btn_mastered" translatable="false">已掌握</string>
+    <string name="add_master_word_succuess_msg" translatable="false">%s 添加到已掌握列表成功！</string>
+    <string name="no_exercise_data" translatable="false">暂无练习数据</string>
+    <string name="no_mastered_word_msg" translatable="false">没有已掌握的单词</string>
 </resources>

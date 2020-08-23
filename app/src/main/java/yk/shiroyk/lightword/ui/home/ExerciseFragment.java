@@ -252,7 +252,6 @@ public class ExerciseFragment extends Fragment {
     }
 
     private void remember(Long wordId, Long vtypeId) {
-        exerciseRepository.defaultForgetTime();
         if (exerciseRepository.remember(wordId, vtypeId)) {
             statisticRepository.updateCount();
             sharedViewModel.setTarget(statisticRepository.getTodayCount());
@@ -261,13 +260,11 @@ public class ExerciseFragment extends Fragment {
     }
 
     private void forget(Long wordId, Long vtypeId) {
-        exerciseRepository.defaultForgetTime();
         exerciseRepository.forget(wordId, vtypeId);
         statisticRepository.updateWrong();
     }
 
     private void remembered(Long wordId, Long vtypeId) {
-        exerciseRepository.defaultForgetTime();
         if (exerciseRepository.remembered(wordId, vtypeId)) {
             statisticRepository.updateCount();
             sharedViewModel.setTarget(statisticRepository.getTodayCount());

@@ -14,13 +14,13 @@ import io.reactivex.rxjava3.schedulers.Schedulers;
 import yk.shiroyk.lightword.db.LightWordDatabase;
 import yk.shiroyk.lightword.db.dao.ExerciseDao;
 import yk.shiroyk.lightword.db.entity.ExerciseData;
-import yk.shiroyk.lightword.db.entity.Profile;
+import yk.shiroyk.lightword.db.entity.Vocabulary;
 import yk.shiroyk.lightword.utils.CalDate;
 import yk.shiroyk.lightword.utils.ThreadTask;
 
 public class ExerciseRepository {
     private ExerciseDao exerciseDao;
-    private List<Integer> minList;
+    private List<Integer> minList = Arrays.asList(5, 20, 720, 1440, 2880, 5760, 10080, 14436, 46080, 92160);
 
     public ExerciseRepository(Application application) {
         LightWordDatabase db = LightWordDatabase.getDatabase(application);
@@ -32,22 +32,29 @@ public class ExerciseRepository {
     }
 
     public void setForgetTime(List<Integer> minList) {
-        if (minList != null) {
+        if (minList.size() > 0) {
             this.minList = minList;
-        } else {
-            defaultForgetTime();
         }
     }
 
-    public void defaultForgetTime() {
-        Profile profile = new Profile();
-        List<Integer> minList = Arrays.asList(5, 20, 720, 1440, 2880, 5760, 10080, 14436, 46080, 92160);
-        profile.setForgetTime(minList);
-        this.minList = profile.getForgetTime();
+    public Integer getForgetTimeSize() {
+        return minList.size();
     }
 
-    public LiveData<ExerciseData> getWordDetail(Long wordId, Long vtypeId) {
+    public void update(ExerciseData data) {
+        ThreadTask.runOnThread(data, d -> exerciseDao.update(d));
+    }
+
+    public ExerciseData getWordDetail(Long wordId, Long vtypeId) {
         return exerciseDao.getWordDetail(wordId, vtypeId);
+    }
+
+    public LiveData<List<Vocabulary>> getMasterWord(Long vtypeId) {
+        return exerciseDao.getMasterWord(vtypeId);
+    }
+
+    public LiveData<List<Vocabulary>> searchMasterWord(Long vtypeId, String word) {
+        return exerciseDao.searchMasterWord(vtypeId, word);
     }
 
     private ExerciseData getWord(Long wordId, Long vtypeId) {
@@ -74,7 +81,7 @@ public class ExerciseRepository {
             }
             exerciseData.setLastPractice(now);
             exerciseData.setCorrect(correct + 1);
-            ThreadTask.runOnThread(exerciseData, e -> exerciseDao.update(e));
+            update(exerciseData);
             return false;
         } catch (NullPointerException ex) {
             exerciseData = new ExerciseData();
@@ -104,7 +111,7 @@ public class ExerciseRepository {
             }
             exerciseData.setLastPractice(new Date());
             exerciseData.setWrong(wrong + 1);
-            ThreadTask.runOnThread(exerciseData, e -> exerciseDao.update(e));
+            update(exerciseData);
         } catch (NullPointerException ignored) {
         }
     }
@@ -119,11 +126,11 @@ public class ExerciseRepository {
             Integer correct = exerciseData.getCorrect();
             if (stage < 10) {
                 exerciseData.setTimestamp(new Date(tenYears));
-                exerciseData.setStage(11);
+                exerciseData.setStage(minList.size() + 1);
             }
             exerciseData.setLastPractice(now);
             exerciseData.setCorrect(correct + 1);
-            ThreadTask.runOnThread(exerciseData, e -> exerciseDao.update(e));
+            update(exerciseData);
             return false;
         } catch (NullPointerException ex) {
             exerciseData = new ExerciseData();

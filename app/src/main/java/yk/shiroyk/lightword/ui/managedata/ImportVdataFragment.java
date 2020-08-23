@@ -15,6 +15,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -44,8 +45,10 @@ import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import yk.shiroyk.lightword.R;
 import yk.shiroyk.lightword.db.entity.ExerciseData;
+import yk.shiroyk.lightword.db.entity.Optional;
 import yk.shiroyk.lightword.db.entity.VocabData;
 import yk.shiroyk.lightword.db.entity.VocabType;
+import yk.shiroyk.lightword.db.entity.Vocabulary;
 import yk.shiroyk.lightword.repository.ExerciseRepository;
 import yk.shiroyk.lightword.repository.VocabDataRepository;
 import yk.shiroyk.lightword.repository.VocabTypeRepository;
@@ -73,7 +76,7 @@ public class ImportVdataFragment extends Fragment {
     private VocabDataRepository vocabDataRepository;
     private ExerciseRepository exerciseRepository;
 
-    private CompositeDisposable compositeDisposable;
+    private CompositeDisposable dispose;
 
     private VocabType defaultVocabType;
     private TitleString title = (VocabType v) -> v.getVocabtype() + " (" + v.getAmount() + ")";
@@ -89,7 +92,7 @@ public class ImportVdataFragment extends Fragment {
         vocabDataRepository = new VocabDataRepository(getActivity().getApplication());
         exerciseRepository = new ExerciseRepository(getActivity().getApplication());
 
-        compositeDisposable = new CompositeDisposable();
+        dispose = new CompositeDisposable();
     }
 
     @Override
@@ -116,7 +119,7 @@ public class ImportVdataFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         sharedViewModel.setSubTitle("");
-        compositeDisposable.dispose();
+        dispose.dispose();
     }
 
     private void setDefaultTitle(List<VocabType> vocabTypes) {
@@ -201,10 +204,15 @@ public class ImportVdataFragment extends Fragment {
                     tv_vdata_msg.setVisibility(View.GONE);
                     adapter = new VocabularyAdapter(
                             context, vList, vocabulary ->
-                            exerciseRepository.getWordDetail(vocabulary.getId(), v.getId()).observe(
-                                    getViewLifecycleOwner(),
-                                    data -> showDetail(vocabulary.getWord(), data)
-                            ));
+                            dispose.add(
+                                    Observable.create((ObservableOnSubscribe<Optional<ExerciseData>>) emitter -> {
+                                        emitter.onNext(Optional.of(exerciseRepository
+                                                .getWordDetail(vocabulary.getId(), v.getId())));
+                                        emitter.onComplete();
+                                    })
+                                            .subscribeOn(Schedulers.io())
+                                            .observeOn(AndroidSchedulers.mainThread())
+                                            .subscribe(optional -> showDetail(vocabulary, v.getId(), optional))));
                     vdata_list.setLayoutManager(new LinearLayoutManager(context));
                     vdata_list.setAdapter(adapter);
                 } else {
@@ -216,15 +224,32 @@ public class ImportVdataFragment extends Fragment {
         });
     }
 
-    private void showDetail(String title, ExerciseData data) {
-        String detail = "暂无练习数据";
-        if (data != null) {
-            detail = data.toString();
+    private void showDetail(Vocabulary v, Long vTypeId, Optional<ExerciseData> optional) {
+        String detail = getString(R.string.no_exercise_data);
+        boolean showNeutral = false;
+        if (!optional.isEmpty()) {
+            if (optional.get().getStage() > (exerciseRepository.getForgetTimeSize())) {
+                detail = optional.get().toMasterString();
+            } else {
+                showNeutral = true;
+                detail = optional.get().toString();
+            }
+        } else {
+            showNeutral = true;
         }
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle(title)
-                .setMessage(detail)
-                .setPositiveButton(R.string.dialog_cancel, null)
+        builder.setTitle(v.getWord())
+                .setMessage(detail);
+        if (showNeutral) {
+            builder.setNeutralButton(R.string.dialog_btn_mastered, (dialogInterface, i) -> {
+                if (exerciseRepository.remembered(v.getId(), vTypeId)) {
+                    Toast.makeText(context,
+                            String.format(getString(R.string.add_master_word_succuess_msg),
+                                    v.getWord()), Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+        builder.setPositiveButton(R.string.dialog_cancel, null)
                 .create().show();
     }
 
@@ -250,7 +275,7 @@ public class ImportVdataFragment extends Fragment {
         builder.setTitle(R.string.import_vdata_type_exist_title)
                 .setMessage(R.string.import_vdata_type_exist_message)
                 .setPositiveButton(R.string.dialog_ensure, (dialogInterface, i) ->
-                        compositeDisposable.add(insertVData(v, uri, true)))
+                        dispose.add(insertVData(v, uri, true)))
                 .setNegativeButton(R.string.dialog_cancel, null).create().show();
     }
 
@@ -294,18 +319,18 @@ public class ImportVdataFragment extends Fragment {
                         } else {
                             msg += "共导入" + r.count + "条数据";
                             r.vocabType.setAmount(r.count);
-                            Disposable update = Observable.create((ObservableOnSubscribe<Integer>) emitter -> {
-                                emitter.onNext(vocabTypeRepository.update(r.vocabType));
-                                emitter.onComplete();
-                            })
+                            dispose.add(Observable.create((ObservableOnSubscribe<Integer>)
+                                    emitter -> {
+                                        emitter.onNext(vocabTypeRepository.update(r.vocabType));
+                                        emitter.onComplete();
+                                    })
                                     .subscribeOn(Schedulers.io())
                                     .observeOn(AndroidSchedulers.mainThread())
                                     .subscribe(i -> {
                                         if (i.equals(1)) {
                                             getActivity().invalidateOptionsMenu();
                                         }
-                                    });
-                            compositeDisposable.add(update);
+                                    }));
                         }
                     } else {
                         msg = r.ignoreWord > 0 ? "没有可新增的数据" : "解析失败，未导入数据！";
@@ -364,38 +389,30 @@ public class ImportVdataFragment extends Fragment {
             if (data != null) {
                 Uri uri = data.getData();
                 String fname = new FileUtils(context).getFileName(uri);
-                Disposable disposable = Observable.create(
-                        (ObservableOnSubscribe<QueryResult>) emitter -> {
-                            QueryResult r = new QueryResult();
-                            r.v = vocabTypeRepository.getVocabType(fname);
-                            if (r.v == null) {
-                                r.isExist = false;
-                                r.v = new VocabType();
-                                r.v.setAmount(0);
-                            }
-                            emitter.onNext(r);
+                dispose.add(Observable.create(
+                        (ObservableOnSubscribe<Optional<VocabType>>) emitter -> {
+                            emitter.onNext(Optional.of(vocabTypeRepository.getVocabType(fname)));
                             emitter.onComplete();
                         })
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(r -> {
-                            if (r.isExist) {
-                                setEnsureDialog(r.v, uri);
+                        .subscribe(optional -> {
+                            if (!optional.isEmpty()) {
+                                setEnsureDialog(optional.get(), uri);
                             } else {
-                                r.v.setVocabtype(fname);
-                                Disposable create = Observable.create(
-                                        (ObservableOnSubscribe<Long>)
-                                                emitter -> emitter.onNext(vocabTypeRepository.insert(r.v)))
+                                VocabType vType = new VocabType();
+                                vType.setVocabtype(fname);
+                                dispose.add(Observable.create(
+                                        (ObservableOnSubscribe<Long>) emitter ->
+                                                emitter.onNext(vocabTypeRepository.insert(vType)))
                                         .subscribeOn(Schedulers.io())
                                         .observeOn(AndroidSchedulers.mainThread())
                                         .subscribe(id -> {
-                                            r.v.setId(id);
-                                            insertVData(r.v, uri, false);
-                                        });
-                                compositeDisposable.add(create);
+                                            vType.setId(id);
+                                            insertVData(vType, uri, false);
+                                        }));
                             }
-                        });
-                compositeDisposable.add(disposable);
+                        }));
             }
         }
 
@@ -403,11 +420,6 @@ public class ImportVdataFragment extends Fragment {
 
     private interface TitleString {
         String get(VocabType v);
-    }
-
-    private static class QueryResult {
-        VocabType v;
-        boolean isExist = true;
     }
 
     private static class FileResult {

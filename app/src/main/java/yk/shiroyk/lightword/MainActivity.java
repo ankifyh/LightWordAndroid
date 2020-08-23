@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
         drawer.setClipToPadding(false);
 
         mAppBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.nav_home, R.id.nav_import, R.id.nav_setting, R.id.nav_about)
+                R.id.nav_home, R.id.nav_data, R.id.nav_setting, R.id.nav_about)
                 .setDrawerLayout(drawer)
                 .build();
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
