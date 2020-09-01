@@ -2,10 +2,8 @@ package yk.shiroyk.lightword.repository;
 
 import android.app.Application;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.Calendar;
 import java.util.List;
-import java.util.Locale;
 
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.core.ObservableOnSubscribe;
@@ -33,14 +31,18 @@ public class UserStatisticRepository {
         return userStatisticDao.getStatistic("-" + days + " day");
     }
 
-    public void getTodayStatistic() {
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd", Locale.CHINA);
-        Date date = new Date();
+    private void getTodayStatistic() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
         statistic = Observable.create((ObservableOnSubscribe<UserStatistic>) emitter -> {
-            UserStatistic s = userStatisticDao.getTodayStatistic(formatter.format(date));
+            UserStatistic s = userStatisticDao.getTodayStatistic(calendar.getTimeInMillis());
             if (s == null) {
                 s = new UserStatistic();
-                s.setTimestamp(date);
+                s.setTimestamp(calendar.getTime());
                 s.setCorrect(0);
                 s.setWrong(0);
                 s.setCount(0);

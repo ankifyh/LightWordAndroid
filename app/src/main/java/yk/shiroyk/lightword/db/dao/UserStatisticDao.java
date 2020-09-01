@@ -18,10 +18,8 @@ public interface UserStatisticDao {
     @Update
     int update(UserStatistic statistic);
 
-    @Query("SELECT * FROM user_statistic " +
-            "WHERE CAST(strftime('%Y%m%d', " +
-            "timestamp / 1000, 'unixepoch') AS integer) = :day")
-    UserStatistic getTodayStatistic(String day);
+    @Query("SELECT * FROM user_statistic WHERE timestamp = :timestamp")
+    UserStatistic getTodayStatistic(Long timestamp);
 
     @Query("SELECT * FROM user_statistic WHERE timestamp >= strftime('%s','now', :days) * 1000")
     List<UserStatistic> getStatistic(String days);

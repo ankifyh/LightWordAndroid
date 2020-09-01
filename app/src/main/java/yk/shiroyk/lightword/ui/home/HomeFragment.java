@@ -30,9 +30,12 @@ import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
 import io.reactivex.rxjava3.core.Observable;
@@ -118,7 +121,7 @@ public class HomeFragment extends Fragment {
 
         for (UserStatistic day : recentDays
         ) {
-            int d = Integer.parseInt(day.getDay());
+            long d = day.getTimestamp().getTime();
             correct.add(new Entry(d, day.getCorrect()));
             wrong.add(new Entry(d, day.getWrong()));
             count.add(new Entry(d, day.getCount()));
@@ -174,22 +177,20 @@ public class HomeFragment extends Fragment {
         home_chart.animateY(1000);
         home_chart.invalidate();
 
-        ValueFormatter formatter = new ValueFormatter() {
-            @Override
-            public String getFormattedValue(float value) {
-                String day = String.valueOf((int) value);
-                return new StringBuilder(day).
-                        insert(day.length() - 2, "/").toString();
-            }
-        };
-
         XAxis xAxis = home_chart.getXAxis();
         xAxis.setGranularity(1f);
         xAxis.setTextSize(12f);
         xAxis.setTextColor(white);
         xAxis.setAxisLineColor(white);
         xAxis.setDrawGridLines(false);
-        xAxis.setValueFormatter(formatter);
+        xAxis.setValueFormatter(new ValueFormatter() {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("M/dd", Locale.CHINA);
+
+            @Override
+            public String getFormattedValue(float value) {
+                return dateFormat.format(new Date((long) value));
+            }
+        });
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         YAxis yAxis = home_chart.getAxisLeft();
         yAxis.setTextColor(white);
