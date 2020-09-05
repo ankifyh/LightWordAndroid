@@ -66,4 +66,7 @@
     <string name="add_master_word_succuess_msg" translatable="false">%s 添加到已掌握列表成功！</string>
     <string name="no_exercise_data" translatable="false">暂无练习数据</string>
     <string name="no_mastered_word_msg" translatable="false">没有已掌握的单词</string>
+    <string name="missing_vocab_data">未查询到词汇数据，\n请先导入词汇数据。</string>
+    <string name="parse_vocab_data_error">解析词库例句失败，\n请尝试重新导入词库数据。</string>
+    <string name="importing">导入中...</string>
 </resources>

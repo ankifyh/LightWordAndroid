@@ -11,15 +11,9 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.annotations.NonNull;
-import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.ObservableOnSubscribe;
-import io.reactivex.rxjava3.core.Observer;
-import io.reactivex.rxjava3.disposables.Disposable;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 import yk.shiroyk.lightword.BuildConfig;
 import yk.shiroyk.lightword.R;
+import yk.shiroyk.lightword.utils.ThreadTask;
 import yk.shiroyk.lightword.utils.UpdateChecker;
 
 
@@ -65,45 +59,21 @@ public class AboutFragment extends PreferenceFragmentCompat {
 
     private void setCheckUpdate() {
         UpdateChecker checker = new UpdateChecker();
-        Observable.create((ObservableOnSubscribe<String[]>) emitter -> {
-            emitter.onNext(checker.checkUpdate());
-            emitter.onComplete();
-        })
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<String[]>() {
-                    @Override
-                    public void onSubscribe(@NonNull Disposable d) {
-                        Toast.makeText(context, "检查中...", Toast.LENGTH_SHORT).show();
-                    }
-
-                    @Override
-                    public void onNext(String @NonNull [] strings) {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                        if (strings.length > 1) {
-                            builder.setTitle(strings[0])
-                                    .setMessage(strings[1])
-                                    .setPositiveButton(R.string.dialog_url,
-                                            (dialogInterface, i) -> new Intent(Intent.ACTION_VIEW)
-                                                    .setData(Uri.parse(strings[2])))
-                                    .setNegativeButton(R.string.dialog_cancel, null).create().show();
-                        } else {
-                            builder.setTitle(strings[0])
-                                    .setNegativeButton(R.string.dialog_ensure, null).create().show();
-                        }
-
-                    }
-
-                    @Override
-                    public void onError(@NonNull Throwable e) {
-                        e.printStackTrace();
-                    }
-
-                    @Override
-                    public void onComplete() {
-
-                    }
-                });
+        Toast.makeText(context, "检查中...", Toast.LENGTH_SHORT).show();
+        ThreadTask.runOnThread(checker::checkUpdate, strings -> {
+            AlertDialog.Builder builder = new AlertDialog.Builder(context);
+            if (strings.length > 1) {
+                builder.setTitle(strings[0])
+                        .setMessage(strings[1])
+                        .setPositiveButton(R.string.dialog_url,
+                                (dialogInterface, i) -> new Intent(Intent.ACTION_VIEW)
+                                        .setData(Uri.parse(strings[2])))
+                        .setNegativeButton(R.string.dialog_cancel, null).create().show();
+            } else {
+                builder.setTitle(strings[0])
+                        .setNegativeButton(R.string.dialog_ensure, null).create().show();
+            }
+        });
     }
 
 }

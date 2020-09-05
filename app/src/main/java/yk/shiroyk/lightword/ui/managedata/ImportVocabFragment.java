@@ -27,23 +27,18 @@ import com.google.android.material.snackbar.Snackbar;
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.ObservableOnSubscribe;
-import io.reactivex.rxjava3.disposables.CompositeDisposable;
-import io.reactivex.rxjava3.disposables.Disposable;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 import yk.shiroyk.lightword.R;
 import yk.shiroyk.lightword.db.entity.Vocabulary;
 import yk.shiroyk.lightword.repository.VocabularyRepository;
 import yk.shiroyk.lightword.ui.adapter.VocabularyAdapter;
 import yk.shiroyk.lightword.ui.viewmodel.SharedViewModel;
-import yk.shiroyk.lightword.utils.FileUtils;
+import yk.shiroyk.lightword.utils.ThreadTask;
 import yk.shiroyk.lightword.utils.VocabularyDataManage;
 
 
@@ -63,7 +58,6 @@ public class ImportVocabFragment extends Fragment {
     private VocabularyRepository vocabularyRepository;
     private VocabularyDataManage vocabularyDataManage;
 
-    private CompositeDisposable compositeDisposable;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -72,7 +66,6 @@ public class ImportVocabFragment extends Fragment {
         vocabularyRepository = new VocabularyRepository(getActivity().getApplication());
         vocabularyDataManage = new VocabularyDataManage(getActivity().getBaseContext());
 
-        compositeDisposable = new CompositeDisposable();
     }
 
     @Override
@@ -96,7 +89,6 @@ public class ImportVocabFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         sharedViewModel.setSubTitle("");
-        compositeDisposable.dispose();
     }
 
     @Override
@@ -197,13 +189,12 @@ public class ImportVocabFragment extends Fragment {
         if (requestCode == REQUEST_VOCABULARY && resultCode == Activity.RESULT_OK) {
             if (data != null) {
                 Uri uri = data.getData();
-                compositeDisposable.add(importVocab(uri));
+                importVocab(uri);
             }
         }
     }
 
-    private Disposable importVocab(Uri uri) {
-        FileUtils fileUtils = new FileUtils(context);
+    private void importVocab(Uri uri) {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         AlertDialog loadingDialog = builder.setCancelable(false)
@@ -211,70 +202,60 @@ public class ImportVocabFragment extends Fragment {
 
         loadingDialog.show();
         Log.d("Uri", uri.toString());
-        return Observable.create(
-                (ObservableOnSubscribe<List<String>>) emitter -> {
-                    emitter.onNext(vocabularyRepository.getWordString());
-                    emitter.onComplete();
-                })
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.io())
-                .map(stringList -> {
-                    FileResult result = new FileResult();
-                    List<Vocabulary> vocabularyList = new ArrayList<>();
-                    Integer lines = fileUtils.countLines(uri);
 
-                    InputStream is = context.getContentResolver().openInputStream(uri);
-                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(is));
-                    String str;
+        ThreadTask.runOnThread(() -> {
+            List<String> stringList = vocabularyRepository.getWordString();
 
-                    while ((str = bufferedReader.readLine()) != null) {
-                        String[] line = str.split(",", 3);
-                        if (line.length > 1) {
-                            String word = line[0];
-                            if (!stringList.contains(word)) {
-                                Vocabulary vocabulary = new Vocabulary();
-                                long frequency = Long.parseLong(line[1]);
-                                vocabulary.setWord(word);
-                                vocabulary.setFrequency(frequency);
-                                vocabularyList.add(vocabulary);
-                                vocabularyDataManage.writeFile(line[2], word);
-                            } else {
-                                result.overWrite++;
-                                vocabularyDataManage.overWriteFile(line[2], word);
-                            }
-                        }
-                    }
+            int count;
+            int overWrite = 0;
+            List<Vocabulary> vList = new ArrayList<>();
 
-                    result.count = vocabularyList.size();
-                    result.vList = vocabularyList;
-                    Log.d(TAG, "词汇例句初始化数量: " + vocabularyList.size() + "/" + lines);
-                    return result;
-                })
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(r -> {
-                    String msg;
-                    int resultSize = r.vList.size();
-                    if (resultSize > 0) {
-                        msg = "词库数据导入成功，共导入" + resultSize + "条数据";
-                        msg += r.overWrite > 0 ? ", 覆盖" + r.overWrite + "条数据" : "";
-                        Vocabulary[] vocabularies = r.vList.toArray(new Vocabulary[r.count]);
-                        vocabularyRepository.insert(vocabularies);
-                    } else {
-                        if (r.overWrite > 0) {
-                            msg = "词库数据导入成功，共覆盖" + r.overWrite + "条数据";
+            try {
+                InputStream is = context.getContentResolver().openInputStream(uri);
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(is));
+                String str;
+
+                while ((str = bufferedReader.readLine()) != null) {
+                    String[] line = str.split(",", 3);
+                    if (line.length > 1) {
+                        String word = line[0];
+                        if (!stringList.contains(word)) {
+                            Vocabulary vocabulary = new Vocabulary();
+                            long frequency = Long.parseLong(line[1]);
+                            vocabulary.setWord(word);
+                            vocabulary.setFrequency(frequency);
+                            vList.add(vocabulary);
+                            vocabularyDataManage.writeFile(line[2], word);
                         } else {
-                            msg = "解析失败，未导入数据";
+                            overWrite++;
+                            vocabularyDataManage.overWriteFile(line[2], word);
                         }
                     }
-                    loadingDialog.dismiss();
-                    Snackbar.make(getView(), msg, Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-                });
+                }
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+
+            String msg;
+            count = vList.size();
+            if (count > 0) {
+                msg = "词库数据导入成功，共导入" + count + "条数据";
+                msg += overWrite > 0 ? ", 覆盖" + overWrite + "条数据" : "";
+                Vocabulary[] vocabularies = vList.toArray(new Vocabulary[count]);
+                vocabularyRepository.insert(vocabularies);
+            } else {
+                if (overWrite > 0) {
+                    msg = "词库数据导入成功，共覆盖" + overWrite + "条数据";
+                } else {
+                    msg = "解析失败，未导入数据";
+                }
+            }
+            return msg;
+        }, msg -> {
+            loadingDialog.dismiss();
+            Snackbar.make(getView(), msg, Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show();
+        });
     }
 
-    private static class FileResult {
-        int count = 0;
-        int overWrite = 0;
-        List<Vocabulary> vList;
-    }
 }

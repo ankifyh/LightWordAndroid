@@ -24,7 +24,7 @@ public class VocabTypeRepository {
     }
 
     public void delete(VocabType v) {
-        ThreadTask.runOnThread(v, n -> vocabTypeDao.delete(n));
+        ThreadTask.runOnThread(() -> vocabTypeDao.delete(v));
     }
 
     public List<VocabType> getAllVocabTypes() {

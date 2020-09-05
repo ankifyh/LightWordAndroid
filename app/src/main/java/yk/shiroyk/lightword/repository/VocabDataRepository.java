@@ -40,7 +40,7 @@ public class VocabDataRepository {
         return vocabDataDao.searchWord(vtypeId, word);
     }
 
-    public void insert(VocabData[] vocabData) {
-        ThreadTask.runOnThread(vocabData, v -> vocabDataDao.insertMany(v));
+    public void insert(VocabData[] v) {
+        ThreadTask.runOnThread(() -> vocabDataDao.insertMany(v));
     }
 }

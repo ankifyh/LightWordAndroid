@@ -16,9 +16,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.ObservableOnSubscribe;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 import yk.shiroyk.lightword.db.entity.Vocabulary;
 import yk.shiroyk.lightword.db.entity.exercise.Collocation;
 import yk.shiroyk.lightword.db.entity.exercise.Example;
@@ -31,10 +28,11 @@ import yk.shiroyk.lightword.repository.VocabularyRepository;
 public class ExerciseBuild extends ViewModel {
     private static final String TAG = ExerciseBuild.class.getSimpleName();
 
-    private static final String not_found_vdata_msg = "未查询到词汇数据，\n请先导入词汇数据。";
-    private static final String parse_vocab_error_msg = "解析词库例句失败，\n请尝试重新导入词库数据。";
+    public static final int MISSING_VDATA = 10003;
+    public static final int PARSE_FAILURE = 10004;
+
     private MutableLiveData<List<Exercise>> exerciseList = new MutableLiveData<>();
-    private MutableLiveData<String> exerciseMsg = new MutableLiveData<>();
+    private MutableLiveData<Integer> exerciseMsg = new MutableLiveData<>();
 
     private VocabDataRepository vocabDataRepository;
     private ExerciseRepository exerciseRepository;
@@ -213,49 +211,37 @@ public class ExerciseBuild extends ViewModel {
         return exerciseList;
     }
 
-    public LiveData<String> getExerciseMsg() {
+    public LiveData<Integer> getExerciseMsg() {
         return exerciseMsg;
     }
 
     public void newExercise(Long vtypeId, Integer limit) {
-        Observable.create((ObservableOnSubscribe<List<Long>>) emitter -> {
-            emitter.onNext(vocabDataRepository.loadNewWord(vtypeId, byFrequency, limit));
-            emitter.onComplete();
-        })
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.io())
-                .map(longs -> {
-                    if (longs.size() == 0) {
-                        exerciseMsg.postValue(not_found_vdata_msg);
-                    }
-                    List<Exercise> exercises = buildExercise(longs, false);
-                    if (longs.size() != 0 && exercises.size() == 0) {
-                        exerciseMsg.postValue(parse_vocab_error_msg);
-                    }
-                    exerciseList.postValue(exercises);
-                    return exerciseList;
-                }).subscribe();
+        ThreadTask.runOnThread(() -> {
+            List<Long> idList = vocabDataRepository.loadNewWord(vtypeId, byFrequency, limit);
+            if (idList.size() == 0) {
+                exerciseMsg.postValue(MISSING_VDATA);
+            }
+            List<Exercise> exercises = buildExercise(idList, false);
+            if (idList.size() != 0 && exercises.size() == 0) {
+                exerciseMsg.postValue(PARSE_FAILURE);
+            }
+            exerciseList.postValue(exercises);
+        });
     }
 
     public void autoExercise(Long vtypeId, Integer limit) {
-        Observable.create((ObservableOnSubscribe<List<Long>>) emitter -> {
-            emitter.onNext(exerciseRepository.loadReviewWord(vtypeId, limit));
-            emitter.onComplete();
-        })
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.io())
-                .map(longs -> {
-                    if (longs.size() < limit) {
-                        newExercise(vtypeId, limit);
-                    } else {
-                        List<Exercise> exercises = buildExercise(longs, true);
-                        if (longs.size() != 0 && exercises.size() == 0) {
-                            exerciseMsg.postValue(parse_vocab_error_msg);
-                        }
-                        exerciseList.postValue(exercises);
-                    }
-                    return exerciseList;
-                }).subscribe();
+        ThreadTask.runOnThread(() -> {
+            List<Long> idList = exerciseRepository.loadReviewWord(vtypeId, limit);
+            if (idList.size() < limit) {
+                newExercise(vtypeId, limit);
+            } else {
+                List<Exercise> exercises = buildExercise(idList, true);
+                if (idList.size() != 0 && exercises.size() == 0) {
+                    exerciseMsg.postValue(PARSE_FAILURE);
+                }
+                exerciseList.postValue(exercises);
+            }
+        });
     }
 
     public LiveData<List<Exercise>> getExerciseList() {

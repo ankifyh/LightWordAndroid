@@ -16,7 +16,6 @@ import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
@@ -31,17 +30,11 @@ import androidx.preference.PreferenceManager;
 import java.util.List;
 import java.util.Locale;
 
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.ObservableOnSubscribe;
-import io.reactivex.rxjava3.disposables.CompositeDisposable;
-import io.reactivex.rxjava3.disposables.Disposable;
-import io.reactivex.rxjava3.schedulers.Schedulers;
+import yk.shiroyk.lightword.MainActivity;
 import yk.shiroyk.lightword.R;
 import yk.shiroyk.lightword.db.entity.exercise.Exercise;
 import yk.shiroyk.lightword.repository.ExerciseRepository;
 import yk.shiroyk.lightword.repository.UserStatisticRepository;
-import yk.shiroyk.lightword.ui.viewmodel.SharedViewModel;
 import yk.shiroyk.lightword.ui.widget.ExerciseCardView;
 import yk.shiroyk.lightword.utils.ExerciseBuild;
 
@@ -53,11 +46,8 @@ public class ExerciseFragment extends Fragment {
     private ExerciseRepository exerciseRepository;
     private UserStatisticRepository statisticRepository;
     private ExerciseBuild exerciseBuild;
-    private SharedViewModel sharedViewModel;
     private SharedPreferences sp;
-    private CompositeDisposable compositeDisposable;
 
-    private ProgressBar exercise_loading;
     private LinearLayout exercise_container;
     private TextView tv_tip;
     private ExerciseCardView exercise_card;
@@ -88,10 +78,8 @@ public class ExerciseFragment extends Fragment {
         super.onCreate(savedInstanceState);
         exerciseRepository = new ExerciseRepository(getActivity().getApplication());
         statisticRepository = new UserStatisticRepository(getActivity().getApplication());
-        sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
         exerciseBuild = new ViewModelProvider(this).get(ExerciseBuild.class);
         exerciseBuild.setApplication(this.getActivity().getApplication());
-        compositeDisposable = new CompositeDisposable();
     }
 
     @Override
@@ -104,8 +92,9 @@ public class ExerciseFragment extends Fragment {
 
         getCardData(10);
         setExerciseListObserve();
-        initTarget();
+        setTargetObserve();
         setTargetDialog();
+        setStatusObserve();
         initTTS();
         return root;
     }
@@ -118,23 +107,22 @@ public class ExerciseFragment extends Fragment {
             tts.shutdown();
             tts = null;
         }
-        compositeDisposable.dispose();
     }
 
-    private void initTarget() {
-        int todayTarget = statisticRepository.getTodayCount();
-        sharedViewModel.setTarget(todayTarget);
-        if (dailyTarget.equals("0")) {
-            tv_daily_target.setVisibility(View.INVISIBLE);
-        } else {
-            tv_daily_target.setVisibility(View.VISIBLE);
-            tv_daily_target.setText(String.format(getString(
-                    R.string.exercise_fragment_today_target), todayTarget, dailyTarget));
-        }
+    private void setTargetObserve() {
+        statisticRepository.getTodayCount().observe(getViewLifecycleOwner(), todayTarget -> {
+            if (dailyTarget.equals("0")) {
+                tv_daily_target.setVisibility(View.INVISIBLE);
+            } else {
+                tv_daily_target.setVisibility(View.VISIBLE);
+                tv_daily_target.setText(String.format(getString(
+                        R.string.exercise_fragment_today_target), todayTarget, dailyTarget));
+            }
+        });
     }
 
     private void setTargetDialog() {
-        sharedViewModel.getTarget().observe(getViewLifecycleOwner(), integer -> {
+        statisticRepository.getTodayCount().observe(getViewLifecycleOwner(), integer -> {
             int parseInt = Integer.parseInt(dailyTarget);
             if (parseInt != 0) {
                 tv_daily_target.setVisibility(View.VISIBLE);
@@ -154,7 +142,6 @@ public class ExerciseFragment extends Fragment {
     }
 
     private void init(View root) {
-        exercise_loading = root.findViewById(R.id.exercise_loading);
         exercise_container = root.findViewById(R.id.exercise_container);
         tv_tip = root.findViewById(R.id.tv_tip);
         exercise_card = root.findViewById(R.id.exercise_card);
@@ -240,7 +227,7 @@ public class ExerciseFragment extends Fragment {
         builder.setTitle(R.string.exercise_fragment_exclude_dialog_title)
                 .setMessage(R.string.exercise_fragment_exclude_dialog_message)
                 .setPositiveButton(R.string.dialog_ensure, (dialogInterface, i) -> {
-                    remembered(wordId, vtypeId);
+                    mastered(wordId, vtypeId);
                     exercise_card.showAnswer();
                     if (isSpeech && initTTSSuccess) {
                         tts.speak(speakString, TextToSpeech.QUEUE_FLUSH, null, "");
@@ -252,24 +239,31 @@ public class ExerciseFragment extends Fragment {
     }
 
     private void remember(Long wordId, Long vtypeId) {
-        if (exerciseRepository.remember(wordId, vtypeId)) {
-            statisticRepository.updateCount();
-            sharedViewModel.setTarget(statisticRepository.getTodayCount());
-        }
-        statisticRepository.updateCorrect();
+        exerciseRepository.remember(wordId, vtypeId);
     }
 
     private void forget(Long wordId, Long vtypeId) {
         exerciseRepository.forget(wordId, vtypeId);
-        statisticRepository.updateWrong();
     }
 
-    private void remembered(Long wordId, Long vtypeId) {
-        if (exerciseRepository.remembered(wordId, vtypeId)) {
-            statisticRepository.updateCount();
-            sharedViewModel.setTarget(statisticRepository.getTodayCount());
-        }
-        statisticRepository.updateCorrect();
+    private void mastered(Long wordId, Long vtypeId) {
+        exerciseRepository.mastered(wordId, vtypeId);
+    }
+
+    private void setStatusObserve() {
+        exerciseRepository.getExerciseStatus().observe(getViewLifecycleOwner(), status -> {
+            switch (status) {
+                case ExerciseRepository.EXERCISE_NEW:
+                    statisticRepository.updateCount();
+                    break;
+                case ExerciseRepository.EXERCISE_WRONG:
+                    statisticRepository.updateWrong();
+                    break;
+                case ExerciseRepository.EXERCISE_CORRECT:
+                    statisticRepository.updateCorrect();
+                    break;
+            }
+        });
     }
 
     private void prevCard() {
@@ -313,7 +307,7 @@ public class ExerciseFragment extends Fragment {
             setCardData(cardIndex);
             exercise_card.startExerciseCardAnim();
             btn_prev_card.setVisibility(View.VISIBLE);
-            if (!(currentCard > cardIndex)) {
+            if (currentCard <= cardIndex) {
                 exercise_card.setAnswerVisibility(View.VISIBLE);
             }
         }
@@ -328,6 +322,7 @@ public class ExerciseFragment extends Fragment {
             btn_prev_card.setVisibility(View.VISIBLE);
             exercise_card.clearAnswer();
             exercise_card.startExerciseCardAnim();
+            exercise_card.setAnswerVisibility(View.VISIBLE);
         } else {
             getCardData(10);
         }
@@ -372,7 +367,16 @@ public class ExerciseFragment extends Fragment {
                         tv_translation.setVisibility(View.GONE);
                         exerciseBuild.getExerciseMsg()
                                 .observe(getViewLifecycleOwner(),
-                                        msg -> tv_tip.setText(msg));
+                                        msg -> {
+                                            switch (msg) {
+                                                case ExerciseBuild.MISSING_VDATA:
+                                                    tv_tip.setText(R.string.missing_vocab_data);
+                                                    break;
+                                                case ExerciseBuild.PARSE_FAILURE:
+                                                    tv_tip.setText(R.string.parse_vocab_data_error);
+                                                    break;
+                                            }
+                                        });
                     }
                 });
     }
@@ -394,17 +398,6 @@ public class ExerciseFragment extends Fragment {
     public void setTTS(float pitch, float rate) {
         tts.setPitch(pitch);
         tts.setSpeechRate(rate);
-    }
-
-    private Disposable setOnDoneObserve(String s) {
-        return Observable
-                .create((ObservableOnSubscribe<String>) emitter -> {
-                    emitter.onNext(s);
-                    emitter.onComplete();
-                })
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(s1 -> getNextCard());
     }
 
     private void initTTS() {
@@ -442,7 +435,7 @@ public class ExerciseFragment extends Fragment {
 
         @Override
         public void onDone(String s) {
-            compositeDisposable.add(setOnDoneObserve(s));
+            ((MainActivity) context).runOnUiThread(ExerciseFragment.this::getNextCard);
         }
 
         @Override

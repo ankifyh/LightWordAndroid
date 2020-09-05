@@ -66,18 +66,7 @@ public class VocabularyRepository {
         return map;
     }
 
-    public void insert(Vocabulary[] vocabulary) {
-        ThreadTask.runOnThread(vocabulary, v -> {
-//            int chunk = 1000;
-//            int len = vocabularies.length;
-//
-//            for (int i = 0; i < len - chunk + 1; i += chunk) {
-//                vocabularyDao.insertMany(Arrays.copyOfRange(vocabularies, i, i + chunk));
-//            }
-//            if (len % chunk != 0) {
-//                vocabularyDao.insertMany(Arrays.copyOfRange(vocabularies, len - len % chunk, len));
-//            }
-            vocabularyDao.insertMany(v);
-        });
+    public void insert(Vocabulary[] v) {
+        ThreadTask.runOnThread(() -> vocabularyDao.insertMany(v));
     }
 }

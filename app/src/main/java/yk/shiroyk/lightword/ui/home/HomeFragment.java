@@ -37,18 +37,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.ObservableOnSubscribe;
-import io.reactivex.rxjava3.disposables.CompositeDisposable;
-import io.reactivex.rxjava3.disposables.Disposable;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 import yk.shiroyk.lightword.R;
 import yk.shiroyk.lightword.db.entity.UserStatistic;
 import yk.shiroyk.lightword.repository.ExerciseRepository;
 import yk.shiroyk.lightword.repository.UserStatisticRepository;
 import yk.shiroyk.lightword.repository.VocabTypeRepository;
 import yk.shiroyk.lightword.ui.adapter.TimeLineAdapter;
+import yk.shiroyk.lightword.utils.ThreadTask;
 
 public class HomeFragment extends Fragment {
 
@@ -57,7 +52,6 @@ public class HomeFragment extends Fragment {
     private ExerciseRepository exerciseRepository;
     private VocabTypeRepository vocabTypeRepository;
     private UserStatisticRepository statisticRepository;
-    private CompositeDisposable compositeDisposable;
     private SharedPreferences sp;
 
     private TextView tv_home_title;
@@ -74,7 +68,6 @@ public class HomeFragment extends Fragment {
         statisticRepository = new UserStatisticRepository(getActivity().getApplication());
         context = getContext();
         sp = PreferenceManager.getDefaultSharedPreferences(context);
-        compositeDisposable = new CompositeDisposable();
     }
 
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -202,16 +195,14 @@ public class HomeFragment extends Fragment {
     }
 
     private void setHomeChart(Integer days) {
-        Disposable disposable = Observable.create(
-                (ObservableOnSubscribe<List<UserStatistic>>)
-                        emitter -> emitter.onNext(statisticRepository.getStatistic(days)))
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .filter(statistics -> statistics.size() > 0)
-                .doOnNext(this::setTimeLine)
-                .map(this::setChartData)
-                .subscribe(this::showChart);
-        compositeDisposable.add(disposable);
+        ThreadTask.runOnThread(() -> statisticRepository.getStatistic(days),
+                statistics -> {
+                    if (statistics.size() > 0) {
+                        setTimeLine(statistics);
+                        LineData lineData = setChartData(statistics);
+                        showChart(lineData);
+                    }
+                });
     }
 
     private void setChartMenu() {
@@ -257,6 +248,5 @@ public class HomeFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        compositeDisposable.dispose();
     }
 }

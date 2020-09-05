@@ -18,38 +18,30 @@ import androidx.preference.SwitchPreferenceCompat;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.ObservableOnSubscribe;
-import io.reactivex.rxjava3.disposables.CompositeDisposable;
-import io.reactivex.rxjava3.disposables.Disposable;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 import yk.shiroyk.lightword.R;
 import yk.shiroyk.lightword.db.entity.VocabType;
 import yk.shiroyk.lightword.repository.VocabTypeRepository;
 import yk.shiroyk.lightword.ui.adapter.ColorPickAdapter;
 import yk.shiroyk.lightword.utils.ThemeHelper;
+import yk.shiroyk.lightword.utils.ThreadTask;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
 
     private Activity mActivity;
 
     private VocabTypeRepository vocabTypeRepository;
-    private CompositeDisposable compositeDisposable;
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         setPreferencesFromResource(R.xml.preferences, rootKey);
         mActivity = getActivity();
         vocabTypeRepository = new VocabTypeRepository(mActivity.getApplication());
-        compositeDisposable = new CompositeDisposable();
         init();
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        compositeDisposable.dispose();
     }
 
     private void init() {
@@ -73,7 +65,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             return false;
         });
 
-        compositeDisposable.add(setVTypeEntry());
+        setVTypeEntry();
 
         EditTextPreference targetPreference = findPreference("dailyTarget");
         targetPreference.setOnBindEditTextListener(editText ->
@@ -93,44 +85,39 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
     }
 
-    private Disposable setVTypeEntry() {
-        return Observable.create(
-                (ObservableOnSubscribe<List<VocabType>>)
-                        emitter -> emitter.onNext(vocabTypeRepository.getAllVocabTypes()))
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(vList -> {
-                    if (vList.size() > 0) {
-                        List<String> entries = new ArrayList<>();
-                        List<String> entryValues = new ArrayList<>();
+    private void setVTypeEntry() {
+        ThreadTask.runOnThread(() -> vocabTypeRepository.getAllVocabTypes(), vList -> {
+            if (vList.size() > 0) {
+                List<String> entries = new ArrayList<>();
+                List<String> entryValues = new ArrayList<>();
 
-                        ListPreference vtypePreference = findPreference("vtypeId");
-                        String preValue = vtypePreference.getValue();
+                ListPreference vtypePreference = findPreference("vtypeId");
+                String preValue = vtypePreference.getValue();
 
-                        for (VocabType v : vList) {
-                            Long id = v.getId();
-                            String vType = v.getVocabtype();
-                            entries.add(vType + " (" + v.getAmount() + ")");
-                            entryValues.add(id + "");
-                            if (id.toString().equals(preValue))
-                                vtypePreference.setSummaryProvider(p -> vType);
-                        }
-                        CharSequence[] vtype = entries.toArray(new CharSequence[entries.size()]);
-                        CharSequence[] vtypeId = entryValues.toArray(new CharSequence[entryValues.size()]);
+                for (VocabType v : vList) {
+                    Long id = v.getId();
+                    String vType = v.getVocabtype();
+                    entries.add(vType + " (" + v.getAmount() + ")");
+                    entryValues.add(id + "");
+                    if (id.toString().equals(preValue))
+                        vtypePreference.setSummaryProvider(p -> vType);
+                }
+                CharSequence[] vtype = entries.toArray(new CharSequence[0]);
+                CharSequence[] vtypeId = entryValues.toArray(new CharSequence[0]);
 
-                        vtypePreference.setEntries(vtype);
-                        vtypePreference.setEntryValues(vtypeId);
+                vtypePreference.setEntries(vtype);
+                vtypePreference.setEntryValues(vtypeId);
 
-                        vtypePreference.setOnPreferenceChangeListener(
-                                (preference, newValue) -> {
-                                    vtypePreference.setValue(newValue.toString());
-                                    if (vtype.length > 0)
-                                        vtypePreference.setSummaryProvider(p ->
-                                                vtype[Integer.parseInt(newValue.toString()) - 1]);
-                                    return false;
-                                });
-                    }
-                });
+                vtypePreference.setOnPreferenceChangeListener(
+                        (preference, newValue) -> {
+                            vtypePreference.setValue(newValue.toString());
+                            if (vtype.length > 0)
+                                vtypePreference.setSummaryProvider(p ->
+                                        vtype[Integer.parseInt(newValue.toString()) - 1]);
+                            return false;
+                        });
+            }
+        });
     }
 
     private void setColorPickView(SharedPreferences sp) {

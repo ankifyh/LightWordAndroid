@@ -6,7 +6,6 @@ import androidx.lifecycle.ViewModel;
 
 public class SharedViewModel extends ViewModel {
     private final MutableLiveData<String> subTitle = new MutableLiveData<String>();
-    private final MutableLiveData<Integer> target = new MutableLiveData<Integer>();
 
     public LiveData<String> getSubTitle() {
         return subTitle;
@@ -16,11 +15,4 @@ public class SharedViewModel extends ViewModel {
         subTitle.setValue(title);
     }
 
-    public LiveData<Integer> getTarget() {
-        return target;
-    }
-
-    public void setTarget(Integer i) {
-        target.setValue(i);
-    }
 }

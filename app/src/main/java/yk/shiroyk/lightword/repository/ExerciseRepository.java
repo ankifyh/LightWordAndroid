@@ -3,14 +3,12 @@ package yk.shiroyk.lightword.repository;
 import android.app.Application;
 
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.ObservableOnSubscribe;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 import yk.shiroyk.lightword.db.LightWordDatabase;
 import yk.shiroyk.lightword.db.dao.ExerciseDao;
 import yk.shiroyk.lightword.db.entity.ExerciseData;
@@ -21,6 +19,10 @@ import yk.shiroyk.lightword.utils.ThreadTask;
 public class ExerciseRepository {
     private ExerciseDao exerciseDao;
     private List<Integer> minList = Arrays.asList(5, 20, 720, 1440, 2880, 5760, 10080, 14436, 46080, 92160);
+    public static final int EXERCISE_CORRECT = 10005;
+    public static final int EXERCISE_WRONG = 10006;
+    public static final int EXERCISE_NEW = 10007;
+    private MutableLiveData<Integer> exerciseStatus = new MutableLiveData<>();
 
     public ExerciseRepository(Application application) {
         LightWordDatabase db = LightWordDatabase.getDatabase(application);
@@ -42,7 +44,7 @@ public class ExerciseRepository {
     }
 
     public void update(ExerciseData data) {
-        ThreadTask.runOnThread(data, d -> exerciseDao.update(d));
+        ThreadTask.runOnThread(() -> exerciseDao.update(data));
     }
 
     public ExerciseData getWordDetail(Long wordId, Long vtypeId) {
@@ -57,100 +59,98 @@ public class ExerciseRepository {
         return exerciseDao.searchMasterWord(vtypeId, word);
     }
 
-    private ExerciseData getWord(Long wordId, Long vtypeId) {
-        return Observable.create((ObservableOnSubscribe<ExerciseData>) emitter -> {
-            emitter.onNext(exerciseDao.getSingleWord(wordId, vtypeId));
-            emitter.onComplete();
-        })
-                .subscribeOn(Schedulers.io())
-                .blockingSingle();
-    }
-
-    public boolean remember(Long wordId, Long vtypeId) {
-        ExerciseData exerciseData;
+    public void remember(Long wordId, Long vtypeId) {
         Date now = new Date();
-        try {
-            exerciseData = getWord(wordId, vtypeId);
-            Integer stage = exerciseData.getStage();
-            Integer correct = exerciseData.getCorrect();
-            Date timestamp = exerciseData.getTimestamp();
-            CalDate calDate = new CalDate(minList, timestamp, stage);
-            if (stage < 10) {
-                exerciseData.setTimestamp(calDate.timestamp(false));
-                exerciseData.setStage(stage + 1);
-            }
-            exerciseData.setLastPractice(now);
-            exerciseData.setCorrect(correct + 1);
-            update(exerciseData);
-            return false;
-        } catch (NullPointerException ex) {
-            exerciseData = new ExerciseData();
-            exerciseData.setTimestamp(new Date(now.getTime() + minList.get(0) * 60 * 1000));
-            exerciseData.setWordId(wordId);
-            exerciseData.setVtypeId(vtypeId);
-            exerciseData.setLastPractice(now);
-            exerciseData.setStage(1);
-            exerciseData.setCorrect(1);
-            exerciseData.setWrong(0);
-            insert(exerciseData);
-            return true;
-        }
+        ThreadTask.runOnThread(() -> exerciseDao.getSingleWord(wordId, vtypeId),
+                data -> {
+                    if (data != null) {
+                        Integer stage = data.getStage();
+                        Integer correct = data.getCorrect();
+                        Date timestamp = data.getTimestamp();
+                        CalDate calDate = new CalDate(minList, timestamp, stage);
+                        if (stage < minList.size()) {
+                            data.setTimestamp(calDate.timestamp(false));
+                            data.setStage(stage + 1);
+                        }
+                        data.setLastPractice(now);
+                        data.setCorrect(correct + 1);
+                        update(data);
+                        exerciseStatus.setValue(EXERCISE_CORRECT);
+                    } else {
+                        data = new ExerciseData();
+                        data.setTimestamp(new Date(now.getTime() + minList.get(0) * 60 * 1000));
+                        data.setWordId(wordId);
+                        data.setVtypeId(vtypeId);
+                        data.setLastPractice(now);
+                        data.setStage(1);
+                        data.setCorrect(1);
+                        data.setWrong(0);
+                        insert(data);
+                        exerciseStatus.setValue(EXERCISE_NEW);
+                    }
+                });
     }
 
     public void forget(Long wordId, Long vtypeId) {
-        ExerciseData exerciseData;
-        try {
-            exerciseData = getWord(wordId, vtypeId);
-            Integer stage = exerciseData.getStage();
-            Integer wrong = exerciseData.getWrong();
-            Date timestamp = exerciseData.getTimestamp();
-            CalDate calDate = new CalDate(minList, timestamp, stage);
-            if (stage > 1) {
-                exerciseData.setTimestamp(calDate.timestamp(true));
-                exerciseData.setStage(stage - 1);
-            }
-            exerciseData.setLastPractice(new Date());
-            exerciseData.setWrong(wrong + 1);
-            update(exerciseData);
-        } catch (NullPointerException ignored) {
-        }
+        ThreadTask.runOnThread(() -> exerciseDao.getSingleWord(wordId, vtypeId),
+                data -> {
+                    if (data != null) {
+                        Integer stage = data.getStage();
+                        Integer wrong = data.getWrong();
+                        Date timestamp = data.getTimestamp();
+                        CalDate calDate = new CalDate(minList, timestamp, stage);
+                        if (stage > 1) {
+                            data.setTimestamp(calDate.timestamp(true));
+                            data.setStage(stage - 1);
+                        }
+                        data.setLastPractice(new Date());
+                        data.setWrong(wrong + 1);
+                        update(data);
+                    }
+                    exerciseStatus.setValue(EXERCISE_WRONG);
+                });
     }
 
-    public boolean remembered(Long wordId, Long vtypeId) {
-        ExerciseData exerciseData;
+    public void mastered(Long wordId, Long vtypeId) {
         Date now = new Date();
         long tenYears = now.getTime() + 5126400L * 60 * 1000;
-        try {
-            exerciseData = getWord(wordId, vtypeId);
-            Integer stage = exerciseData.getStage();
-            Integer correct = exerciseData.getCorrect();
-            if (stage < 10) {
-                exerciseData.setTimestamp(new Date(tenYears));
-                exerciseData.setStage(minList.size() + 1);
-            }
-            exerciseData.setLastPractice(now);
-            exerciseData.setCorrect(correct + 1);
-            update(exerciseData);
-            return false;
-        } catch (NullPointerException ex) {
-            exerciseData = new ExerciseData();
-            exerciseData.setTimestamp(new Date(tenYears));
-            exerciseData.setWordId(wordId);
-            exerciseData.setVtypeId(vtypeId);
-            exerciseData.setLastPractice(now);
-            exerciseData.setStage(11);
-            exerciseData.setCorrect(1);
-            exerciseData.setWrong(0);
-            insert(exerciseData);
-            return true;
-        }
+        ThreadTask.runOnThread(() -> exerciseDao.getSingleWord(wordId, vtypeId),
+                data -> {
+                    if (data != null) {
+                        Integer stage = data.getStage();
+                        Integer correct = data.getCorrect();
+                        if (stage < minList.size()) {
+                            data.setTimestamp(new Date(tenYears));
+                            data.setStage(minList.size() + 1);
+                        }
+                        data.setLastPractice(now);
+                        data.setCorrect(correct + 1);
+                        update(data);
+                        exerciseStatus.setValue(EXERCISE_CORRECT);
+                    } else {
+                        data = new ExerciseData();
+                        data.setTimestamp(new Date(tenYears));
+                        data.setWordId(wordId);
+                        data.setVtypeId(vtypeId);
+                        data.setLastPractice(now);
+                        data.setStage(minList.size() + 1);
+                        data.setCorrect(1);
+                        data.setWrong(0);
+                        insert(data);
+                        exerciseStatus.setValue(EXERCISE_NEW);
+                    }
+                });
+    }
+
+    public LiveData<Integer> getExerciseStatus() {
+        return exerciseStatus;
     }
 
     public LiveData<Integer> getExerciseProgress(Long vtypeId) {
         return exerciseDao.getExerciseProgress(vtypeId);
     }
 
-    public void insert(ExerciseData exerciseData) {
-        ThreadTask.runOnThread(exerciseData, e -> exerciseDao.insert(e));
+    public void insert(ExerciseData e) {
+        ThreadTask.runOnThread(() -> exerciseDao.insert(e));
     }
 }

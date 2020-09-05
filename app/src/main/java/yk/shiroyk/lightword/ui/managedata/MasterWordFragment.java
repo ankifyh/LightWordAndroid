@@ -27,17 +27,13 @@ import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView;
 
 import java.util.Date;
 
-import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers;
-import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.core.ObservableOnSubscribe;
-import io.reactivex.rxjava3.disposables.CompositeDisposable;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 import yk.shiroyk.lightword.R;
 import yk.shiroyk.lightword.db.entity.ExerciseData;
 import yk.shiroyk.lightword.db.entity.VocabType;
 import yk.shiroyk.lightword.repository.ExerciseRepository;
 import yk.shiroyk.lightword.repository.VocabTypeRepository;
 import yk.shiroyk.lightword.ui.adapter.VocabularyAdapter;
+import yk.shiroyk.lightword.utils.ThreadTask;
 
 
 public class MasterWordFragment extends Fragment {
@@ -47,8 +43,6 @@ public class MasterWordFragment extends Fragment {
     private VocabTypeRepository vocabTypeRepository;
     private MasterWordViewModel idViewModel;
     private SharedPreferences sp;
-
-    private CompositeDisposable disposable;
 
     private VocabularyAdapter adapter;
     private ProgressBar master_card_loading;
@@ -61,7 +55,6 @@ public class MasterWordFragment extends Fragment {
         exerciseRepository = new ExerciseRepository(getActivity().getApplication());
         vocabTypeRepository = new VocabTypeRepository(getActivity().getApplication());
         idViewModel = ViewModelProviders.of(this).get(MasterWordViewModel.class);
-        disposable = new CompositeDisposable();
         context = getContext();
         sp = PreferenceManager.getDefaultSharedPreferences(context);
     }
@@ -79,7 +72,6 @@ public class MasterWordFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        disposable.dispose();
     }
 
     @Override
@@ -159,15 +151,9 @@ public class MasterWordFragment extends Fragment {
                                 tv_master_card_msg.setVisibility(View.GONE);
                                 adapter = new VocabularyAdapter(
                                         context, vList, vocabulary ->
-                                        disposable.add(Observable.create((ObservableOnSubscribe<ExerciseData>) emitter -> {
-                                            emitter.onNext(exerciseRepository.getWordDetail(vocabulary.getId(), id));
-                                            emitter.onComplete();
-                                        })
-                                                .subscribeOn(Schedulers.io())
-                                                .observeOn(AndroidSchedulers.mainThread())
-                                                .subscribe(data -> {
-                                                    delMasterWord(vocabulary.getWord(), data);
-                                                })));
+                                        ThreadTask.runOnThread(() -> exerciseRepository
+                                                        .getWordDetail(vocabulary.getId(), id),
+                                                data -> delMasterWord(vocabulary.getWord(), data)));
                                 master_card_list.setLayoutManager(new LinearLayoutManager(context));
                                 master_card_list.setAdapter(adapter);
                             } else {
