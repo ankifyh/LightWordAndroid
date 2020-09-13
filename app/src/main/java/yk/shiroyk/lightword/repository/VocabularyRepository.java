@@ -2,6 +2,7 @@ package yk.shiroyk.lightword.repository;
 
 import android.app.Application;
 
+import androidx.core.util.Consumer;
 import androidx.lifecycle.LiveData;
 
 import java.util.HashMap;
@@ -50,6 +51,10 @@ public class VocabularyRepository {
         return vocabularyDao.getWord(word);
     }
 
+    public Vocabulary queryWord(String word) {
+        return vocabularyDao.queryWord(word);
+    }
+
     public LiveData<List<Vocabulary>> searchWord(String word) {
         return vocabularyDao.searchWord(word);
     }
@@ -68,5 +73,17 @@ public class VocabularyRepository {
 
     public void insert(Vocabulary[] v) {
         ThreadTask.runOnThread(() -> vocabularyDao.insertMany(v));
+    }
+
+    public void update(Vocabulary v) {
+        ThreadTask.runOnThread(() -> vocabularyDao.update(v));
+    }
+
+    public void insert(Vocabulary v, Consumer<Long> consumer) {
+        ThreadTask.runOnThread(() -> vocabularyDao.insert(v), consumer);
+    }
+
+    public void delete(Vocabulary v, Consumer<Integer> consumer) {
+        ThreadTask.runOnThread(() -> vocabularyDao.delete(v), consumer);
     }
 }

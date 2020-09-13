@@ -1,4 +1,4 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/exercise_card_container"
     android:layout_width="match_parent"
@@ -6,47 +6,39 @@
     android:orientation="vertical"
     android:padding="15dp">
 
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top"
-        android:orientation="horizontal">
+        android:layout_height="wrap_content">
 
         <ProgressBar
             android:id="@+id/card_progress_circle"
             style="@style/Widget.AppCompat.ProgressBar.Horizontal"
             android:layout_width="25dp"
             android:layout_height="25dp"
-            android:layout_gravity="center"
+            android:layout_alignParentStart="true"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:indeterminate="false"
             android:max="100"
             android:progress="0"
             android:progressDrawable="@drawable/circle_progress" />
 
-        <View
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1" />
-
         <TextView
             android:id="@+id/tv_card_pos"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
+            android:layout_height="25dp"
+            android:layout_alignParentEnd="true"
+            android:gravity="center"
             android:text="@string/exercise_card_pos"
             android:textColor="@color/cardTextColor"
             android:textSize="14sp" />
-    </LinearLayout>
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
+    </RelativeLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:paddingTop="25dp"
         android:orientation="vertical">
 
         <FrameLayout
@@ -75,7 +67,7 @@
                     android:background="@color/cardColor"
                     android:hint=""
                     android:imeOptions="actionDone"
-                    android:textCursorDrawable="@drawable/et_answer_cursor"
+                    android:textCursorDrawable="@drawable/blue_text_cursor"
                     android:padding="0dp"
                     android:paddingStart="0dp"
                     android:paddingEnd="0dp"
@@ -107,10 +99,5 @@
 
     </LinearLayout>
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-
-</LinearLayout>
+</RelativeLayout>
 

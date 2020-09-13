@@ -188,6 +188,11 @@ public class ExerciseBuild extends ViewModel {
                     Example example = rdExample(collocation);
                     String sentence = example.getExample();
 
+                    if (example.hasAnswer()) {
+                        inflection = new ArrayList<>();
+                        inflection.add(example.getAnswer());
+                    }
+
                     AnswerObject answerObject = getAnswer(inflection, sentence);
                     String answer = answerObject.answer;
                     int answerIndex = answerObject.answerIndex;

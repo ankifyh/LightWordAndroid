@@ -10,6 +10,9 @@ public class Example {
     @SerializedName("translation")
     @Expose
     private String translation;
+    @SerializedName("answer")
+    @Expose
+    private String answer;
 
     public String getExample() {
         return example;
@@ -25,5 +28,17 @@ public class Example {
 
     public void setTranslation(String translation) {
         this.translation = translation;
+    }
+
+    public String getAnswer() {
+        return answer;
+    }
+
+    public void setAnswer(String answer) {
+        this.answer = answer;
+    }
+
+    public boolean hasAnswer() {
+        return answer != null;
     }
 }

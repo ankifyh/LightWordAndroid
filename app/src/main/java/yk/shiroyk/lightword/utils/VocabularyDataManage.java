@@ -42,6 +42,13 @@ public class VocabularyDataManage {
         }
     }
 
+    public void deleteFile(String filename) {
+        File file = new File(dataDir(), filename + ".json");
+        if (file.exists()) {
+            file.delete();
+        }
+    }
+
     public String readFile(String filename) {
         File file = new File(dataDir(), filename + ".json");
         String line;

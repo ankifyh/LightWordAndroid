@@ -17,7 +17,6 @@ public class ManageDataFragment extends Fragment {
 
     private MaterialButton btn_import_data;
     private MaterialButton btn_master_word;
-    private MaterialButton btn_create_vocab;
     private MaterialButton btn_create_vdata;
     private MaterialButton btn_data_clone;
 
@@ -31,7 +30,6 @@ public class ManageDataFragment extends Fragment {
     private void init(View root) {
         btn_import_data = root.findViewById(R.id.btn_import_data);
         btn_master_word = root.findViewById(R.id.btn_master_word);
-        btn_create_vocab = root.findViewById(R.id.btn_create_vocab);
         btn_create_vdata = root.findViewById(R.id.btn_create_vdata);
         btn_data_clone = root.findViewById(R.id.btn_data_clone);
 

@@ -41,6 +41,7 @@
     <string name="dialog_default" translatable="false">默认</string>
     <string name="dialog_url" translatable="false">下载地址</string>
     <string name="dialog_delete" translatable="false">删除</string>
+    <string name="dialog_save" translatable="false">保存</string>
 
     <string name="crash_send_failed" translatable="false">发送崩溃日志失败！</string>
     <string name="crash_send_succeeded" translatable="false">发送日志成功！</string>
@@ -69,4 +70,24 @@
     <string name="missing_vocab_data">未查询到词汇数据，\n请先导入词汇数据。</string>
     <string name="parse_vocab_data_error">解析词库例句失败，\n请尝试重新导入词库数据。</string>
     <string name="importing">导入中...</string>
+    <string name="pos">词性</string>
+    <string name="meaning">词义</string>
+    <string name="example">例句</string>
+    <string name="translation">翻译</string>
+    <string name="answer">回答</string>
+    <string name="vocabulary">词汇</string>
+    <string name="frequency">词频</string>
+    <string name="zero">0</string>
+    <string name="new_item">新建</string>
+    <string name="new_vocab_title">新建词汇</string>
+    <string name="edit_vocab_title">编辑词汇</string>
+    <string name="delete_vocab">删除词汇</string>
+    <string name="delete_vocab_msg">是否删除词汇 %s？\n这个操作将会删除这个词汇的学习数据！</string>
+    <string name="create_collocation">新建更多搭配</string>
+    <string name="create_example">新建更多例句</string>
+    <string name="save_vocab_error">保存失败，词汇不能为空！</string>
+    <string name="vocab_exist">%s 已存在</string>
+    <string name="vocab_exist_msg">是否覆盖？</string>
+    <string name="vocab_save_success">%s 保存成功！</string>
+    <string name="vocab_delete_success">%s 删除成功！</string>
 </resources>

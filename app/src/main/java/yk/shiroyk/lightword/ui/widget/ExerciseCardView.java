@@ -13,8 +13,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.AnimRes;
@@ -38,7 +38,7 @@ public class ExerciseCardView extends CardView {
     public static final int ERROR_BASELINE = R.color.errorAnswerBaseLineColor;
 
     private Context context;
-    private LinearLayout exercise_card_container;
+    private RelativeLayout exercise_card_container;
     private ProgressBar card_progress_circle;
     private TextView tv_card_pos;
     private TextView tv_card_sentence;
@@ -91,7 +91,7 @@ public class ExerciseCardView extends CardView {
             et_card_answer.setHint(exercise.getAnswer());
             tv_card_pos.setText(exercise.getPartOfSpeech());
             tv_card_meaning.setText(exercise.getMeaning());
-            setAnswerInputStyle(exercise.getAnswerIndex(), exercise.getAnswer());
+            setAnswerPosition(exercise.getAnswerIndex(), exercise.getAnswer());
             setStatusColor(exercise.getStatus());
         }
     }
@@ -103,7 +103,7 @@ public class ExerciseCardView extends CardView {
                 .setColorFilter(getResources().getColor(color), PorterDuff.Mode.SRC_IN);
     }
 
-    private void setAnswerInputStyle(Integer answerIndex, String answer) {
+    private void setAnswerPosition(Integer answerIndex, String answer) {
         tv_card_sentence.post(() -> {
             int width = Math.round(tv_card_sentence.getPaint().measureText(answer));
             et_card_answer.setMaxWidth(width);
