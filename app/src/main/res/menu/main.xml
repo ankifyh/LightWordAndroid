@@ -4,10 +4,24 @@
 
     <item
         android:id="@+id/action_search"
-        android:title="search"
         android:visible="false"
         app:actionViewClass="androidx.appcompat.widget.SearchView"
         app:showAsAction="ifRoom" />
+
+    <group
+        android:id="@+id/vocab_data_menu_group"
+        android:visible="false">
+        <item
+            android:id="@+id/action_all_vocabdata"
+            android:orderInCategory="100"
+            android:title="@string/all_vocabdata"
+            app:showAsAction="never" />
+        <item
+            android:id="@+id/action_master_word"
+            android:orderInCategory="200"
+            android:title="@string/mastered_word"
+            app:showAsAction="never" />
+    </group>
 
     <item
         android:id="@+id/action_menu"

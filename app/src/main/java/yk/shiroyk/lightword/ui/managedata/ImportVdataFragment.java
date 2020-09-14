@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -124,41 +125,60 @@ public class ImportVdataFragment extends Fragment {
 
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        menu.clear();
         SubMenu vType = menu.addSubMenu(R.string.import_vdata_submenu);
-        vocabTypeRepository.getAllVocabType().observe(getViewLifecycleOwner(),
-                vocabTypes -> {
-                    setDefaultTitle(vocabTypes);
-                    MenuItem searchMenuItem = menu.findItem(R.id.action_search);
-                    SearchView searchView = (SearchView) searchMenuItem.getActionView();
-                    if (vocabTypes.size() > 0) {
-                        if (vocabTypes.size() > vType.size()) {
-                            vType.clear();
-                            for (VocabType v : vocabTypes) {
-                                String s = title.get(v);
-                                MenuItem item = vType.add(s);
-                                if (v.getId().equals(defaultVocabType.getId())) {
-                                    item.setChecked(true);
-                                }
-                                item.setOnMenuItemClickListener(menuItem -> {
-                                    item.setChecked(true);
-                                    vdataViewModel.setVocabType(v);
-                                    sharedViewModel.setSubTitle(s);
-                                    return false;
-                                });
-                            }
-                            vType.setGroupCheckable(0, true, true);
+        ThreadTask.runOnThread(() -> vocabTypeRepository.getAllVocabTypes(), vocabTypes -> {
+            setDefaultTitle(vocabTypes);
+            MenuItem searchMenuItem = menu.findItem(R.id.action_search);
+            MenuItem allVDataItem = menu.findItem(R.id.action_all_vocabdata);
+            MenuItem masterItem = menu.findItem(R.id.action_master_word);
+            SearchView searchView = (SearchView) searchMenuItem.getActionView();
+
+            allVDataItem.setOnMenuItemClickListener(menuItem -> {
+                allVDataItem.setChecked(true);
+                setWordList();
+                setSearchWordView(searchView);
+                return false;
+            });
+            masterItem.setOnMenuItemClickListener(menuItem -> {
+                masterItem.setChecked(true);
+                setMasterWordList();
+                setSearchMasterWordView(searchView);
+                return false;
+            });
+
+            if (vocabTypes.size() > 0) {
+                if (vocabTypes.size() > vType.size()) {
+                    vType.clear();
+                    for (VocabType v : vocabTypes) {
+                        String s = title.get(v);
+                        MenuItem item = vType.add(s);
+                        if (v.getId().equals(defaultVocabType.getId())) {
+                            item.setChecked(true);
                         }
-                        searchMenuItem.setVisible(true);
-                        setSearchView(searchView);
-                    } else {
-                        searchMenuItem.setVisible(false);
+                        item.setOnMenuItemClickListener(menuItem -> {
+                            item.setChecked(true);
+                            vdataViewModel.setVocabType(v);
+                            sharedViewModel.setSubTitle(s);
+                            return false;
+                        });
                     }
-                });
+                    vType.setGroupCheckable(0, true, true);
+                }
+                allVDataItem.setChecked(true);
+                searchMenuItem.setVisible(true);
+                menu.setGroupVisible(R.id.vocab_data_menu_group, true);
+                menu.setGroupCheckable(R.id.vocab_data_menu_group, true, true);
+            } else {
+                searchMenuItem.setVisible(false);
+                menu.setGroupVisible(R.id.vocab_data_menu_group, false);
+            }
+        });
         inflater.inflate(R.menu.main, menu);
         super.onCreateOptionsMenu(menu, inflater);
     }
 
-    private void setSearchView(SearchView searchView) {
+    private void setSearchWordView(SearchView searchView) {
         vdataViewModel.getVocabType().observe(getViewLifecycleOwner(), v -> {
             searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
                 @Override
@@ -175,6 +195,33 @@ public class ImportVdataFragment extends Fragment {
 
                 private void getResults(String newText) {
                     vocabDataRepository.searchWord(v.getId(),
+                            "%" + newText + "%").observe(
+                            getViewLifecycleOwner(), words -> {
+                                if (words == null) return;
+                                adapter.setWords(words);
+                            });
+                }
+            });
+        });
+    }
+
+    private void setSearchMasterWordView(SearchView searchView) {
+        vdataViewModel.getVocabType().observe(getViewLifecycleOwner(), vocabType -> {
+            searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                @Override
+                public boolean onQueryTextSubmit(String s) {
+                    getResults(s);
+                    return true;
+                }
+
+                @Override
+                public boolean onQueryTextChange(String s) {
+                    getResults(s);
+                    return true;
+                }
+
+                private void getResults(String newText) {
+                    exerciseRepository.searchMasterWord(vocabType.getId(),
                             "%" + newText + "%").observe(
                             getViewLifecycleOwner(), words -> {
                                 if (words == null) return;
@@ -206,6 +253,48 @@ public class ImportVdataFragment extends Fragment {
                 vdata_loading.setVisibility(View.GONE);
             });
         });
+    }
+
+    private void setMasterWordList() {
+        vdataViewModel.getVocabType().observe(getViewLifecycleOwner(), v ->
+                //query word list by stage > 10
+                exerciseRepository.getMasterWord(v.getId())
+                        .observe(getViewLifecycleOwner(), vList -> {
+                            if (vList.size() > 0) {
+                                vdata_list.setVisibility(View.VISIBLE);
+                                tv_vdata_msg.setVisibility(View.GONE);
+                                adapter = new VocabularyAdapter(
+                                        context, vList, vocabulary ->
+                                        ThreadTask.runOnThread(() -> exerciseRepository
+                                                        .getWordDetail(vocabulary.getId(), v.getId()),
+                                                data -> delMasterWord(vocabulary.getWord(), data)));
+                                vdata_list.setLayoutManager(new LinearLayoutManager(context));
+                                vdata_list.setAdapter(adapter);
+                            } else {
+                                vdata_list.setVisibility(View.GONE);
+                                tv_vdata_msg.setVisibility(View.VISIBLE);
+                            }
+                            vdata_loading.setVisibility(View.GONE);
+                        })
+        );
+    }
+
+    private void delMasterWord(String title, ExerciseData data) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(title)
+                .setMessage(R.string.delete_master_word_msg)
+                .setNeutralButton(R.string.dialog_delete,
+                        (dialogInterface, i) -> updateWord(data))
+                .setPositiveButton(R.string.dialog_cancel, null)
+                .create().show();
+    }
+
+    private void updateWord(ExerciseData data) {
+        //reset exercise data
+        data.setTimestamp(new Date());
+        data.setStage(1);
+        exerciseRepository.update(data);
+        Toast.makeText(context, "删除成功！", Toast.LENGTH_SHORT).show();
     }
 
     private void showDetail(Vocabulary v, Long vTypeId, ExerciseData data) {

@@ -90,4 +90,6 @@
     <string name="vocab_exist_msg">是否覆盖？</string>
     <string name="vocab_save_success">%s 保存成功！</string>
     <string name="vocab_delete_success">%s 删除成功！</string>
+    <string name="all_vocabdata">全部词汇</string>
+    <string name="mastered_word">已经掌握</string>
 </resources>
