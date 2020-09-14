@@ -30,6 +30,9 @@ public interface VocabularyDao {
     @Query("SELECT * FROM vocabulary WHERE id = :wordId")
     LiveData<Vocabulary> getWordById(Long wordId);
 
+    @Query("SELECT * FROM vocabulary WHERE id = :wordId")
+    Vocabulary queryWordById(Long wordId);
+
     @Query("SELECT * FROM vocabulary WHERE word = :word")
     LiveData<Vocabulary> getWord(String word);
 

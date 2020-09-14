@@ -11,6 +11,9 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
@@ -26,17 +29,28 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.gson.Gson;
 
 import java.util.List;
 import java.util.Locale;
 
 import yk.shiroyk.lightword.MainActivity;
 import yk.shiroyk.lightword.R;
+import yk.shiroyk.lightword.db.entity.exercise.Example;
 import yk.shiroyk.lightword.db.entity.exercise.Exercise;
+import yk.shiroyk.lightword.db.entity.exercise.ExerciseList;
 import yk.shiroyk.lightword.repository.ExerciseRepository;
 import yk.shiroyk.lightword.repository.UserStatisticRepository;
+import yk.shiroyk.lightword.repository.VocabularyRepository;
+import yk.shiroyk.lightword.ui.adapter.ExampleDetailAdapter;
+import yk.shiroyk.lightword.ui.adapter.VocabDetailAdapter;
 import yk.shiroyk.lightword.ui.widget.ExerciseCardView;
 import yk.shiroyk.lightword.utils.ExerciseBuild;
+import yk.shiroyk.lightword.utils.ThreadTask;
+import yk.shiroyk.lightword.utils.VocabularyDataManage;
 
 public class ExerciseFragment extends Fragment {
 
@@ -45,6 +59,8 @@ public class ExerciseFragment extends Fragment {
     private Context context;
     private ExerciseRepository exerciseRepository;
     private UserStatisticRepository statisticRepository;
+    private VocabularyRepository vocabularyRepository;
+    private VocabularyDataManage vocabularyDataManage;
     private ExerciseBuild exerciseBuild;
     private SharedPreferences sp;
 
@@ -78,6 +94,8 @@ public class ExerciseFragment extends Fragment {
         super.onCreate(savedInstanceState);
         exerciseRepository = new ExerciseRepository(getActivity().getApplication());
         statisticRepository = new UserStatisticRepository(getActivity().getApplication());
+        vocabularyRepository = new VocabularyRepository(getActivity().getApplication());
+        vocabularyDataManage = new VocabularyDataManage(getActivity().getBaseContext());
         exerciseBuild = new ViewModelProvider(this).get(ExerciseBuild.class);
         exerciseBuild.setApplication(this.getActivity().getApplication());
     }
@@ -88,6 +106,7 @@ public class ExerciseFragment extends Fragment {
         View root = inflater.inflate(R.layout.fragment_exercise, container, false);
         context = root.getContext();
         sp = PreferenceManager.getDefaultSharedPreferences(context);
+        setHasOptionsMenu(true);
         init(root);
 
         getCardData(10);
@@ -107,6 +126,59 @@ public class ExerciseFragment extends Fragment {
             tts.shutdown();
             tts = null;
         }
+    }
+
+    @Override
+    public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
+        MenuItem info = menu.findItem(R.id.action_info);
+        info.setVisible(true);
+        info.setOnMenuItemClickListener(menuItem -> {
+            setWordInfoDialog();
+            return false;
+        });
+        inflater.inflate(R.menu.main, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    private void setWordInfoDialog() {
+        if (wordId != null) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(context);
+            ThreadTask.runOnThread(() -> vocabularyRepository.queryWordById(wordId), v -> {
+                View view = getLayoutInflater().inflate(R.layout.layout_info_vocab, null);
+                RecyclerView infoList = view.findViewById(R.id.recycler_info_vocab);
+
+                VocabDetailAdapter infoAdapter = new VocabDetailAdapter(context,
+                        collocation -> setExampleInfoDialog(collocation.getExample()),
+                        true);
+                infoList.setLayoutManager(new LinearLayoutManager(context));
+                infoList.setAdapter(infoAdapter);
+                String ex = vocabularyDataManage.readFile(v.getWord());
+                ExerciseList eList = new Gson().fromJson(ex, ExerciseList.class);
+                infoAdapter.setCollocations(eList.getCollocation());
+
+                builder.setTitle(R.string.mean_and_pos)
+                        .setView(view)
+                        .setNegativeButton(R.string.dialog_cancel, null).create().show();
+            });
+        }
+    }
+
+    private void setExampleInfoDialog(List<Example> examples) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+
+        View view = getLayoutInflater().inflate(R.layout.layout_info_vocab, null);
+        RecyclerView infoList = view.findViewById(R.id.recycler_info_vocab);
+
+        ExampleDetailAdapter infoAdapter = new ExampleDetailAdapter(context,
+                null, true);
+        infoList.setLayoutManager(new LinearLayoutManager(context));
+        infoList.setAdapter(infoAdapter);
+        infoAdapter.setExampleList(examples);
+
+        builder.setTitle(R.string.example)
+                .setView(view)
+                .setNegativeButton(R.string.dialog_cancel, null)
+                .create().show();
     }
 
     private void setTargetObserve() {

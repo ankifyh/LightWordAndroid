@@ -164,7 +164,8 @@ public class ImportVocabFragment extends Fragment {
         tv_new_collocation.setText(R.string.create_collocation);
         tv_new_collocation.setOnClickListener(v -> editCollocationDialog(null));
         vocabDetailAdapter = new VocabDetailAdapter(context,
-                this::editCollocationDialog);
+                this::editCollocationDialog,
+                false);
         recycler_collocation.setLayoutManager(new LinearLayoutManager(context));
         recycler_collocation.setAdapter(vocabDetailAdapter);
 
@@ -259,7 +260,8 @@ public class ImportVocabFragment extends Fragment {
         RecyclerView example_list = view.findViewById(R.id.example_list);
         TextView tv_new_example = view.findViewById(R.id.tv_new_example);
 
-        exampleDetailAdapter = new ExampleDetailAdapter(context, this::editExampleDialog);
+        exampleDetailAdapter = new ExampleDetailAdapter(context,
+                this::editExampleDialog, false);
         example_list.setLayoutManager(new LinearLayoutManager(context));
         example_list.setAdapter(exampleDetailAdapter);
         tv_new_example.setText(R.string.create_example);

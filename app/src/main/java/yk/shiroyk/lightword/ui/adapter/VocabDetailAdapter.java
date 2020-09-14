@@ -19,24 +19,26 @@ public class VocabDetailAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     private OnItemClickListener listener;
     private Context context;
     private List<Collocation> collocations = new ArrayList<>();
+    private boolean multiLine;
 
-    public VocabDetailAdapter(Context context, OnItemClickListener listener) {
+    public VocabDetailAdapter(Context context, OnItemClickListener listener, boolean multiLine) {
         this.context = context;
         this.listener = listener;
+        this.multiLine = multiLine;
     }
 
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        return new ViewHolder(LayoutInflater.from(context).inflate(R.layout.item_vocab_detail, parent, false));
+        return new ViewHolder(LayoutInflater.from(context).inflate(R.layout.item_vocab_detail, parent, false), multiLine);
     }
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         ViewHolder viewHolder = (ViewHolder) holder;
         Collocation collocation = collocations.get(position);
-        viewHolder.tv_detail_title.setText(collocation.getPartOfSpeech());
-        viewHolder.tv_detail_subtitle.setText(collocation.getMeaning());
+        viewHolder.tv_detail_title.setText(collocation.getMeaning());
+        viewHolder.tv_detail_subtitle.setText(collocation.getPartOfSpeech());
         viewHolder.itemView.setOnClickListener(view -> listener.onClick(collocation));
     }
 
@@ -66,10 +68,14 @@ public class VocabDetailAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     private static class ViewHolder extends RecyclerView.ViewHolder {
         private TextView tv_detail_title, tv_detail_subtitle;
 
-        public ViewHolder(@NonNull View itemView) {
+        public ViewHolder(@NonNull View itemView, boolean multiLine) {
             super(itemView);
             tv_detail_title = itemView.findViewById(R.id.tv_detail_title);
             tv_detail_subtitle = itemView.findViewById(R.id.tv_detail_subtitle);
+            if (multiLine) {
+                tv_detail_title.setSingleLine(false);
+                tv_detail_subtitle.setSingleLine(false);
+            }
         }
     }
 

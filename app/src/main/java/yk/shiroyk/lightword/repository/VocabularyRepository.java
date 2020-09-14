@@ -39,6 +39,10 @@ public class VocabularyRepository {
         return vocabularyDao.getWordById(wordId);
     }
 
+    public Vocabulary queryWordById(Long wordId) {
+        return vocabularyDao.queryWordById(wordId);
+    }
+
     public List<String> getWordString() {
         return vocabularyDao.getWordString();
     }
