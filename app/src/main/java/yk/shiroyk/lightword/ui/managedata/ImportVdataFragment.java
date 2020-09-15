@@ -167,6 +167,7 @@ public class ImportVdataFragment extends Fragment {
                 }
                 allVDataItem.setChecked(true);
                 searchMenuItem.setVisible(true);
+                setSearchWordView(searchView);
                 menu.setGroupVisible(R.id.vocab_data_menu_group, true);
                 menu.setGroupCheckable(R.id.vocab_data_menu_group, true, true);
             } else {
@@ -284,12 +285,12 @@ public class ImportVdataFragment extends Fragment {
         builder.setTitle(title)
                 .setMessage(R.string.delete_master_word_msg)
                 .setNeutralButton(R.string.dialog_delete,
-                        (dialogInterface, i) -> updateWord(data))
+                        (dialogInterface, i) -> updateExerciseData(data))
                 .setPositiveButton(R.string.dialog_cancel, null)
                 .create().show();
     }
 
-    private void updateWord(ExerciseData data) {
+    private void updateExerciseData(ExerciseData data) {
         //reset exercise data
         data.setTimestamp(new Date());
         data.setStage(1);

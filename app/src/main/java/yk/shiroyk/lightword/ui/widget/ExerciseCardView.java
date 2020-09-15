@@ -46,6 +46,7 @@ public class ExerciseCardView extends CardView {
     private TextInputEditText et_card_answer;
     private View second_view_answer;
     private TextView tv_card_meaning;
+    private TextView tv_pronounce;
 
     public ExerciseCardView(@NonNull Context context) {
         super(context);
@@ -75,6 +76,7 @@ public class ExerciseCardView extends CardView {
         et_card_answer = findViewById(R.id.et_card_answer);
         second_view_answer = findViewById(R.id.second_view_answer);
         tv_card_meaning = findViewById(R.id.tv_card_meaning);
+        tv_pronounce = findViewById(R.id.tv_pronounce);
 
         setCardTypeface();
     }
@@ -91,6 +93,9 @@ public class ExerciseCardView extends CardView {
             et_card_answer.setHint(exercise.getAnswer());
             tv_card_pos.setText(exercise.getPartOfSpeech());
             tv_card_meaning.setText(exercise.getMeaning());
+            if (exercise.hasPronounce()) {
+                tv_pronounce.setText(exercise.getPronounce());
+            }
             setAnswerPosition(exercise.getAnswerIndex(), exercise.getAnswer());
             setStatusColor(exercise.getStatus());
         }
@@ -148,6 +153,10 @@ public class ExerciseCardView extends CardView {
 
     public void setAnswerVisibility(int visibility) {
         et_card_answer.setVisibility(visibility);
+    }
+
+    public void setPronounceVisibility(int visibility) {
+        tv_pronounce.setVisibility(visibility);
     }
 
     public void clearAnswer() {

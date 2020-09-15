@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import yk.shiroyk.lightword.R;
@@ -69,6 +70,7 @@ public class ImportVocabFragment extends Fragment {
 
     private TextInputEditText et_vocab;
     private TextInputEditText et_frequency;
+    private TextInputEditText et_pronounce;
     private VocabDetailAdapter vocabDetailAdapter;
     private ExampleDetailAdapter exampleDetailAdapter;
     private ExerciseList exerciseList = new ExerciseList();
@@ -158,6 +160,7 @@ public class ImportVocabFragment extends Fragment {
 
         et_vocab = view.findViewById(R.id.et_vocab);
         et_frequency = view.findViewById(R.id.et_frequency);
+        et_pronounce = view.findViewById(R.id.et_pronounce);
         TextView tv_new_collocation = view.findViewById(R.id.tv_new_collocation);
         RecyclerView recycler_collocation = view.findViewById(R.id.recycler_collocation);
 
@@ -175,6 +178,7 @@ public class ImportVocabFragment extends Fragment {
             try {
                 String ex = vocabularyDataManage.readFile(vocabulary.getWord());
                 exerciseList = new Gson().fromJson(ex, ExerciseList.class);
+                et_pronounce.setText(exerciseList.getPronounceString());
                 vocabDetailAdapter.setCollocations(exerciseList.getCollocation());
             } catch (Exception ignored) {
 
@@ -199,6 +203,8 @@ public class ImportVocabFragment extends Fragment {
         if (w.length() > 0) {
             ThreadTask.runOnThread(() -> vocabularyRepository.queryWord(w), v -> {
                 if (v == null) {
+                    exerciseList.setInflection(null);
+                    exerciseList.setSource(null);
                     writeToFile(w, true);
                 } else {
                     overWriteDialog(w);
@@ -222,6 +228,8 @@ public class ImportVocabFragment extends Fragment {
     }
 
     private void writeToFile(String w, boolean newVocab) {
+        exerciseList.setPronounce(Arrays.asList(et_pronounce.getText().toString().split(",")));
+
         String json = new Gson().toJson(exerciseList, ExerciseList.class);
         Vocabulary v = new Vocabulary();
         v.setWord(w);

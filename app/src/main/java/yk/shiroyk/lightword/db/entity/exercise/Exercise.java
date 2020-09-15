@@ -60,6 +60,10 @@ public class Exercise {
         return pronounce;
     }
 
+    public Boolean hasPronounce() {
+        return pronounce != null;
+    }
+
     public void setPronounce(String pronounce) {
         this.pronounce = pronounce;
     }

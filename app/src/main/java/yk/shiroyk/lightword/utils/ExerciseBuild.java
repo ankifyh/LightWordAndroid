@@ -40,6 +40,7 @@ public class ExerciseBuild extends ViewModel {
     private VocabularyDataManage vocabularyDataManage;
 
     private Boolean byFrequency;
+    private String isPronounce;
 
     public void setApplication(Application application) {
         vocabDataRepository = new VocabDataRepository(application);
@@ -48,6 +49,8 @@ public class ExerciseBuild extends ViewModel {
         vocabularyDataManage = new VocabularyDataManage(application.getBaseContext());
         this.byFrequency = PreferenceManager.getDefaultSharedPreferences(application.getBaseContext())
                 .getBoolean("byFrequency", false);
+        this.isPronounce = PreferenceManager.getDefaultSharedPreferences(application.getBaseContext())
+                .getString("isPronounce", "0");
 
     }
 
@@ -70,8 +73,29 @@ public class ExerciseBuild extends ViewModel {
         return examples.get(0);
     }
 
-    private String[] getPronounce(String[] pronounce) {
-        return null;
+    private String getPronounce(List<String> pronounce) {
+        switch (isPronounce) {
+            case "0":
+                return "";
+            case "1":
+                switch (pronounce.size()) {
+                    case 0:
+                        return "";
+                    case 1:
+                        return pronounce.get(0);
+                }
+            case "2":
+                switch (pronounce.size()) {
+                    case 0:
+                        return "";
+                    case 1:
+                        return pronounce.get(0);
+                    case 2:
+                        return pronounce.get(1);
+                }
+            default:
+                return "";
+        }
     }
 
     private String str_compare(String a, String b) {
@@ -180,6 +204,8 @@ public class ExerciseBuild extends ViewModel {
 
                     List<String> inflection = exampleList.getInflection();
                     exercise.setInflection(inflection);
+
+                    exercise.setPronounce(getPronounce(exampleList.getPronounce()));
 
                     Collocation collocation = rdCollocation(exampleList);
                     exercise.setMeaning(collocation.getMeaning());

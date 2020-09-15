@@ -8,19 +8,23 @@ import java.util.List;
 public class ExerciseList {
     @SerializedName("pronounce")
     @Expose
-    private List<String> pronounce = null;
+    private List<String> pronounce;
     @SerializedName("inflection")
     @Expose
-    private List<String> inflection = null;
+    private List<String> inflection;
     @SerializedName("source")
     @Expose
     private String source;
     @SerializedName("collocation")
     @Expose
-    private List<Collocation> collocation = null;
+    private List<Collocation> collocation;
 
     public List<String> getPronounce() {
         return pronounce;
+    }
+
+    public String getPronounceString() {
+        return pronounce.toString().replaceAll("[\\[\\]]", "");
     }
 
     public void setPronounce(List<String> pronounce) {

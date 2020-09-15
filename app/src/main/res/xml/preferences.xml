@@ -38,6 +38,15 @@
             app:title="练习单词分类"
             app:useSimpleSummaryProvider="true" />
 
+        <ListPreference
+            app:defaultValue="0"
+            app:dialogTitle="选择单词读音"
+            app:entries="@array/pronounceListArray"
+            app:entryValues="@array/pronounceEntryArray"
+            app:key="isPronounce"
+            app:title="显示单词读音"
+            app:useSimpleSummaryProvider="true" />
+
         <EditTextPreference
             app:defaultValue="0"
             app:dialogTitle="设置每日目标"

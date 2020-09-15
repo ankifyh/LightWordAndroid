@@ -94,4 +94,5 @@
     <string name="mastered_word">已经掌握</string>
     <string name="action_info" translatable="false">info</string>
     <string name="mean_and_pos">词义与词性</string>
+    <string name="pronounce">读音</string>
 </resources>

@@ -34,6 +34,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.gson.Gson;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -344,6 +345,7 @@ public class ExerciseFragment extends Fragment {
             setCardData(cardIndex);
             exercise_card.startExerciseCardAnim();
             exercise_card.setAnswerVisibility(View.INVISIBLE);
+            exercise_card.setPronounceVisibility(View.VISIBLE);
             if (cardIndex == 0) {
                 btn_prev_card.setVisibility(View.INVISIBLE);
             }
@@ -381,6 +383,7 @@ public class ExerciseFragment extends Fragment {
             btn_prev_card.setVisibility(View.VISIBLE);
             if (currentCard <= cardIndex) {
                 exercise_card.setAnswerVisibility(View.VISIBLE);
+                exercise_card.setPronounceVisibility(View.GONE);
             }
         }
     }
@@ -455,7 +458,11 @@ public class ExerciseFragment extends Fragment {
 
     private void setCardData(Integer cardIndex) {
         Exercise exercise = exerciseList.get(cardIndex);
-        inflection = exercise.getInflection();
+        if (exercise.getInflection() != null) {
+            inflection = exercise.getInflection();
+        } else {
+            inflection = new ArrayList<>();
+        }
         answer = exercise.getAnswer();
         speakString = "sentence".equals(ttsSpeech) ? exercise.getSentence() : answer;
         Log.d(TAG, "vtypeId: " + vtypeId + " Answer: " + answer + " Word: " +
