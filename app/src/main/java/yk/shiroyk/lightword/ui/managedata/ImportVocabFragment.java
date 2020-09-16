@@ -124,7 +124,9 @@ public class ImportVocabFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        adapter.clearSelected();
+        if (adapter != null) {
+            adapter.clearSelected();
+        }
     }
 
     @Override
