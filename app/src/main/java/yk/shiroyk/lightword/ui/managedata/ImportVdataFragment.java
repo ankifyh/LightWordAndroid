@@ -65,6 +65,7 @@ public class ImportVdataFragment extends Fragment {
     private TextView tv_vdata_msg;
     private FastScrollRecyclerView vdata_list;
     private VocabularyAdapter adapter;
+    private MenuItem doneMenuItem;
 
     private VocabTypeRepository vocabTypeRepository;
     private VocabularyRepository vocabularyRepository;
@@ -103,13 +104,25 @@ public class ImportVdataFragment extends Fragment {
     public void onResume() {
         super.onResume();
         vdataViewModel.getVocabType().observe(getViewLifecycleOwner(),
-                v -> sharedViewModel.setSubTitle(title.get(v)));
+                v -> {
+                    defaultVocabType = v;
+                    sharedViewModel.setSubTitle(title.get(v));
+                });
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         sharedViewModel.setSubTitle("");
+        if (adapter != null) {
+            adapter.exitMultiSelectMode();
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        adapter.clearSelected();
     }
 
     private void setDefaultTitle(List<VocabType> vocabTypes) {
@@ -130,20 +143,26 @@ public class ImportVdataFragment extends Fragment {
         ThreadTask.runOnThread(() -> vocabTypeRepository.getAllVocabTypes(), vocabTypes -> {
             setDefaultTitle(vocabTypes);
             MenuItem searchMenuItem = menu.findItem(R.id.action_search);
+            doneMenuItem = menu.findItem(R.id.action_done);
             MenuItem allVDataItem = menu.findItem(R.id.action_all_vocabdata);
             MenuItem masterItem = menu.findItem(R.id.action_master_word);
+            MenuItem masterSelectItem = menu.findItem(R.id.action_master_select_word);
             SearchView searchView = (SearchView) searchMenuItem.getActionView();
 
             allVDataItem.setOnMenuItemClickListener(menuItem -> {
                 allVDataItem.setChecked(true);
+                exitSelectMode();
                 setWordList();
                 setSearchWordView(searchView);
+                masterSelectItem.setTitle(R.string.mastered_word);
                 return false;
             });
             masterItem.setOnMenuItemClickListener(menuItem -> {
                 masterItem.setChecked(true);
-                setMasterWordList();
+                exitSelectMode();
+                setMasterWordList(defaultVocabType);
                 setSearchMasterWordView(searchView);
+                masterSelectItem.setTitle(R.string.demaster_word);
                 return false;
             });
 
@@ -158,6 +177,8 @@ public class ImportVdataFragment extends Fragment {
                         }
                         item.setOnMenuItemClickListener(menuItem -> {
                             item.setChecked(true);
+                            allVDataItem.setChecked(true);
+                            masterSelectItem.setTitle(R.string.mastered_word);
                             vdataViewModel.setVocabType(v);
                             sharedViewModel.setSubTitle(s);
                             return false;
@@ -168,6 +189,8 @@ public class ImportVdataFragment extends Fragment {
                 allVDataItem.setChecked(true);
                 searchMenuItem.setVisible(true);
                 setSearchWordView(searchView);
+                MenuItem masterWord = menu.findItem(R.id.action_master_select_word);
+                masterWord.setVisible(true);
                 menu.setGroupVisible(R.id.vocab_data_menu_group, true);
                 menu.setGroupCheckable(R.id.vocab_data_menu_group, true, true);
             } else {
@@ -177,6 +200,30 @@ public class ImportVdataFragment extends Fragment {
         });
         inflater.inflate(R.menu.main, menu);
         super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_clear_select:
+                exitSelectMode();
+                return true;
+            case R.id.action_master_select_word:
+                if (getString(R.string.mastered_word).contentEquals(item.getTitle())) {
+                    masterWordDialog(adapter.getSelectedItem());
+                } else {
+                    delMasterWord(adapter.getSelectedItem());
+                }
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private void exitSelectMode() {
+        doneMenuItem.setVisible(false);
+        adapter.exitMultiSelectMode();
+        sharedViewModel.setSubTitle(title.get(defaultVocabType));
     }
 
     private void setSearchWordView(SearchView searchView) {
@@ -239,11 +286,29 @@ public class ImportVdataFragment extends Fragment {
                 if (vList.size() > 0) {
                     vdata_list.setVisibility(View.VISIBLE);
                     tv_vdata_msg.setVisibility(View.GONE);
-                    adapter = new VocabularyAdapter(
-                            context, vList, vocabulary -> {
+                    adapter = new VocabularyAdapter(context, vList);
+                    adapter.setOnInfoClickListener(vocabulary -> {
                         ThreadTask.runOnThread(() -> exerciseRepository
                                         .getWordDetail(vocabulary.getId(), v.getId()),
                                 data -> showDetail(vocabulary, v.getId(), data));
+                    });
+                    adapter.setOnLongClickListener(multiSelectMode -> {
+                        if (multiSelectMode) {
+                            doneMenuItem.setVisible(true);
+                        }
+                    });
+                    adapter.setOnSelectedChanged(size -> {
+                        //change done menu visible by selected size
+                        if (size == 0) {
+                            exitSelectMode();
+                        } else {
+                            doneMenuItem.setVisible(true);
+                            sharedViewModel.setSubTitle(
+                                    String.format(
+                                            getString(R.string.mulit_select_item_title),
+                                            size,
+                                            vList.size()));
+                        }
                     });
                     vdata_list.setLayoutManager(new LinearLayoutManager(context));
                     vdata_list.setAdapter(adapter);
@@ -256,28 +321,42 @@ public class ImportVdataFragment extends Fragment {
         });
     }
 
-    private void setMasterWordList() {
-        vdataViewModel.getVocabType().observe(getViewLifecycleOwner(), v ->
-                //query word list by stage > 10
-                exerciseRepository.getMasterWord(v.getId())
-                        .observe(getViewLifecycleOwner(), vList -> {
-                            if (vList.size() > 0) {
-                                vdata_list.setVisibility(View.VISIBLE);
-                                tv_vdata_msg.setVisibility(View.GONE);
-                                adapter = new VocabularyAdapter(
-                                        context, vList, vocabulary ->
-                                        ThreadTask.runOnThread(() -> exerciseRepository
-                                                        .getWordDetail(vocabulary.getId(), v.getId()),
-                                                data -> delMasterWord(vocabulary.getWord(), data)));
-                                vdata_list.setLayoutManager(new LinearLayoutManager(context));
-                                vdata_list.setAdapter(adapter);
-                            } else {
-                                vdata_list.setVisibility(View.GONE);
-                                tv_vdata_msg.setVisibility(View.VISIBLE);
-                            }
-                            vdata_loading.setVisibility(View.GONE);
-                        })
-        );
+    private void setMasterWordList(VocabType vType) {
+        //query word list by stage > 10
+        ThreadTask.runOnThread(() -> exerciseRepository.getMasterWord(vType.getId()), vList -> {
+            if (vList.size() > 0) {
+                vdata_list.setVisibility(View.VISIBLE);
+                tv_vdata_msg.setVisibility(View.GONE);
+                adapter.setWords(vList);
+                adapter.setOnInfoClickListener(vocabulary ->
+                        ThreadTask.runOnThread(() -> exerciseRepository
+                                        .getWordDetail(vocabulary.getId(), vType.getId()),
+                                data -> delMasterWord(vocabulary.getWord(), data)));
+                adapter.setOnLongClickListener(multiSelectMode -> {
+                    if (multiSelectMode) {
+                        doneMenuItem.setVisible(true);
+                    }
+                });
+                adapter.setOnSelectedChanged(size -> {
+                    //change done menu visible by selected size
+                    if (size == 0) {
+                        exitSelectMode();
+                    } else {
+                        doneMenuItem.setVisible(true);
+                        sharedViewModel.setSubTitle(String.format(
+                                getString(R.string.mulit_select_item_title),
+                                size,
+                                vList.size()));
+                    }
+                });
+                vdata_list.setLayoutManager(new LinearLayoutManager(context));
+                vdata_list.setAdapter(adapter);
+            } else {
+                vdata_list.setVisibility(View.GONE);
+                tv_vdata_msg.setVisibility(View.VISIBLE);
+            }
+            vdata_loading.setVisibility(View.GONE);
+        });
     }
 
     private void delMasterWord(String title, ExerciseData data) {
@@ -290,12 +369,56 @@ public class ImportVdataFragment extends Fragment {
                 .create().show();
     }
 
+    private void delMasterWord(List<Long> data) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(R.string.delete_select_master_word_title)
+                .setMessage(R.string.delete_select_master_word_msg)
+                .setNeutralButton(R.string.dialog_delete,
+                        (dialogInterface, i) -> updateExerciseData(data))
+                .setPositiveButton(R.string.dialog_cancel, null)
+                .create().show();
+    }
+
+    private void masterWordDialog(List<Long> data) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(R.string.add_select_master_word_title)
+                .setMessage(R.string.add_select_master_word_msg)
+                .setPositiveButton(R.string.dialog_ensure,
+                        (dialogInterface, i) -> masterWord(data))
+                .setNegativeButton(R.string.dialog_cancel, null)
+                .create().show();
+    }
+
+    private void masterWord(List<Long> idList) {
+        for (Long id : idList) {
+            exerciseRepository.mastered(id, defaultVocabType.getId());
+        }
+        Toast.makeText(context, "成功添加" + idList.size() + "个!", Toast.LENGTH_SHORT).show();
+    }
+
     private void updateExerciseData(ExerciseData data) {
         //reset exercise data
         data.setTimestamp(new Date());
         data.setStage(1);
         exerciseRepository.update(data);
-        Toast.makeText(context, "删除成功！", Toast.LENGTH_SHORT).show();
+        Toast.makeText(context, "删除成功!", Toast.LENGTH_SHORT).show();
+    }
+
+    private void updateExerciseData(List<Long> idList) {
+        //reset exercise data
+        ThreadTask.runOnThread(() -> exerciseRepository
+                        .getWordListById(idList, defaultVocabType.getId()),
+                dataArray -> {
+                    Date date = new Date();
+                    for (ExerciseData data : dataArray) {
+                        data.setTimestamp(date);
+                        data.setStage(1);
+                    }
+                    exerciseRepository.update(dataArray);
+                    // refresh master word list
+                    setMasterWordList(defaultVocabType);
+                });
+        Toast.makeText(context, "删除成功!", Toast.LENGTH_SHORT).show();
     }
 
     private void showDetail(Vocabulary v, Long vTypeId, ExerciseData data) {

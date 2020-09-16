@@ -3,10 +3,38 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/action_done"
+        android:icon="@drawable/ic_done"
+        android:visible="false"
+        app:showAsAction="always">
+        <menu>
+            <group android:id="@+id/done_menu_group">
+                <item
+                    android:id="@+id/action_clear_select"
+                    android:orderInCategory="200"
+                    android:title="@string/deselect_all"
+                    app:showAsAction="never" />
+                <item
+                    android:id="@+id/action_add_to_vocab_type"
+                    android:orderInCategory="200"
+                    android:title="@string/add_to_vocab_type"
+                    android:visible="false"
+                    app:showAsAction="never" />
+                <item
+                    android:id="@+id/action_master_select_word"
+                    android:orderInCategory="200"
+                    android:title="@string/mastered_word"
+                    android:visible="false"
+                    app:showAsAction="never" />
+            </group>
+        </menu>
+    </item>
+
+    <item
         android:id="@+id/action_search"
         android:visible="false"
         app:actionViewClass="androidx.appcompat.widget.SearchView"
-        app:showAsAction="ifRoom" />
+        app:showAsAction="always" />
 
     <group
         android:id="@+id/vocab_data_menu_group"
@@ -31,12 +59,5 @@
         android:visible="false"
         app:iconTint="@android:color/white"
         app:showAsAction="always" />
-
-    <item
-        android:id="@+id/action_menu"
-        android:orderInCategory="100"
-        android:title="@string/action_settings"
-        android:visible="false"
-        app:showAsAction="never" />
 
 </menu>

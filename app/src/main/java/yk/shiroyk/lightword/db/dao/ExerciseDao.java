@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
+import androidx.room.Transaction;
 import androidx.room.Update;
 
 import java.util.List;
@@ -20,12 +21,20 @@ public interface ExerciseDao {
     @Update
     void update(ExerciseData exercisedata);
 
+    @Transaction
+    @Update
+    void update(ExerciseData[] exerciseData);
+
     @Query("SELECT * FROM exercise_data")
     ExerciseData getAllData();
 
+    @Transaction
+    @Query("SELECT * FROM exercise_data WHERE vtype_id = :vtypeId AND word_id IN (:idList)")
+    ExerciseData[] getWordListById(List<Long> idList, Long vtypeId);
+
     @Query("SELECT vocabulary.* FROM exercise_data, vocabulary WHERE " +
             "stage = 11 AND vtype_id = :vtypeId AND exercise_data.word_id = vocabulary.id")
-    LiveData<List<Vocabulary>> getMasterWord(long vtypeId);
+    List<Vocabulary> getMasterWord(long vtypeId);
 
     @Query("SELECT vocabulary.* FROM exercise_data, vocabulary WHERE " +
             "stage = 11 AND vtype_id = :vtypeId AND exercise_data.word_id = vocabulary.id AND word LIKE :word")

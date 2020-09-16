@@ -18,7 +18,7 @@ public interface VocabDataDao {
 
     @Transaction
     @Insert
-    void insertMany(VocabData[] vocabData);
+    void insert(VocabData[] vocabData);
 
     @Query("SELECT COUNT(word_id) FROM vocab_data WHERE vtype_id = :vtypeId")
     LiveData<Integer> getCount(Long vtypeId);

@@ -31,6 +31,9 @@ public interface VocabTypeDao {
     @Query("SELECT * FROM vocab_type WHERE id = :vtypeId")
     LiveData<VocabType> getVocabTypeById(Long vtypeId);
 
+    @Query("SELECT * FROM vocab_type WHERE id = :vtypeId")
+    VocabType queryVocabTypeById(Long vtypeId);
+
     @Query("SELECT * FROM vocab_type WHERE vocabtype = :vocabtype")
     VocabType getVocabType(String vocabtype);
 

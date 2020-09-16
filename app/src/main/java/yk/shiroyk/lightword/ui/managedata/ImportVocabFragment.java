@@ -12,6 +12,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -19,6 +20,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.AppCompatSpinner;
 import androidx.appcompat.widget.SearchView;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
@@ -39,10 +41,14 @@ import java.util.Arrays;
 import java.util.List;
 
 import yk.shiroyk.lightword.R;
+import yk.shiroyk.lightword.db.entity.VocabData;
+import yk.shiroyk.lightword.db.entity.VocabType;
 import yk.shiroyk.lightword.db.entity.Vocabulary;
 import yk.shiroyk.lightword.db.entity.exercise.Collocation;
 import yk.shiroyk.lightword.db.entity.exercise.Example;
 import yk.shiroyk.lightword.db.entity.exercise.ExerciseList;
+import yk.shiroyk.lightword.repository.VocabDataRepository;
+import yk.shiroyk.lightword.repository.VocabTypeRepository;
 import yk.shiroyk.lightword.repository.VocabularyRepository;
 import yk.shiroyk.lightword.ui.adapter.ExampleDetailAdapter;
 import yk.shiroyk.lightword.ui.adapter.VocabDetailAdapter;
@@ -64,8 +70,11 @@ public class ImportVocabFragment extends Fragment {
     private TextView tv_vocab_msg;
     private FastScrollRecyclerView vocab_list;
     private VocabularyAdapter adapter;
+    private MenuItem doneMenuItem;
 
     private VocabularyRepository vocabularyRepository;
+    private VocabTypeRepository vocabTypeRepository;
+    private VocabDataRepository vocabDataRepository;
     private VocabularyDataManage vocabularyDataManage;
 
     private TextInputEditText et_vocab;
@@ -80,6 +89,8 @@ public class ImportVocabFragment extends Fragment {
         super.onCreate(savedInstanceState);
         sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
         vocabularyRepository = new VocabularyRepository(getActivity().getApplication());
+        vocabTypeRepository = new VocabTypeRepository(getActivity().getApplication());
+        vocabDataRepository = new VocabDataRepository(getActivity().getApplication());
         vocabularyDataManage = new VocabularyDataManage(getActivity().getBaseContext());
 
     }
@@ -98,34 +109,67 @@ public class ImportVocabFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        setTitle();
+        setTitleObserve();
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         sharedViewModel.setSubTitle("");
+        if (adapter != null) {
+            adapter.exitMultiSelectMode();
+        }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        adapter.clearSelected();
     }
 
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-        MenuItem newItem = menu.add(R.string.new_item);
-        newItem.setOnMenuItemClickListener(menuItem -> {
+        MenuItem newMenuItem = menu.add(R.string.new_item);
+        newMenuItem.setOnMenuItemClickListener(menuItem -> {
             editVocabDialog(getString(R.string.new_vocab_title), null);
             return false;
         });
         vocabularyRepository.getCount().observe(getViewLifecycleOwner(), i -> {
             MenuItem searchMenuItem = menu.findItem(R.id.action_search);
+            doneMenuItem = menu.findItem(R.id.action_done);
             SearchView searchView = (SearchView) searchMenuItem.getActionView();
             if (i > 0) {
                 searchMenuItem.setVisible(true);
+                MenuItem addVType = menu.findItem(R.id.action_add_to_vocab_type);
+                addVType.setVisible(true);
                 setSearchView(searchView);
-                inflater.inflate(R.menu.main, menu);
             } else {
                 searchMenuItem.setVisible(false);
             }
         });
+        inflater.inflate(R.menu.main, menu);
         super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_clear_select:
+                exitSelectMode();
+                return true;
+            case R.id.action_add_to_vocab_type:
+                setAddVocabDataDialog(adapter.getSelectedItem());
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+
+    }
+
+    private void exitSelectMode() {
+        doneMenuItem.setVisible(false);
+        adapter.exitMultiSelectMode();
+        setTitleObserve();
     }
 
     private void setSearchView(SearchView searchView) {
@@ -151,6 +195,91 @@ public class ImportVocabFragment extends Fragment {
                         });
             }
         });
+    }
+
+    private void setAddVocabDataDialog(List<Long> idList) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+
+        View view = getLayoutInflater().inflate(R.layout.layout_add_vocab_data, null);
+        AppCompatSpinner spinner_vType = view.findViewById(R.id.spinner_vType);
+
+        ThreadTask.runOnThread(() -> vocabTypeRepository.getAllVocabTypes(), vType -> {
+            ArrayAdapter<VocabType> arrayAdapter = new ArrayAdapter<>(
+                    context, android.R.layout.simple_spinner_dropdown_item,
+                    vType
+            );
+            spinner_vType.setAdapter(arrayAdapter);
+        });
+
+        builder.setTitle("添加至词汇分类")
+                .setView(view)
+                .setPositiveButton(R.string.dialog_ensure,
+                        (dialogInterface, i) -> {
+                            VocabType v = (VocabType) spinner_vType.getSelectedItem();
+                            if (v != null)
+                                addToVocabData(idList, v.getId());
+                        })
+                .setNeutralButton(R.string.dialog_create,
+                        (dialogInterface, i) -> setCreateVTypeDialog(idList))
+                .setNegativeButton(R.string.dialog_cancel, null)
+                .create().show();
+    }
+
+    private void setCreateVTypeDialog(List<Long> idList) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        View view = getLayoutInflater().inflate(R.layout.layout_create_vocab_type, null);
+        TextInputEditText et_type = view.findViewById(R.id.et_type);
+
+        builder.setTitle("新建词汇分类")
+                .setView(view)
+                .setPositiveButton(R.string.dialog_ensure, (dialogInterface, i) -> {
+                    String vName = et_type.getText().toString().trim();
+                    if (vName.length() > 0) {
+                        ThreadTask.runOnThread(() -> {
+                            VocabType v = vocabTypeRepository.getVocabType(vName);
+                            if (v == null) {
+                                // if is not exist, create
+                                v = new VocabType();
+                                v.setVocabtype(vName);
+                                v.setAmount(0);
+                                return vocabTypeRepository.insert(v);
+                            } else {
+                                return v.getId();
+                            }
+                        }, vId -> addToVocabData(idList, vId));
+                    }
+                })
+                .setNegativeButton(R.string.dialog_cancel, null)
+                .create().show();
+    }
+
+    private void addToVocabData(List<Long> idList, Long vtypeId) {
+        ThreadTask.runOnThread(() -> {
+                    Vocabulary[] vList = vocabularyRepository
+                            .getWordListById(idList);
+                    List<Long> vDataList = vocabDataRepository.getAllWordId(vtypeId);
+                    List<VocabData> vData = new ArrayList<>();
+                    for (Vocabulary v : vList) {
+                        if (vDataList.contains(v.getId())) {
+                            // if original contain skip
+                            continue;
+                        }
+                        VocabData vD = new VocabData();
+                        vD.setWordId(v.getId());
+                        vD.setFrequency(v.getFrequency());
+                        vD.setVtypeId(vtypeId);
+                        vData.add(vD);
+                    }
+                    // update vocab type amount
+                    VocabType vType = vocabTypeRepository.queryVocabTypeById(vtypeId);
+                    vType.inAmount(vData.size());
+                    vocabTypeRepository.update(vType);
+                    return vData;
+                },
+                vData -> {
+                    vocabDataRepository.insert(vData.toArray(new VocabData[0]));
+                    Toast.makeText(context, "成功添加" + vData.size() + "个!", Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void editVocabDialog(String title, Vocabulary vocabulary) {
@@ -285,6 +414,10 @@ public class ImportVocabFragment extends Fragment {
                         collocation.setMeaning(et_mean.getText().toString().trim());
                         vocabDetailAdapter.notifyDataSetChanged();
                     });
+            builder.setNeutralButton(R.string.dialog_delete, (dialogInterface, i) -> {
+                vocabDetailAdapter.getCollocations().remove(collocation);
+                vocabDetailAdapter.notifyDataSetChanged();
+            });
         } else {
             builder.setTitle("搭配")
                     .setPositiveButton(R.string.dialog_save, (dialogInterface, i) -> {
@@ -321,6 +454,10 @@ public class ImportVocabFragment extends Fragment {
                 example.setExample(et_example.getText().toString().trim());
                 example.setTranslation(et_translation.getText().toString().trim());
                 example.setAnswer(et_answer.getText().toString().trim());
+                exampleDetailAdapter.notifyDataSetChanged();
+            });
+            builder.setNeutralButton(R.string.dialog_delete, (dialogInterface, i) -> {
+                exampleDetailAdapter.getExampleList().remove(example);
                 exampleDetailAdapter.notifyDataSetChanged();
             });
         } else {
@@ -372,21 +509,42 @@ public class ImportVocabFragment extends Fragment {
         this.startActivityForResult(intent, REQUEST_VOCABULARY);
     }
 
-    private void setTitle() {
-        vocabularyRepository.getCount().observe(this,
-                integer -> sharedViewModel.setSubTitle("共" + integer + "条"));
+    private void setTitleObserve() {
+        vocabularyRepository.getCount().observe(getViewLifecycleOwner(),
+                this::setTitle);
     }
+
+    private void setTitle(Integer size) {
+        sharedViewModel.setSubTitle(String.format(
+                getString(R.string.total_of), size));
+    }
+
 
     private void setVocabList() {
         vocabularyRepository.getAllWordList().observe(getViewLifecycleOwner(), v -> {
             if (v.size() > 0) {
                 vocab_list.setVisibility(View.VISIBLE);
                 tv_vocab_msg.setVisibility(View.GONE);
-                adapter = new VocabularyAdapter(
-                        context, v, vocabulary -> {
-                    editVocabDialog(getString(R.string.edit_vocab_title), vocabulary);
+                adapter = new VocabularyAdapter(context, v);
+                adapter.setOnInfoClickListener(vocabulary ->
+                        editVocabDialog(getString(R.string.edit_vocab_title), vocabulary));
+                adapter.setOnLongClickListener(multiSelectMode -> {
+                    if (multiSelectMode) {
+                        doneMenuItem.setVisible(true);
+                    }
                 });
-
+                adapter.setOnSelectedChanged(size -> {
+                    //change done menu visible by selected size
+                    if (size == 0) {
+                        exitSelectMode();
+                    } else {
+                        doneMenuItem.setVisible(true);
+                        sharedViewModel.setSubTitle(String.format(
+                                getString(R.string.mulit_select_item_title),
+                                size,
+                                v.size()));
+                    }
+                });
                 vocab_list.setLayoutManager(new LinearLayoutManager(context));
                 vocab_list.setAdapter(adapter);
             } else {
@@ -395,14 +553,6 @@ public class ImportVocabFragment extends Fragment {
             }
             vocab_loading.setVisibility(View.GONE);
         });
-    }
-
-    private void showDetail(String title, String detail) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle(title)
-                .setMessage(detail)
-                .setPositiveButton(R.string.dialog_cancel, null)
-                .create().show();
     }
 
     @Override

@@ -39,6 +39,10 @@ public class VocabTypeRepository {
         return vocabTypeDao.getVocabTypeById(vtypeId);
     }
 
+    public VocabType queryVocabTypeById(Long vtypeId) {
+        return vocabTypeDao.queryVocabTypeById(vtypeId);
+    }
+
     public VocabType getVocabType(String name) {
         return vocabTypeDao.getVocabType(name);
     }

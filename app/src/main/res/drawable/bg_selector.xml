@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@null" android:state_selected="true">
+        <shape>
+            <solid android:color="?attr/colorPrimary" />
+        </shape>
+    </item>
+
+    <item android:drawable="@drawable/bg_item" android:state_selected="false"></item>
+</selector>

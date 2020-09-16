@@ -41,6 +41,7 @@
     <string name="dialog_default" translatable="false">默认</string>
     <string name="dialog_url" translatable="false">下载地址</string>
     <string name="dialog_delete" translatable="false">删除</string>
+    <string name="dialog_create" translatable="false">新建</string>
     <string name="dialog_save" translatable="false">保存</string>
 
     <string name="crash_send_failed" translatable="false">发送崩溃日志失败！</string>
@@ -63,6 +64,7 @@
     <string name="create_vdata" translatable="false">新建词汇</string>
     <string name="data_clone" translatable="false">数据克隆</string>
     <string name="delete_master_word_msg" translatable="false">是否将该词汇从已掌握列表删除？</string>
+    <string name="delete_select_master_word_msg" translatable="false">是否将这些词汇从已掌握列表删除？</string>
     <string name="dialog_btn_mastered" translatable="false">已掌握</string>
     <string name="add_master_word_succuess_msg" translatable="false">%s 添加到已掌握列表成功！</string>
     <string name="no_exercise_data" translatable="false">暂无练习数据</string>
@@ -72,6 +74,7 @@
     <string name="importing">导入中...</string>
     <string name="pos">词性</string>
     <string name="meaning">词义</string>
+    <string name="vocab_type">词汇分类</string>
     <string name="example">例句</string>
     <string name="translation">翻译</string>
     <string name="answer">回答</string>
@@ -92,7 +95,15 @@
     <string name="vocab_delete_success">%s 删除成功！</string>
     <string name="all_vocabdata">全部词汇</string>
     <string name="mastered_word">已经掌握</string>
+    <string name="demaster_word">取消掌握</string>
     <string name="action_info" translatable="false">info</string>
     <string name="mean_and_pos">词义与词性</string>
     <string name="pronounce">读音</string>
+    <string name="mulit_select_item_title">%d/%d</string>
+    <string name="total_of">共%d条</string>
+    <string name="deselect_all">退出选择</string>
+    <string name="add_to_vocab_type">添加到词汇分类</string>
+    <string name="delete_select_master_word_title">取消掌握已选择</string>
+    <string name="add_select_master_word_title">掌握已选择</string>
+    <string name="add_select_master_word_msg">是否将这些词汇添加至已掌握列表？</string>
 </resources>

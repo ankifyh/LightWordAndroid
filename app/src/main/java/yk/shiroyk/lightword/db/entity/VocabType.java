@@ -49,6 +49,10 @@ public class VocabType {
         this.amount = amount;
     }
 
+    public void inAmount(Integer amount) {
+        this.amount += amount;
+    }
+
     @Override
     public String toString() {
         return vocabtype.isEmpty() ? alias : vocabtype + " (" + amount + ")";

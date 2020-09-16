@@ -47,11 +47,19 @@ public class ExerciseRepository {
         ThreadTask.runOnThread(() -> exerciseDao.update(data));
     }
 
+    public void update(ExerciseData[] data) {
+        ThreadTask.runOnThread(() -> exerciseDao.update(data));
+    }
+
+    public ExerciseData[] getWordListById(List<Long> idList, Long vtypeId) {
+        return exerciseDao.getWordListById(idList, vtypeId);
+    }
+
     public ExerciseData getWordDetail(Long wordId, Long vtypeId) {
         return exerciseDao.getWordDetail(wordId, vtypeId);
     }
 
-    public LiveData<List<Vocabulary>> getMasterWord(Long vtypeId) {
+    public List<Vocabulary> getMasterWord(Long vtypeId) {
         return exerciseDao.getMasterWord(vtypeId);
     }
 

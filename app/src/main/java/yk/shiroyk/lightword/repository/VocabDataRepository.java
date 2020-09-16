@@ -41,6 +41,6 @@ public class VocabDataRepository {
     }
 
     public void insert(VocabData[] v) {
-        ThreadTask.runOnThread(() -> vocabDataDao.insertMany(v));
+        ThreadTask.runOnThread(() -> vocabDataDao.insert(v));
     }
 }
