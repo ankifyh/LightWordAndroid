@@ -56,6 +56,7 @@ public class HomeFragment extends Fragment {
 
     private TextView tv_home_title;
     private TextView tv_home_subtitle;
+    private TextView tv_home_review;
     private LineChart home_chart;
     private AppCompatButton home_chart_menu;
     private RecyclerView home_timeline;
@@ -81,6 +82,7 @@ public class HomeFragment extends Fragment {
     private void init(View root) {
         tv_home_title = root.findViewById(R.id.tv_home_title);
         tv_home_subtitle = root.findViewById(R.id.tv_home_subtitle);
+        tv_home_review = root.findViewById(R.id.tv_home_review);
         home_chart = root.findViewById(R.id.home_chart);
         home_chart_menu = root.findViewById(R.id.home_chart_menu);
         home_timeline = root.findViewById(R.id.home_timeline);
@@ -90,21 +92,33 @@ public class HomeFragment extends Fragment {
         setChartMenu();
     }
 
-    private void setHomeCard() {
+    private void setHomeCardTitle() {
         String preValue = sp.getString("vtypeId", "1");
 
-        vocabTypeRepository.getVocabTypeById(Long.valueOf(preValue)).observe(getViewLifecycleOwner(), vocabType ->
-                exerciseRepository.getExerciseProgress(Long.valueOf(preValue)).observe(getViewLifecycleOwner(), integer -> {
-                    if (vocabType != null) {
-                        tv_home_title.setText(vocabType.getVocabtype());
-                        tv_home_subtitle.setVisibility(View.VISIBLE);
-                        tv_home_subtitle.setText(integer + "/" + vocabType.getAmount());
-                    } else {
-                        tv_home_title.setText("暂无数据");
-                        tv_home_subtitle.setVisibility(View.INVISIBLE);
-                    }
-
-                }));
+        vocabTypeRepository.getVocabTypeById(Long.valueOf(preValue)).observe(getViewLifecycleOwner(), vocabType -> {
+            exerciseRepository.getExerciseProgress(Long.valueOf(preValue)).observe(getViewLifecycleOwner(), integer -> {
+                if (vocabType != null) {
+                    tv_home_title.setText(vocabType.getVocabtype());
+                    tv_home_subtitle.setVisibility(View.VISIBLE);
+                    tv_home_subtitle.setText(
+                            String.format(getString(R.string.string_home_progress),
+                                    integer, vocabType.getAmount()));
+                } else {
+                    tv_home_title.setText("暂无数据");
+                    tv_home_subtitle.setVisibility(View.INVISIBLE);
+                }
+            });
+            exerciseRepository.getExerciseReview(Long.valueOf(preValue)).observe(getViewLifecycleOwner(), integer -> {
+                if (vocabType != null) {
+                    tv_home_review.setVisibility(View.VISIBLE);
+                    tv_home_review.setText(
+                            String.format(getString(R.string.string_home_review),
+                                    integer));
+                } else {
+                    tv_home_review.setVisibility(View.INVISIBLE);
+                }
+            });
+        });
     }
 
     private LineData setChartData(List<UserStatistic> recentDays) {
@@ -241,7 +255,7 @@ public class HomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        setHomeCard();
+        setHomeCardTitle();
         setHomeChart(7);
     }
 

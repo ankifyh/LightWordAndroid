@@ -26,23 +26,24 @@
             android:src="@drawable/home_card_bg" />
 
 
-        <LinearLayout
+        <RelativeLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_gravity="center_vertical"
-            android:layout_marginStart="20dp"
+            android:layout_margin="20dp"
             android:orientation="vertical">
 
             <TextView
                 android:id="@+id/tv_home_title"
                 android:layout_width="200dp"
-                android:layout_height="35dp"
-                android:gravity="bottom"
+                android:layout_height="40dp"
+                android:layout_centerVertical="true"
                 android:scrollbars="none"
+                android:gravity="center_vertical"
                 android:text="@string/string_home_vtype"
                 android:textAppearance="@style/TextAppearance.AppCompat.Body1"
                 android:textColor="@android:color/white"
-                app:autoSizeMaxTextSize="24sp"
+                app:autoSizeMaxTextSize="26sp"
                 app:autoSizeMinTextSize="18sp"
                 app:autoSizeStepGranularity="1sp"
                 app:autoSizeTextType="uniform" />
@@ -51,33 +52,35 @@
                 android:id="@+id/tv_home_subtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_above="@+id/tv_home_review"
                 android:layout_gravity="bottom"
                 android:text="@string/string_home_progress"
                 android:textColor="@android:color/white" />
 
-        </LinearLayout>
+            <TextView
+                android:id="@+id/tv_home_review"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:layout_gravity="bottom"
+                android:text="@string/string_home_review"
+                android:textColor="@android:color/white" />
 
-        <LinearLayout
+        </RelativeLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_start_exercise"
+            style="@style/Widget.AppCompat.Button.Borderless"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
             android:layout_margin="10dp"
-            android:orientation="vertical">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_start_exercise"
-                style="@style/Widget.AppCompat.Button.Borderless"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end"
-                android:text="开始学习"
-                android:textColor="@android:color/white"
-                android:textSize="16sp"
-                app:backgroundTint="@android:color/transparent"
-                app:cornerRadius="5dp"
-                app:rippleColor="#4FFFFFFF" />
-
-        </LinearLayout>
+            android:text="@string/start_learn"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            app:backgroundTint="@android:color/transparent"
+            app:cornerRadius="5dp"
+            app:rippleColor="#4FFFFFFF" />
 
     </androidx.cardview.widget.CardView>
 

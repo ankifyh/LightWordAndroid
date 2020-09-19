@@ -158,6 +158,10 @@ public class ExerciseRepository {
         return exerciseDao.getExerciseProgress(vtypeId);
     }
 
+    public LiveData<Integer> getExerciseReview(Long vtypeId) {
+        return exerciseDao.getExerciseReview(vtypeId);
+    }
+
     public void insert(ExerciseData e) {
         ThreadTask.runOnThread(() -> exerciseDao.insert(e));
     }

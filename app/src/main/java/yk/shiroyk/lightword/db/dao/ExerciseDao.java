@@ -43,6 +43,11 @@ public interface ExerciseDao {
     @Query("SELECT count(word_id) FROM exercise_data WHERE vtype_id = :vtypeId")
     LiveData<Integer> getExerciseProgress(long vtypeId);
 
+    @Query("SELECT count(word_id) FROM exercise_data " +
+            "WHERE vtype_id = :vtypeId " +
+            "AND timestamp <= strftime('%s','now') * 1000")
+    LiveData<Integer> getExerciseReview(long vtypeId);
+
     @Query("SELECT * FROM exercise_data " +
             "WHERE exercise_data.word_id = :wordId " +
             "AND exercise_data.vtype_id = :vtypeId ")

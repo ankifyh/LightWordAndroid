@@ -28,7 +28,8 @@
     <string name="exercise_fragment_target_dialog_title" translatable="false">今日目标已完成！(%d/%d)</string>
 
     <string name="home_fragment_card_not_found_data" translatable="false">暂无数据</string>
-    <string name="string_home_progress" translatable="false">0/4598</string>
+    <string name="string_home_progress" translatable="false">以学习 %d/%d</string>
+    <string name="string_home_review" translatable="false">待复习 %d</string>
     <string name="string_home_vtype" translatable="false">CET4</string>
 
     <string name="import_vdata_submenu" translatable="false">词汇数据</string>
@@ -106,4 +107,5 @@
     <string name="delete_select_master_word_title">取消掌握已选择</string>
     <string name="add_select_master_word_title">掌握已选择</string>
     <string name="add_select_master_word_msg">是否将这些词汇添加至已掌握列表？</string>
+    <string name="start_learn">开始学习</string>
 </resources>
