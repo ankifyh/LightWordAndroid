@@ -403,6 +403,7 @@ public class ImportVdataFragment extends Fragment {
         data.setTimestamp(new Date());
         data.setStage(1);
         exerciseRepository.update(data);
+        setMasterWordList(defaultVocabType);
         Toast.makeText(context, "删除成功!", Toast.LENGTH_SHORT).show();
     }
 

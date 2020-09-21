@@ -26,11 +26,9 @@ import yk.shiroyk.lightword.repository.VocabDataRepository;
 import yk.shiroyk.lightword.repository.VocabularyRepository;
 
 public class ExerciseBuild extends ViewModel {
-    private static final String TAG = ExerciseBuild.class.getSimpleName();
-
     public static final int MISSING_VDATA = 10003;
     public static final int PARSE_FAILURE = 10004;
-
+    private static final String TAG = ExerciseBuild.class.getSimpleName();
     private MutableLiveData<List<Exercise>> exerciseList = new MutableLiveData<>();
     private MutableLiveData<Integer> exerciseMsg = new MutableLiveData<>();
 
@@ -98,90 +96,97 @@ public class ExerciseBuild extends ViewModel {
         }
     }
 
+    private String capitalize(String s) {
+        return s.substring(0, 1).toUpperCase()
+                + s.substring(1).toLowerCase();
+    }
+
     private String str_compare(String a, String b) {
         String c = null;
         if (a.equals(b)) {
             c = a;
-        } else if (a.equals(b.substring(0, 1).toUpperCase()
-                + b.substring(1).toLowerCase())) {
+        } else if (a.equals(capitalize(b))) {
             c = a;
         }
         return c;
     }
 
-    private AnswerObject getAnswer(List<String> inflection, String sentence) {
-        AnswerObject answerObject = new AnswerObject();
-        answerObject.answer = null;
+    private Answer getAnswer(List<String> inflection, String sentence) {
+        Answer ans = new Answer();
         String[] st = sentence.split("\\s");
+        String a = null;
+        int index = 0;
 
         for (String w : inflection) {
-
-            String a = null;
-            if (answerObject.answer != null) {
+            if (ans.answer != null) {
                 break;
             } else {
-                answerObject.answerIndex = 0;
+                ans.index = 0;
             }
             for (String s : st) {
-                //一般匹配
-                a = str_compare(s, w);
-                if (a != null) {
-                    answerObject.answer = a;
-                    Log.d(TAG, "一般匹配: " + answerObject.answer +
-                            "  " + answerObject.answerIndex +
-                            "  " + sentence);
-                    break;
-                } else {
-                    answerObject.answerIndex += s.length() + 1;
-                }
-            }
-            if (answerObject.answer == null) {
-                //去除字符匹配
-                answerObject.answerIndex = 0;
-                for (String s : st) {
-
-                    String[] ss = s.split("[^A-Za-z-]");
-                    int sl = 0;
-                    for (String c : ss) {
-                        a = str_compare(c, w);
-                        if (a != null) {
-                            answerObject.answer = a;
-                            answerObject.answerIndex += sl;
-                            Log.d(TAG, "字符匹配: " + answerObject.answer +
-                                    "  " + answerObject.answerIndex +
-                                    "  " + sentence);
+                // eg: find 'ever' in sentence 'I have never, ever, forgive myself.'
+                if (s.length() >= w.length()) {
+                    if (Pattern.matches(".*" + w + ".*", s.toLowerCase())) {
+                        ans.answer = str_compare(s, w);
+                        if (ans.answer != null) {
+                            break;
                         } else {
-                            sl += c.length() > 0 ? c.length() : 1;
+                            // split symbol
+                            String[] ss = s.split("[^A-Za-z]");
+                            int sl = 0;
+                            for (String c : ss) {
+                                ans.answer = str_compare(c, w);
+                                if (ans.answer == null) {
+                                    sl += c.length() > 0 ? c.length() : 1;
+                                }
+                            }
+                            if (ans.answer != null) {
+                                ans.index += sl;
+                                break;
+                            } else {
+//                                Pattern p = Pattern.compile(w + "[A-Za-z]{0,4}");
+//                                Matcher m = p.matcher(s);
+//                                if (m.find()) {
+//                                    ans.answer = m.group();
+//                                    Log.d(TAG, "后缀匹配: " + ans.answer +
+//                                            " " + ans.index +
+//                                            " " + sentence);
+//                                    break;
+//                                }
+                                continue;
+                            }
                         }
                     }
-                    if (answerObject.answer != null) {
-                        break;
-                    } else {
-                        answerObject.answerIndex += s.length() + 1;
-                    }
+                    ans.answer = null;
                 }
+                ans.index += s.length() + 1;
             }
-            if (answerObject.answer == null) {
-                //后缀匹配
-                answerObject.answerIndex = 0;
-                for (String s : st) {
-                    String pattern = w + "[A-Za-z]{0,4}";
-                    Pattern p = Pattern.compile(pattern);
-                    Matcher m = p.matcher(s);
+            if (a == null) {
+                Pattern p = Pattern.compile(w);
+                Matcher m = p.matcher(sentence);
+                if (m.find()) {
+                    a = m.group();
+                    index = m.start();
+                } else {
+                    p = Pattern.compile(capitalize(w));
+                    m = p.matcher(sentence);
                     if (m.find()) {
-                        answerObject.answer = m.group();
-                        Log.d(TAG, "后缀匹配: " + answerObject.answer +
-                                "  " + answerObject.answerIndex +
-                                "  " + sentence);
-                        break;
-                    } else {
-                        answerObject.answerIndex += s.length() + 1;
+                        a = m.group();
+                        index = m.start();
                     }
                 }
             }
         }
-
-        return answerObject;
+        if (ans.answer == null) {
+            ans.answer = a;
+            ans.index = index;
+        } else {
+            if (a != null && a.length() > ans.answer.length()) {
+                ans.answer = a;
+                ans.index = index;
+            }
+        }
+        return ans;
     }
 
     private List<Exercise> buildExercise(List<Long> wordList, boolean status) {
@@ -219,18 +224,20 @@ public class ExerciseBuild extends ViewModel {
                         inflection.add(example.getAnswer());
                     }
 
-                    AnswerObject answerObject = getAnswer(inflection, sentence);
-                    String answer = answerObject.answer;
-                    int answerIndex = answerObject.answerIndex;
+                    Answer ans = getAnswer(inflection, sentence);
+                    String answer = ans.answer;
+                    String translation = example.getTranslation();
+                    int index = ans.index;
                     if (answer == null) {
                         answer = word;
                         sentence = word;
-                        answerIndex = 0;
+                        index = 0;
+                        translation = "";
                     }
                     exercise.setSentence(sentence);
-                    exercise.setTranslation(example.getTranslation());
+                    exercise.setTranslation(translation);
                     exercise.setAnswer(answer);
-                    exercise.setAnswerIndex(answerIndex);
+                    exercise.setAnswerIndex(index);
 
                     exerciseList.add(exercise);
                 } else {
@@ -279,9 +286,9 @@ public class ExerciseBuild extends ViewModel {
         return exerciseList;
     }
 
-    private static class AnswerObject {
+    private static class Answer {
         String answer;
-        Integer answerIndex;
+        Integer index;
     }
 
 }
