@@ -43,7 +43,7 @@
                 android:text="@string/string_home_vtype"
                 android:textAppearance="@style/TextAppearance.AppCompat.Body1"
                 android:textColor="@android:color/white"
-                app:autoSizeMaxTextSize="26sp"
+                app:autoSizeMaxTextSize="24sp"
                 app:autoSizeMinTextSize="18sp"
                 app:autoSizeStepGranularity="1sp"
                 app:autoSizeTextType="uniform" />

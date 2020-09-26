@@ -68,7 +68,10 @@ public class ExerciseBuild extends ViewModel {
         List<Example> examples = collocation.getExample();
         Collections.shuffle(examples);
 
-        return examples.get(0);
+        if (examples.size() > 0)
+            return examples.get(0);
+        else
+            return null;
     }
 
     private String getPronounce(List<String> pronounce) {
@@ -132,32 +135,22 @@ public class ExerciseBuild extends ViewModel {
                             break;
                         } else {
                             // split symbol
-                            String[] ss = s.split("[^A-Za-z]");
+                            String[] ss = s.split("(?!^)\\b");
                             int sl = 0;
                             for (String c : ss) {
                                 ans.answer = str_compare(c, w);
                                 if (ans.answer == null) {
-                                    sl += c.length() > 0 ? c.length() : 1;
+                                    sl += c.length();
+                                } else {
+                                    break;
                                 }
                             }
                             if (ans.answer != null) {
                                 ans.index += sl;
                                 break;
-                            } else {
-//                                Pattern p = Pattern.compile(w + "[A-Za-z]{0,4}");
-//                                Matcher m = p.matcher(s);
-//                                if (m.find()) {
-//                                    ans.answer = m.group();
-//                                    Log.d(TAG, "后缀匹配: " + ans.answer +
-//                                            " " + ans.index +
-//                                            " " + sentence);
-//                                    break;
-//                                }
-                                continue;
                             }
                         }
                     }
-                    ans.answer = null;
                 }
                 ans.index += s.length() + 1;
             }
@@ -217,6 +210,11 @@ public class ExerciseBuild extends ViewModel {
                     exercise.setPartOfSpeech(collocation.getPartOfSpeech());
 
                     Example example = rdExample(collocation);
+                    if (example == null) {
+                        Log.e(TAG, "例句缺失: " + "Word: " + word);
+                        continue;
+                    }
+
                     String sentence = example.getExample();
 
                     if (example.hasAnswer()) {
