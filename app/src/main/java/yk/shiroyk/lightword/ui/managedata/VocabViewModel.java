@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModel;
 import yk.shiroyk.lightword.db.entity.VocabType;
 
 
-public class ImportVdataViewModel extends ViewModel {
+public class VocabViewModel extends ViewModel {
 
     private MutableLiveData<VocabType> vocabType = new MutableLiveData<>();
 

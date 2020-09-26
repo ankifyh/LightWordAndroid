@@ -33,11 +33,13 @@ public interface ExerciseDao {
     ExerciseData[] getWordListById(List<Long> idList, Long vtypeId);
 
     @Query("SELECT vocabulary.* FROM exercise_data, vocabulary WHERE " +
-            "stage = 11 AND vtype_id = :vtypeId AND exercise_data.word_id = vocabulary.id")
+            "stage = 11 AND exercise_data.vtype_id = :vtypeId" +
+            " AND exercise_data.word_id = vocabulary.id")
     List<Vocabulary> getMasterWord(long vtypeId);
 
     @Query("SELECT vocabulary.* FROM exercise_data, vocabulary WHERE " +
-            "stage = 11 AND vtype_id = :vtypeId AND exercise_data.word_id = vocabulary.id AND word LIKE :word")
+            "stage = 11 AND exercise_data.vtype_id = :vtypeId " +
+            " AND exercise_data.word_id = vocabulary.id AND word LIKE :word")
     LiveData<List<Vocabulary>> searchMasterWord(long vtypeId, String word);
 
     @Query("SELECT count(word_id) FROM exercise_data WHERE vtype_id = :vtypeId")

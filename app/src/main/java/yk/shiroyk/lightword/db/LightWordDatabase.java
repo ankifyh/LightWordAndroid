@@ -13,20 +13,17 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 import yk.shiroyk.lightword.db.converter.DateConverter;
 import yk.shiroyk.lightword.db.dao.ExerciseDao;
 import yk.shiroyk.lightword.db.dao.UserStatisticDao;
-import yk.shiroyk.lightword.db.dao.VocabDataDao;
 import yk.shiroyk.lightword.db.dao.VocabTypeDao;
 import yk.shiroyk.lightword.db.dao.VocabularyDao;
 import yk.shiroyk.lightword.db.entity.ExerciseData;
 import yk.shiroyk.lightword.db.entity.UserStatistic;
-import yk.shiroyk.lightword.db.entity.VocabData;
 import yk.shiroyk.lightword.db.entity.VocabType;
 import yk.shiroyk.lightword.db.entity.Vocabulary;
 
 @Database(entities = {ExerciseData.class,
-        VocabData.class,
         VocabType.class,
         Vocabulary.class,
-        UserStatistic.class}, version = 2)
+        UserStatistic.class}, version = 3)
 @TypeConverters(DateConverter.class)
 public abstract class LightWordDatabase extends RoomDatabase {
     @VisibleForTesting
@@ -45,6 +42,40 @@ public abstract class LightWordDatabase extends RoomDatabase {
         }
     };
 
+    private static final Migration MIGRATION_2_3 = new Migration(2, 3) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            // merge vocabulary and vocab_data tables
+            // create new table
+            database.execSQL("CREATE TABLE new_vocabulary "
+                    + " (id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                    + " word TEXT, "
+                    + " vtype_id INTEGER, "
+                    + " frequency INTEGER DEFAULT 99999, "
+                    + " total_correct INTEGER NOT NULL DEFAULT 0, "
+                    + " total_error INTEGER NOT NULL DEFAULT 0, "
+                    + " FOREIGN KEY(vtype_id) REFERENCES vocab_type(id)"
+                    + " ON UPDATE CASCADE ON DELETE CASCADE )");
+
+            database.execSQL("CREATE INDEX index_vocabulary_vtype_id ON new_vocabulary (vtype_id)");
+
+            // copy old table data
+            database.execSQL("INSERT INTO new_vocabulary (word, vtype_id, frequency) "
+                    + " SELECT vocabulary.word, vocab_data.vtype_id, vocabulary.frequency"
+                    + " FROM vocabulary, vocab_data"
+                    + " WHERE vocabulary.id = vocab_data.word_id");
+
+            // drop old table or can rename to *_bk
+            database.execSQL("DROP TABLE vocab_data");
+
+            database.execSQL("DROP TABLE vocabulary");
+
+            // rename new table
+            database.execSQL("ALTER TABLE new_vocabulary RENAME TO vocabulary");
+
+        }
+    };
+
     public static LightWordDatabase getDatabase(final Context context) {
         if (INSTANCE == null) {
             synchronized (LightWordDatabase.class) {
@@ -54,7 +85,9 @@ public abstract class LightWordDatabase extends RoomDatabase {
                             LightWordDatabase.class,
                             DATABASE_NAME
                     )
-                            .addMigrations(MIGRATION_1_2).build();
+                            .addMigrations(MIGRATION_1_2)
+                            .addMigrations(MIGRATION_2_3)
+                            .build();
                 }
             }
         }
@@ -62,8 +95,6 @@ public abstract class LightWordDatabase extends RoomDatabase {
     }
 
     public abstract ExerciseDao exerciseDao();
-
-    public abstract VocabDataDao vocabDataDao();
 
     public abstract VocabTypeDao vocabTypeDao();
 

@@ -1,0 +1,281 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "aaa3d766c294e347006857c59793e830",
+    "entities": [
+      {
+        "tableName": "exercise_data",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `word_id` INTEGER, `vtype_id` INTEGER, `timestamp` INTEGER DEFAULT CURRENT_TIMESTAMP, `last_practice` INTEGER DEFAULT CURRENT_TIMESTAMP, `stage` INTEGER DEFAULT 1, `correct` INTEGER DEFAULT 1, `wrong` INTEGER DEFAULT 0, FOREIGN KEY(`word_id`) REFERENCES `vocabulary`(`id`) ON UPDATE CASCADE ON DELETE CASCADE , FOREIGN KEY(`vtype_id`) REFERENCES `vocab_type`(`id`) ON UPDATE CASCADE ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "wordId",
+            "columnName": "word_id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "vtypeId",
+            "columnName": "vtype_id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": false,
+            "defaultValue": "CURRENT_TIMESTAMP"
+          },
+          {
+            "fieldPath": "lastPractice",
+            "columnName": "last_practice",
+            "affinity": "INTEGER",
+            "notNull": false,
+            "defaultValue": "CURRENT_TIMESTAMP"
+          },
+          {
+            "fieldPath": "stage",
+            "columnName": "stage",
+            "affinity": "INTEGER",
+            "notNull": false,
+            "defaultValue": "1"
+          },
+          {
+            "fieldPath": "correct",
+            "columnName": "correct",
+            "affinity": "INTEGER",
+            "notNull": false,
+            "defaultValue": "1"
+          },
+          {
+            "fieldPath": "wrong",
+            "columnName": "wrong",
+            "affinity": "INTEGER",
+            "notNull": false,
+            "defaultValue": "0"
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "id"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [
+          {
+            "name": "index_exercise_data_word_id",
+            "unique": false,
+            "columnNames": [
+              "word_id"
+            ],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_exercise_data_word_id` ON `${TABLE_NAME}` (`word_id`)"
+          },
+          {
+            "name": "index_exercise_data_vtype_id",
+            "unique": false,
+            "columnNames": [
+              "vtype_id"
+            ],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_exercise_data_vtype_id` ON `${TABLE_NAME}` (`vtype_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "vocabulary",
+            "onDelete": "CASCADE",
+            "onUpdate": "CASCADE",
+            "columns": [
+              "word_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "vocab_type",
+            "onDelete": "CASCADE",
+            "onUpdate": "CASCADE",
+            "columns": [
+              "vtype_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "vocab_type",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `vocabtype` TEXT, `alias` TEXT, `amount` INTEGER DEFAULT 0)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "vocabtype",
+            "columnName": "vocabtype",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "alias",
+            "columnName": "alias",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "amount",
+            "columnName": "amount",
+            "affinity": "INTEGER",
+            "notNull": false,
+            "defaultValue": "0"
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "id"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [
+          {
+            "name": "index_vocab_type_vocabtype",
+            "unique": false,
+            "columnNames": [
+              "vocabtype"
+            ],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_vocab_type_vocabtype` ON `${TABLE_NAME}` (`vocabtype`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "vocabulary",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `word` TEXT, `vtype_id` INTEGER, `frequency` INTEGER, `total_correct` INTEGER NOT NULL DEFAULT 0, `total_error` INTEGER NOT NULL DEFAULT 0, FOREIGN KEY(`vtype_id`) REFERENCES `vocab_type`(`id`) ON UPDATE CASCADE ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "word",
+            "columnName": "word",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "vtypeId",
+            "columnName": "vtype_id",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "frequency",
+            "columnName": "frequency",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "totalCorrect",
+            "columnName": "total_correct",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "totalError",
+            "columnName": "total_error",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "id"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [
+          {
+            "name": "index_vocabulary_vtype_id",
+            "unique": false,
+            "columnNames": [
+              "vtype_id"
+            ],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_vocabulary_vtype_id` ON `${TABLE_NAME}` (`vtype_id`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "vocab_type",
+            "onDelete": "CASCADE",
+            "onUpdate": "CASCADE",
+            "columns": [
+              "vtype_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "user_statistic",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`timestamp` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL DEFAULT CURRENT_TIMESTAMP, `correct` INTEGER, `wrong` INTEGER, `count` INTEGER)",
+        "fields": [
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "CURRENT_TIMESTAMP"
+          },
+          {
+            "fieldPath": "correct",
+            "columnName": "correct",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "wrong",
+            "columnName": "wrong",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "count",
+            "columnName": "count",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "columnNames": [
+            "timestamp"
+          ],
+          "autoGenerate": true
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'aaa3d766c294e347006857c59793e830')"
+    ]
+  }
+}

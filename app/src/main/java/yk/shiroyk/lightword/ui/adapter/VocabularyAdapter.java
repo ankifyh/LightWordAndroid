@@ -63,7 +63,8 @@ public class VocabularyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
 
     public void clearSelected() {
         selectedItem.clear();
-        notifyItemRangeChanged(0, words.size());
+        if (words != null)
+            notifyItemRangeChanged(0, words.size());
     }
 
     public List<Long> getSelectedItem() {

@@ -144,7 +144,7 @@ public class ExerciseFragment extends Fragment {
     private void setWordInfoDialog() {
         if (wordId != null) {
             AlertDialog.Builder builder = new AlertDialog.Builder(context);
-            ThreadTask.runOnThread(() -> vocabularyRepository.queryWordById(wordId), v -> {
+            ThreadTask.runOnThread(() -> vocabularyRepository.queryWordById(wordId, vtypeId), v -> {
                 View view = getLayoutInflater().inflate(R.layout.layout_info_vocab, null);
                 RecyclerView infoList = view.findViewById(R.id.recycler_info_vocab);
 
@@ -153,7 +153,7 @@ public class ExerciseFragment extends Fragment {
                         true);
                 infoList.setLayoutManager(new LinearLayoutManager(context));
                 infoList.setAdapter(infoAdapter);
-                String ex = vocabularyDataManage.readFile(v.getWord());
+                String ex = vocabularyDataManage.readFile(vtypeId, v.getWord());
                 ExerciseList eList = new Gson().fromJson(ex, ExerciseList.class);
                 infoAdapter.setCollocations(eList.getCollocation());
 
@@ -203,7 +203,7 @@ public class ExerciseFragment extends Fragment {
                         R.string.exercise_fragment_today_target), integer, dailyTarget));
                 if (integer == parseInt) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                    builder.setIcon(R.drawable.ic_edit)
+                    builder.setIcon(R.drawable.ic_create)
                             .setTitle(String.format(getString(
                                     R.string.exercise_fragment_target_dialog_title), integer, parseInt))
                             .setNegativeButton(R.string.dialog_ensure, null).create().show();
@@ -444,7 +444,7 @@ public class ExerciseFragment extends Fragment {
                                 .observe(getViewLifecycleOwner(),
                                         msg -> {
                                             switch (msg) {
-                                                case ExerciseBuild.MISSING_VDATA:
+                                                case ExerciseBuild.MISSING_VOCAB:
                                                     tv_tip.setText(R.string.missing_vocab_data);
                                                     break;
                                                 case ExerciseBuild.PARSE_FAILURE:

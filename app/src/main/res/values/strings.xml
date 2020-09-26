@@ -19,7 +19,7 @@
     <string name="exercise_card_sentence" translatable="false">The anesthetic functioned not only in the courtroom, and not only to allow me to see Hanna as if it was someone else who had loved and desired her, someone I knew well but who wasn`t me.</string>
     <string name="exercise_card_meaning" translatable="false">麻醉的；感觉缺失的</string>
     <string name="exercise_card_pos" translatable="false">形容词</string>
-    <string name="exercise_tips" translatable="false">未查询到数据,\n请尝试重新导入词库与词汇数据</string>
+    <string name="exercise_tips" translatable="false">未查询到数据,\n请尝试重新导入词汇数据</string>
     <string name="exercise_data_tips" translatable="false">未找到该单词之前练习的数据</string>
     <string name="exercise_fragment_exclude_dialog_title" translatable="false">是否已掌握该单词？</string>
     <string name="exercise_fragment_exclude_dialog_message" translatable="false">以后将不会再出现在复习计划中，\n如果想取消可在已掌握列表中删除。</string>
@@ -32,11 +32,9 @@
     <string name="string_home_review" translatable="false">待复习 %d</string>
     <string name="string_home_vtype" translatable="false">CET4</string>
 
-    <string name="import_vdata_submenu" translatable="false">词汇数据</string>
-    <string name="import_fragment_title_vocab" translatable="false">词库数据管理</string>
-    <string name="import_fragment_title_vdata" translatable="false">词汇数据管理</string>
-    <string name="import_vdata_type_exist_title" translatable="false">该词汇分类已存在</string>
-    <string name="import_vdata_type_exist_message" translatable="false">是否新增该词汇分类的单词？</string>
+    <string name="import_vocab_data_submenu" translatable="false">词汇数据</string>
+    <string name="import_vocab_type_exist_title" translatable="false">该词汇分类已存在</string>
+    <string name="import_vocab_type_exist_message" translatable="false">是否新增该词汇分类的单词？</string>
     <string name="dialog_ensure" translatable="false">确认</string>
     <string name="dialog_cancel" translatable="false">取消</string>
     <string name="dialog_default" translatable="false">默认</string>
@@ -61,9 +59,7 @@
     <string name="tv_vocab_word_string" translatable="false">abandon</string>
     <string name="import_data" translatable="false">管理数据</string>
     <string name="mastered" translatable="false">已经掌握</string>
-    <string name="create_vocab" translatable="false">新建词库</string>
-    <string name="create_vdata" translatable="false">新建词汇</string>
-    <string name="data_clone" translatable="false">数据克隆</string>
+    <string name="create_vocab" translatable="false">新建词汇</string>
     <string name="delete_master_word_msg" translatable="false">是否将该词汇从已掌握列表删除？</string>
     <string name="delete_select_master_word_msg" translatable="false">是否将这些词汇从已掌握列表删除？</string>
     <string name="dialog_btn_mastered" translatable="false">已掌握</string>
@@ -71,11 +67,12 @@
     <string name="no_exercise_data" translatable="false">暂无练习数据</string>
     <string name="no_mastered_word_msg" translatable="false">没有已掌握的单词</string>
     <string name="missing_vocab_data">未查询到词汇数据，\n请先导入词汇数据。</string>
-    <string name="parse_vocab_data_error">解析词库例句失败，\n请尝试重新导入词库数据。</string>
+    <string name="parse_vocab_data_error">解析词汇例句失败，\n请尝试重新导入词汇数据。</string>
     <string name="importing">导入中...</string>
     <string name="pos">词性</string>
     <string name="meaning">词义</string>
     <string name="vocab_type">词汇分类</string>
+    <string name="create_vocab_type" translatable="false">新建词汇分类</string>
     <string name="example">例句</string>
     <string name="translation">翻译</string>
     <string name="answer">回答</string>
@@ -97,6 +94,7 @@
     <string name="all_vocabdata">全部词汇</string>
     <string name="mastered_word">已经掌握</string>
     <string name="demaster_word">取消掌握</string>
+    <string name="action_create_vocab" translatable="false">vocab</string>
     <string name="action_info" translatable="false">info</string>
     <string name="mean_and_pos">词义与词性</string>
     <string name="pronounce">读音</string>
@@ -108,4 +106,5 @@
     <string name="add_select_master_word_title">掌握已选择</string>
     <string name="add_select_master_word_msg">是否将这些词汇添加至已掌握列表？</string>
     <string name="start_learn">开始学习</string>
+    <string name="not_fount_vocab_type">保存失败，没有词汇分类，请先创建词汇分类！</string>
 </resources>

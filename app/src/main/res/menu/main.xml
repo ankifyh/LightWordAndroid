@@ -15,12 +15,6 @@
                     android:title="@string/deselect_all"
                     app:showAsAction="never" />
                 <item
-                    android:id="@+id/action_add_to_vocab_type"
-                    android:orderInCategory="200"
-                    android:title="@string/add_to_vocab_type"
-                    android:visible="false"
-                    app:showAsAction="never" />
-                <item
                     android:id="@+id/action_master_select_word"
                     android:orderInCategory="200"
                     android:title="@string/mastered_word"
@@ -32,15 +26,24 @@
 
     <item
         android:id="@+id/action_search"
+        android:orderInCategory="100"
         android:visible="false"
         app:actionViewClass="androidx.appcompat.widget.SearchView"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_create_vocab"
+        android:icon="@drawable/ic_create"
+        android:orderInCategory="200"
+        android:title="@string/action_info"
+        android:visible="false"
         app:showAsAction="always" />
 
     <group
         android:id="@+id/vocab_data_menu_group"
         android:visible="false">
         <item
-            android:id="@+id/action_all_vocabdata"
+            android:id="@+id/action_all_vocab"
             android:orderInCategory="100"
             android:title="@string/all_vocabdata"
             app:showAsAction="never" />

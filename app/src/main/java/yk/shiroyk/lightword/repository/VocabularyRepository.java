@@ -5,9 +5,7 @@ import android.app.Application;
 import androidx.core.util.Consumer;
 import androidx.lifecycle.LiveData;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import yk.shiroyk.lightword.db.LightWordDatabase;
 import yk.shiroyk.lightword.db.dao.VocabularyDao;
@@ -23,56 +21,44 @@ public class VocabularyRepository {
         this.vocabularyDao = db.vocabularyDao();
     }
 
-    public List<Vocabulary> getAllWord() {
-        return vocabularyDao.getAllWord();
+    public LiveData<List<Vocabulary>> getAllWordList(Long vtypeId) {
+        return vocabularyDao.getAllWord(vtypeId);
     }
 
-    public LiveData<List<Vocabulary>> getAllWordList() {
-        return vocabularyDao.getAllWordList();
+    public LiveData<Integer> getCount(Long vtypeId) {
+        return vocabularyDao.getCount(vtypeId);
     }
 
-    public LiveData<Integer> getCount() {
-        return vocabularyDao.getCount();
+    public LiveData<Vocabulary> getWordById(Long wordId, Long vtypeId) {
+        return vocabularyDao.getWordById(wordId, vtypeId);
     }
 
-    public LiveData<Vocabulary> getWordById(Long wordId) {
-        return vocabularyDao.getWordById(wordId);
+    public Vocabulary queryWordById(Long wordId, Long vtypeId) {
+        return vocabularyDao.queryWordById(wordId, vtypeId);
     }
 
-    public Vocabulary queryWordById(Long wordId) {
-        return vocabularyDao.queryWordById(wordId);
+    public List<String> getWordString(Long vtypeId) {
+        return vocabularyDao.getWordString(vtypeId);
     }
 
-    public List<String> getWordString() {
-        return vocabularyDao.getWordString();
+    public List<Vocabulary> getWordListById(List<Long> wordId, Long vtypeId) {
+        return vocabularyDao.getWordListById(wordId, vtypeId);
     }
 
-    public Vocabulary[] getWordListById(List<Long> wordId) {
-        return vocabularyDao.getWordListById(wordId);
+    public LiveData<Vocabulary> getWord(String word, Long vtypeId) {
+        return vocabularyDao.getWord(word, vtypeId);
     }
 
-    public LiveData<Vocabulary> getWord(String word) {
-        return vocabularyDao.getWord(word);
+    public Vocabulary queryWord(String word, Long vtypeId) {
+        return vocabularyDao.queryWord(word, vtypeId);
     }
 
-    public Vocabulary queryWord(String word) {
-        return vocabularyDao.queryWord(word);
+    public LiveData<List<Vocabulary>> searchWord(String word, Long vtypeId) {
+        return vocabularyDao.searchWord(word, vtypeId);
     }
 
-    public LiveData<List<Vocabulary>> searchWord(String word) {
-        return vocabularyDao.searchWord(word);
-    }
-
-    public Map<String, Long[]> getWordToFrequencyMap() {
-        Map<String, Long[]> map = new HashMap<>();
-        for (Vocabulary v : vocabularyDao.getAllWord()
-        ) {
-            Long[] data = new Long[2];
-            data[0] = v.getId();
-            data[1] = v.getFrequency();
-            map.put(v.getWord(), data);
-        }
-        return map;
+    public List<Vocabulary> loadNewWord(Long vtypeId, Boolean order, Integer limit) {
+        return vocabularyDao.loadNewWord(vtypeId, order, limit);
     }
 
     public void insert(Vocabulary[] v) {

@@ -23,6 +23,10 @@ public class VocabTypeRepository {
         return vocabTypeDao.update(v);
     }
 
+    public void updateAmount(VocabType v) {
+        ThreadTask.runOnThread(() -> vocabTypeDao.update(v));
+    }
+
     public void delete(VocabType v) {
         ThreadTask.runOnThread(() -> vocabTypeDao.delete(v));
     }

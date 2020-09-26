@@ -9,23 +9,24 @@ import java.io.FileReader;
 import java.io.IOException;
 
 public class VocabularyDataManage {
-    private final String datafile = "vocabluary";
+    private final String datafile = "vocabulary";
     private Context context;
 
     public VocabularyDataManage(Context context) {
         this.context = context;
     }
 
-    private File dataDir() {
-        File dataDir = new File(context.getFilesDir(), datafile);
+    private File dataDir(Long VType) {
+        File dataDir = new File(context.getFilesDir(),
+                datafile + "/" + VType);
         if (!dataDir.exists()) {
             dataDir.mkdirs();
         }
         return dataDir;
     }
 
-    public void overWriteFile(String data, String filename) {
-        File newFile = new File(dataDir(), filename + ".json");
+    public void overWriteFile(String data, Long VType, String filename) {
+        File newFile = new File(dataDir(VType), filename + ".json");
         try {
             FileOutputStream outputStream = new FileOutputStream(newFile);
             outputStream.write(data.getBytes());
@@ -35,22 +36,22 @@ public class VocabularyDataManage {
         }
     }
 
-    public void writeFile(String data, String filename) {
-        File newFile = new File(dataDir(), filename + ".json");
+    public void writeFile(String data, Long VType, String filename) {
+        File newFile = new File(dataDir(VType), filename + ".json");
         if (!newFile.exists()) {
-            overWriteFile(data, filename);
+            overWriteFile(data, VType, filename);
         }
     }
 
-    public void deleteFile(String filename) {
-        File file = new File(dataDir(), filename + ".json");
+    public void deleteFile(Long VType, String filename) {
+        File file = new File(dataDir(VType), filename + ".json");
         if (file.exists()) {
             file.delete();
         }
     }
 
-    public String readFile(String filename) {
-        File file = new File(dataDir(), filename + ".json");
+    public String readFile(Long VType, String filename) {
+        File file = new File(dataDir(VType), filename + ".json");
         String line;
         StringBuilder text = new StringBuilder();
         if (file.exists()) {

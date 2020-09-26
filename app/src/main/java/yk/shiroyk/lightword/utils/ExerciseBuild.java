@@ -22,17 +22,15 @@ import yk.shiroyk.lightword.db.entity.exercise.Example;
 import yk.shiroyk.lightword.db.entity.exercise.Exercise;
 import yk.shiroyk.lightword.db.entity.exercise.ExerciseList;
 import yk.shiroyk.lightword.repository.ExerciseRepository;
-import yk.shiroyk.lightword.repository.VocabDataRepository;
 import yk.shiroyk.lightword.repository.VocabularyRepository;
 
 public class ExerciseBuild extends ViewModel {
-    public static final int MISSING_VDATA = 10003;
+    public static final int MISSING_VOCAB = 10003;
     public static final int PARSE_FAILURE = 10004;
     private static final String TAG = ExerciseBuild.class.getSimpleName();
     private MutableLiveData<List<Exercise>> exerciseList = new MutableLiveData<>();
     private MutableLiveData<Integer> exerciseMsg = new MutableLiveData<>();
 
-    private VocabDataRepository vocabDataRepository;
     private ExerciseRepository exerciseRepository;
     private VocabularyRepository vocabularyRepository;
     private VocabularyDataManage vocabularyDataManage;
@@ -41,7 +39,6 @@ public class ExerciseBuild extends ViewModel {
     private String isPronounce;
 
     public void setApplication(Application application) {
-        vocabDataRepository = new VocabDataRepository(application);
         exerciseRepository = new ExerciseRepository(application);
         vocabularyRepository = new VocabularyRepository(application);
         vocabularyDataManage = new VocabularyDataManage(application.getBaseContext());
@@ -182,16 +179,15 @@ public class ExerciseBuild extends ViewModel {
         return ans;
     }
 
-    private List<Exercise> buildExercise(List<Long> wordList, boolean status) {
+    private List<Exercise> buildExercise(List<Vocabulary> wordList, Long vtypeId, boolean status) {
         List<Exercise> exerciseList = new ArrayList<>();
-        Vocabulary[] vocabularies = vocabularyRepository.getWordListById(wordList);
         if (wordList != null) {
             Exercise exercise;
-            for (Vocabulary vocabulary : vocabularies) {
+            for (Vocabulary vocabulary : wordList) {
                 exercise = new Exercise();
 
                 String word = vocabulary.getWord();
-                String ex = vocabularyDataManage.readFile(word);
+                String ex = vocabularyDataManage.readFile(vtypeId, word);
 
                 exercise.setId(vocabulary.getId());
                 exercise.setWord(word);
@@ -239,7 +235,7 @@ public class ExerciseBuild extends ViewModel {
 
                     exerciseList.add(exercise);
                 } else {
-                    Log.e(TAG, "词库例句缺失: " + "Word: " + word);
+                    Log.e(TAG, "词汇例句缺失: " + "Word: " + word);
                 }
             }
         }
@@ -253,11 +249,11 @@ public class ExerciseBuild extends ViewModel {
 
     public void newExercise(Long vtypeId, Integer limit) {
         ThreadTask.runOnThread(() -> {
-            List<Long> idList = vocabDataRepository.loadNewWord(vtypeId, byFrequency, limit);
+            List<Vocabulary> idList = vocabularyRepository.loadNewWord(vtypeId, byFrequency, limit);
             if (idList.size() == 0) {
-                exerciseMsg.postValue(MISSING_VDATA);
+                exerciseMsg.postValue(MISSING_VOCAB);
             }
-            List<Exercise> exercises = buildExercise(idList, false);
+            List<Exercise> exercises = buildExercise(idList, vtypeId, false);
             if (idList.size() != 0 && exercises.size() == 0) {
                 exerciseMsg.postValue(PARSE_FAILURE);
             }
@@ -271,7 +267,8 @@ public class ExerciseBuild extends ViewModel {
             if (idList.size() < limit) {
                 newExercise(vtypeId, limit);
             } else {
-                List<Exercise> exercises = buildExercise(idList, true);
+                List<Vocabulary> wordList = vocabularyRepository.getWordListById(idList, vtypeId);
+                List<Exercise> exercises = buildExercise(wordList, vtypeId, true);
                 if (idList.size() != 0 && exercises.size() == 0) {
                     exerciseMsg.postValue(PARSE_FAILURE);
                 }
