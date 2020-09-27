@@ -153,6 +153,7 @@ public class VocabFragment extends Fragment {
             MenuItem masterSelectItem = menu.findItem(R.id.action_master_select_word);
             SearchView searchView = (SearchView) searchMenuItem.getActionView();
 
+            setSearchViewHide(searchView);
             newVocab.setVisible(true);
             newVocab.setOnMenuItemClickListener(menuItem -> {
                 editVocabDialog(getString(R.string.new_vocab_title), null);
@@ -250,6 +251,16 @@ public class VocabFragment extends Fragment {
             tv_vocab_msg.setVisibility(View.VISIBLE);
             vocab_loading.setVisibility(View.GONE);
         }
+    }
+
+    private void setSearchViewHide(SearchView searchView) {
+        searchView.setOnSearchClickListener(view -> {
+            newVocab.setVisible(false);
+        });
+        searchView.setOnCloseListener(() -> {
+            newVocab.setVisible(true);
+            return false;
+        });
     }
 
     private void setSearchWordView(SearchView searchView) {
