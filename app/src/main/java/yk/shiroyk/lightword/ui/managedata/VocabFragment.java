@@ -841,7 +841,7 @@ public class VocabFragment extends Fragment {
                 }
             } else {
                 if (overWriteNum > 0) {
-                    msg = "导入成功，共覆盖" + overWrite + "条数据";
+                    msg = "导入成功，共覆盖" + overWriteNum + "条数据";
                 } else {
                     msg = "解析失败，未导入数据！";
                 }
