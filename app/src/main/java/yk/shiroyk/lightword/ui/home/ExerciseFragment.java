@@ -328,6 +328,7 @@ public class ExerciseFragment extends Fragment {
             switch (status) {
                 case ExerciseRepository.EXERCISE_NEW:
                     statisticRepository.updateCount();
+                    statisticRepository.updateCorrect();
                     break;
                 case ExerciseRepository.EXERCISE_WRONG:
                     statisticRepository.updateWrong();
@@ -440,20 +441,24 @@ public class ExerciseFragment extends Fragment {
                         tv_tip.setVisibility(View.VISIBLE);
                         exercise_container.setVisibility(View.GONE);
                         tv_translation.setVisibility(View.GONE);
-                        exerciseBuild.getExerciseMsg()
-                                .observe(getViewLifecycleOwner(),
-                                        msg -> {
-                                            switch (msg) {
-                                                case ExerciseBuild.MISSING_VOCAB:
-                                                    tv_tip.setText(R.string.missing_vocab_data);
-                                                    break;
-                                                case ExerciseBuild.PARSE_FAILURE:
-                                                    tv_tip.setText(R.string.parse_vocab_data_error);
-                                                    break;
-                                            }
-                                        });
+                        setExerciseMsgObserve();
                     }
                 });
+    }
+
+    private void setExerciseMsgObserve() {
+        exerciseBuild.getExerciseMsg()
+                .observe(getViewLifecycleOwner(),
+                        msg -> {
+                            switch (msg) {
+                                case ExerciseBuild.MISSING_VOCAB:
+                                    tv_tip.setText(R.string.missing_vocab_data);
+                                    break;
+                                case ExerciseBuild.PARSE_FAILURE:
+                                    tv_tip.setText(R.string.parse_vocab_data_error);
+                                    break;
+                            }
+                        });
     }
 
     private void setCardData(Integer cardIndex) {

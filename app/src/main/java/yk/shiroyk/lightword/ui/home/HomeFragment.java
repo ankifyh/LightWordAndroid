@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -132,8 +131,6 @@ public class HomeFragment extends Fragment {
             correct.add(new Entry(d, day.getCorrect()));
             wrong.add(new Entry(d, day.getWrong()));
             count.add(new Entry(d, day.getCount()));
-            Log.d(TAG, "day " + d + " count " + day.getCount() + " correct "
-                    + day.getCorrect() + " wrong " + day.getWrong());
         }
         int correctColor = ContextCompat.getColor(context, R.color.correctColor);
         int wrongColor = ContextCompat.getColor(context, R.color.errorColor);
@@ -202,7 +199,7 @@ public class HomeFragment extends Fragment {
         YAxis yAxis = home_chart.getAxisLeft();
         yAxis.setTextColor(white);
         yAxis.setGridColor(white);
-        yAxis.setPosition(YAxis.YAxisLabelPosition.INSIDE_CHART);
+//        yAxis.setPosition(YAxis.YAxisLabelPosition.INSIDE_CHART);
         yAxis.setAxisLineColor(white);
         home_chart.getAxisRight().setEnabled(false);
         home_chart.getLegend().setEnabled(false);

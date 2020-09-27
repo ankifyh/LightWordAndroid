@@ -48,8 +48,8 @@
 
     <string-array name="pronounceListArray">
         <item>关闭</item>
-        <item>英音</item>
-        <item>美音</item>
+        <item>读音1</item>
+        <item>读音2</item>
     </string-array>
 
     <string-array name="pronounceEntryArray">

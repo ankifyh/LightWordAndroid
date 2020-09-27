@@ -93,6 +93,7 @@
     <string name="vocab_delete_success">%s 删除成功！</string>
     <string name="all_vocabdata">全部词汇</string>
     <string name="mastered_word">已经掌握</string>
+    <string name="master_word">已掌握(%d)</string>
     <string name="demaster_word">取消掌握</string>
     <string name="action_create_vocab" translatable="false">vocab</string>
     <string name="action_info" translatable="false">info</string>

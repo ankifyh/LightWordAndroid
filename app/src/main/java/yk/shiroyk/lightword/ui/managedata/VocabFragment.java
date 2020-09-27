@@ -175,7 +175,6 @@ public class VocabFragment extends Fragment {
                 setMasterWordList(defaultVType);
                 setSearchMasterWordView(searchView);
                 masterSelectItem.setTitle(R.string.demaster_word);
-                sharedViewModel.setSubTitle(getString(R.string.mastered_word));
                 return false;
             });
 
@@ -709,6 +708,8 @@ public class VocabFragment extends Fragment {
                 vocab_list.setVisibility(View.GONE);
                 tv_vocab_msg.setVisibility(View.VISIBLE);
             }
+            sharedViewModel.setSubTitle(
+                    String.format(getString(R.string.master_word), vList.size()));
             vocab_loading.setVisibility(View.GONE);
         });
     }

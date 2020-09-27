@@ -57,8 +57,7 @@ public class UserStatisticRepository {
         ThreadTask.runOnThread(
                 this::getTodayStatistic,
                 statistic -> {
-                    int correct = statistic.getCorrect() + 1;
-                    statistic.setCorrect(correct);
+                    statistic.upCorrect();
                     update(statistic);
                 });
     }
@@ -67,8 +66,7 @@ public class UserStatisticRepository {
         ThreadTask.runOnThread(
                 this::getTodayStatistic,
                 statistic -> {
-                    int wrong = statistic.getWrong() + 1;
-                    statistic.setWrong(wrong);
+                    statistic.upWrong();
                     update(statistic);
                 });
     }
@@ -77,8 +75,7 @@ public class UserStatisticRepository {
         ThreadTask.runOnThread(
                 this::getTodayStatistic,
                 statistic -> {
-                    int count = statistic.getCount() + 1;
-                    statistic.setCount(count);
+                    statistic.upCount();
                     update(statistic);
                     todayCount.postValue(statistic.getCount());
                 });

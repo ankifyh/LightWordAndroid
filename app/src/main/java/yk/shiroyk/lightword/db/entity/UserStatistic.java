@@ -44,6 +44,13 @@ public class UserStatistic {
         this.correct = correct;
     }
 
+    public void upCorrect() {
+        if (correct != null)
+            correct++;
+        else
+            correct = 1;
+    }
+
     public Integer getWrong() {
         return wrong;
     }
@@ -52,11 +59,25 @@ public class UserStatistic {
         this.wrong = wrong;
     }
 
+    public void upWrong() {
+        if (wrong != null)
+            wrong++;
+        else
+            wrong = 1;
+    }
+
     public Integer getCount() {
         return count;
     }
 
     public void setCount(Integer count) {
         this.count = count;
+    }
+
+    public void upCount() {
+        if (count != null)
+            count++;
+        else
+            count = 1;
     }
 }
