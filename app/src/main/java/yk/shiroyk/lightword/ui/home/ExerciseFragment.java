@@ -293,6 +293,12 @@ public class ExerciseFragment extends Fragment {
 
         });
 
+        exercise_card.setReplayClickLister(view -> {
+            if (initTTSSuccess) {
+                tts.speak(speakString, TextToSpeech.QUEUE_FLUSH, null, "");
+            }
+        });
+
     }
 
     private void reDialog(View view) {
@@ -303,7 +309,7 @@ public class ExerciseFragment extends Fragment {
                     mastered(wordId, vtypeId);
                     exercise_card.showAnswer();
                     if (isSpeech && initTTSSuccess) {
-                        tts.speak(speakString, TextToSpeech.QUEUE_FLUSH, null, "");
+                        tts.speak(speakString, TextToSpeech.QUEUE_FLUSH, null, "next");
                     } else {
                         getNextCardSync();
                     }
@@ -320,6 +326,7 @@ public class ExerciseFragment extends Fragment {
     }
 
     private void mastered(Long wordId, Long vtypeId) {
+        Toast.makeText(context, answer + " 添加到已经掌握成功！", Toast.LENGTH_SHORT).show();
         exerciseRepository.mastered(wordId, vtypeId);
     }
 
@@ -344,9 +351,7 @@ public class ExerciseFragment extends Fragment {
         if (cardIndex > 0) {
             cardIndex -= 1;
             setCardData(cardIndex);
-            exercise_card.startExerciseCardAnim();
-            exercise_card.setAnswerVisibility(View.INVISIBLE);
-            exercise_card.setPronounceVisibility(View.VISIBLE);
+            setPronounceAndReplayVisible();
             if (cardIndex == 0) {
                 btn_prev_card.setVisibility(View.INVISIBLE);
             }
@@ -363,7 +368,7 @@ public class ExerciseFragment extends Fragment {
                     remember(wordId, vtypeId);
 
                     if (isSpeech && initTTSSuccess) {
-                        tts.speak(speakString, TextToSpeech.QUEUE_FLUSH, null, "");
+                        tts.speak(speakString, TextToSpeech.QUEUE_FLUSH, null, "next");
                     } else {
                         getNextCardSync();
                     }
@@ -382,10 +387,20 @@ public class ExerciseFragment extends Fragment {
             setCardData(cardIndex);
             exercise_card.startExerciseCardAnim();
             btn_prev_card.setVisibility(View.VISIBLE);
-            if (currentCard <= cardIndex) {
-                exercise_card.setAnswerVisibility(View.VISIBLE);
-                exercise_card.setPronounceVisibility(View.GONE);
-            }
+            setPronounceAndReplayVisible();
+        }
+    }
+
+    private void setPronounceAndReplayVisible() {
+        if (currentCard <= cardIndex) {
+            exercise_card.setAnswerVisibility(View.VISIBLE);
+            exercise_card.setPronounceVisibility(View.GONE);
+            exercise_card.setReplayVisibility(View.GONE);
+        } else {
+            exercise_card.setAnswerVisibility(View.INVISIBLE);
+            exercise_card.setPronounceVisibility(View.VISIBLE);
+            if (initTTSSuccess)
+                exercise_card.setReplayVisibility(View.VISIBLE);
         }
     }
 
@@ -398,7 +413,7 @@ public class ExerciseFragment extends Fragment {
             btn_prev_card.setVisibility(View.VISIBLE);
             exercise_card.clearAnswer();
             exercise_card.startExerciseCardAnim();
-            exercise_card.setAnswerVisibility(View.VISIBLE);
+            setPronounceAndReplayVisible();
         } else {
             getCardData(10);
         }
@@ -519,7 +534,8 @@ public class ExerciseFragment extends Fragment {
 
         @Override
         public void onDone(String s) {
-            ((MainActivity) context).runOnUiThread(ExerciseFragment.this::getNextCard);
+            if ("next".equals(s))
+                ((MainActivity) context).runOnUiThread(ExerciseFragment.this::getNextCard);
         }
 
         @Override

@@ -78,7 +78,6 @@
             android:text="@string/start_learn"
             android:textColor="@android:color/white"
             android:textSize="16sp"
-            app:backgroundTint="@android:color/transparent"
             app:cornerRadius="5dp"
             app:rippleColor="#4FFFFFFF" />
 

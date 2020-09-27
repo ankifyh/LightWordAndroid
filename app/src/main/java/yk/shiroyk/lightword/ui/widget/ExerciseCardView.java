@@ -13,6 +13,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -47,6 +48,7 @@ public class ExerciseCardView extends CardView {
     private View second_view_answer;
     private TextView tv_card_meaning;
     private TextView tv_pronounce;
+    private ImageView btn_replay;
 
     public ExerciseCardView(@NonNull Context context) {
         super(context);
@@ -77,6 +79,7 @@ public class ExerciseCardView extends CardView {
         second_view_answer = findViewById(R.id.second_view_answer);
         tv_card_meaning = findViewById(R.id.tv_card_meaning);
         tv_pronounce = findViewById(R.id.tv_pronounce);
+        btn_replay = findViewById(R.id.btn_replay);
 
         setCardTypeface();
     }
@@ -159,6 +162,10 @@ public class ExerciseCardView extends CardView {
         tv_pronounce.setVisibility(visibility);
     }
 
+    public void setReplayVisibility(int visibility) {
+        btn_replay.setVisibility(visibility);
+    }
+
     public void clearAnswer() {
         et_card_answer.setText("");
     }
@@ -209,5 +216,9 @@ public class ExerciseCardView extends CardView {
 
     public void etAnswerTextChangedListener(TextWatcher watcher) {
         et_card_answer.addTextChangedListener(watcher);
+    }
+
+    public void setReplayClickLister(OnClickListener listener) {
+        btn_replay.setOnClickListener(listener);
     }
 }
