@@ -71,6 +71,10 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         targetPreference.setOnBindEditTextListener(editText ->
                 editText.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED));
 
+        EditTextPreference cardQuantity = findPreference("cardQuantity");
+        cardQuantity.setOnBindEditTextListener(editText ->
+                editText.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED));
+
         Preference systemTTS = findPreference("systemTTS");
         systemTTS.setOnPreferenceClickListener(preference -> {
             try {

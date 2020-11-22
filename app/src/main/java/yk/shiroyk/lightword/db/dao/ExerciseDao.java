@@ -37,6 +37,9 @@ public interface ExerciseDao {
             " AND exercise_data.word_id = vocabulary.id")
     List<Vocabulary> getMasterWord(long vtypeId);
 
+    @Query("SELECT * FROM exercise_data WHERE stage = 11")
+    List<ExerciseData> getMastered();
+
     @Query("SELECT vocabulary.* FROM exercise_data, vocabulary WHERE " +
             "stage = 11 AND exercise_data.vtype_id = :vtypeId " +
             " AND exercise_data.word_id = vocabulary.id AND word LIKE :word")

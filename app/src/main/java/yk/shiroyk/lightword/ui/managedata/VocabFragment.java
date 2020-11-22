@@ -62,7 +62,7 @@ import yk.shiroyk.lightword.utils.VocabularyDataManage;
 public class VocabFragment extends Fragment {
 
     private static final String TAG = "ImportVocabFragment";
-    private static int REQUEST_VOCABULARY = 10001;
+    private static final int REQUEST_VOCABULARY = 10001;
 
     private VocabViewModel vocabViewModel;
     private SharedViewModel sharedViewModel;
@@ -149,6 +149,7 @@ public class VocabFragment extends Fragment {
             doneMenuItem = menu.findItem(R.id.action_done);
             newVocab = menu.findItem(R.id.action_create_vocab);
             MenuItem allVocabItem = menu.findItem(R.id.action_all_vocab);
+            MenuItem reviewVocabItem = menu.findItem(R.id.action_review_vocab);
             MenuItem masterItem = menu.findItem(R.id.action_master_word);
             MenuItem masterSelectItem = menu.findItem(R.id.action_master_select_word);
             SearchView searchView = (SearchView) searchMenuItem.getActionView();
@@ -167,6 +168,15 @@ public class VocabFragment extends Fragment {
                 setSearchWordView(searchView);
                 masterSelectItem.setTitle(R.string.mastered_word);
                 sharedViewModel.setSubTitle(defaultVType.toString());
+                return false;
+            });
+
+            reviewVocabItem.setOnMenuItemClickListener(menuItem -> {
+                reviewVocabItem.setChecked(true);
+                exitSelectMode();
+                setReviewWordList(defaultVType);
+                setSearchWordView(searchView);
+                masterSelectItem.setTitle(R.string.mastered_word);
                 return false;
             });
 
@@ -648,41 +658,53 @@ public class VocabFragment extends Fragment {
      * ⬇️
      */
 
+    private void setVocabList(List<Vocabulary> vList) {
+        if (vList.size() > 0) {
+            vocab_list.setVisibility(View.VISIBLE);
+            tv_vocab_msg.setVisibility(View.GONE);
+            adapter = new VocabularyAdapter(context, vList);
+            adapter.setOnInfoClickListener(vocabulary ->
+                    editVocabDialog(getString(R.string.edit_vocab_title), vocabulary));
+            adapter.setOnLongClickListener(multiSelectMode -> {
+                if (multiSelectMode) {
+                    enterSelectMode();
+                }
+            });
+            adapter.setOnSelectedChanged(size -> {
+                //change done menu visible by selected size
+                if (size == 0) {
+                    exitSelectMode();
+                } else {
+                    enterSelectMode();
+                    sharedViewModel.setSubTitle(String.format(
+                            getString(R.string.mulit_select_item_title),
+                            size,
+                            vList.size()));
+                }
+            });
+            vocab_list.setLayoutManager(new LinearLayoutManager(context));
+            vocab_list.setAdapter(adapter);
+        } else {
+            vocab_list.setVisibility(View.GONE);
+            tv_vocab_msg.setVisibility(View.VISIBLE);
+        }
+        vocab_loading.setVisibility(View.GONE);
+    }
+
     private void setWordList() {
         vocabViewModel.getVocabType().observe(getViewLifecycleOwner(), v -> {
-            vocabularyRepository.getAllWordList(v.getId()).observe(getViewLifecycleOwner(), vList -> {
-                if (vList.size() > 0) {
-                    vocab_list.setVisibility(View.VISIBLE);
-                    tv_vocab_msg.setVisibility(View.GONE);
-                    adapter = new VocabularyAdapter(context, vList);
-                    adapter.setOnInfoClickListener(vocabulary ->
-                            editVocabDialog(getString(R.string.edit_vocab_title), vocabulary));
-                    adapter.setOnLongClickListener(multiSelectMode -> {
-                        if (multiSelectMode) {
-                            enterSelectMode();
-                        }
-                    });
-                    adapter.setOnSelectedChanged(size -> {
-                        //change done menu visible by selected size
-                        if (size == 0) {
-                            exitSelectMode();
-                        } else {
-                            enterSelectMode();
-                            sharedViewModel.setSubTitle(String.format(
-                                    getString(R.string.mulit_select_item_title),
-                                    size,
-                                    vList.size()));
-                        }
-                    });
-                    vocab_list.setLayoutManager(new LinearLayoutManager(context));
-                    vocab_list.setAdapter(adapter);
-                } else {
-                    vocab_list.setVisibility(View.GONE);
-                    tv_vocab_msg.setVisibility(View.VISIBLE);
-                }
-                vocab_loading.setVisibility(View.GONE);
-            });
+            vocabularyRepository.getAllWordList(v.getId()).observe(
+                    getViewLifecycleOwner(), this::setVocabList);
         });
+    }
+
+    private void setReviewWordList(VocabType vType) {
+        vocabularyRepository.getAllReviewWord(vType.getId()).observe(
+                getViewLifecycleOwner(), vList -> {
+                    setVocabList(vList);
+                    sharedViewModel.setSubTitle(
+                            String.format(getString(R.string.review_vocab_size), vList.size()));
+                });
     }
 
     private void setMasterWordList(VocabType vType) {

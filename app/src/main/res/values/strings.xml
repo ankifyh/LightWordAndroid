@@ -90,9 +90,13 @@
     <string name="vocab_exist">%s 已存在</string>
     <string name="vocab_exist_msg">是否覆盖？</string>
     <string name="vocab_save_success">%s 保存成功！</string>
+    <string name="vocab_save_fail_collcation_not_null">%s 保存失败，搭配不能为空！</string>
+    <string name="example_del_fail_example_not_null">删除失败，例句不能为空！</string>
     <string name="vocab_delete_success">%s 删除成功！</string>
-    <string name="all_vocabdata">全部词汇</string>
-    <string name="mastered_word">已经掌握</string>
+    <string name="all_vocab">全部词汇</string>
+    <string name="review_vocab">待复习</string>
+    <string name="review_vocab_size">待复习(%d)</string>
+    <string name="mastered_word">已掌握</string>
     <string name="master_word">已掌握(%d)</string>
     <string name="demaster_word">取消掌握</string>
     <string name="action_create_vocab" translatable="false">vocab</string>

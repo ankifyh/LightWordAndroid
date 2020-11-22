@@ -40,6 +40,7 @@ import java.util.Locale;
 
 import yk.shiroyk.lightword.MainActivity;
 import yk.shiroyk.lightword.R;
+import yk.shiroyk.lightword.db.entity.exercise.Collocation;
 import yk.shiroyk.lightword.db.entity.exercise.Example;
 import yk.shiroyk.lightword.db.entity.exercise.Exercise;
 import yk.shiroyk.lightword.db.entity.exercise.ExerciseList;
@@ -73,6 +74,9 @@ public class ExerciseFragment extends Fragment {
     private TextView tv_daily_target;
     private ToggleButton exercise_speech;
 
+    private VocabDetailAdapter vocabDetailAdapter;
+    private ExampleDetailAdapter exampleDetailAdapter;
+
     private TextToSpeech tts;
     private List<Exercise> exerciseList;
     private String dailyTarget;
@@ -80,6 +84,7 @@ public class ExerciseFragment extends Fragment {
     private String answer;
     private Long wordId;
     private Long vtypeId;
+    private Integer cardQuantity = 10;
     private Integer cardIndex = 0;
     private Integer currentCard = 0;
     private String ttsSpeech = "close";
@@ -110,7 +115,7 @@ public class ExerciseFragment extends Fragment {
         setHasOptionsMenu(true);
         init(root);
 
-        getCardData(10);
+        getCardData(cardQuantity);
         setExerciseListObserve();
         setTargetObserve();
         setTargetDialog();
@@ -139,47 +144,6 @@ public class ExerciseFragment extends Fragment {
         });
         inflater.inflate(R.menu.main, menu);
         super.onCreateOptionsMenu(menu, inflater);
-    }
-
-    private void setWordInfoDialog() {
-        if (wordId != null) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(context);
-            ThreadTask.runOnThread(() -> vocabularyRepository.queryWordById(wordId, vtypeId), v -> {
-                View view = getLayoutInflater().inflate(R.layout.layout_info_vocab, null);
-                RecyclerView infoList = view.findViewById(R.id.recycler_info_vocab);
-
-                VocabDetailAdapter infoAdapter = new VocabDetailAdapter(context,
-                        collocation -> setExampleInfoDialog(collocation.getExample()),
-                        true);
-                infoList.setLayoutManager(new LinearLayoutManager(context));
-                infoList.setAdapter(infoAdapter);
-                String ex = vocabularyDataManage.readFile(vtypeId, v.getWord());
-                ExerciseList eList = new Gson().fromJson(ex, ExerciseList.class);
-                infoAdapter.setCollocations(eList.getCollocation());
-
-                builder.setTitle(R.string.mean_and_pos)
-                        .setView(view)
-                        .setNegativeButton(R.string.dialog_cancel, null).create().show();
-            });
-        }
-    }
-
-    private void setExampleInfoDialog(List<Example> examples) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-
-        View view = getLayoutInflater().inflate(R.layout.layout_info_vocab, null);
-        RecyclerView infoList = view.findViewById(R.id.recycler_info_vocab);
-
-        ExampleDetailAdapter infoAdapter = new ExampleDetailAdapter(context,
-                null, true);
-        infoList.setLayoutManager(new LinearLayoutManager(context));
-        infoList.setAdapter(infoAdapter);
-        infoAdapter.setExampleList(examples);
-
-        builder.setTitle(R.string.example)
-                .setView(view)
-                .setNegativeButton(R.string.dialog_cancel, null)
-                .create().show();
     }
 
     private void setTargetObserve() {
@@ -224,8 +188,10 @@ public class ExerciseFragment extends Fragment {
         exercise_speech = root.findViewById(R.id.exercise_speech);
 
         String preValue = sp.getString("vtypeId", "1");
+        String cardValue = sp.getString("cardQuantity", "10");
         dailyTarget = sp.getString("dailyTarget", "0");
         vtypeId = Long.valueOf(preValue);
+        cardQuantity = Integer.parseInt(cardValue);
 
         exercise_card.setOnCardProgressClickListener(this::reDialog);
         exercise_card.setEtAnswerEditorActionListener((textView, i, keyEvent) -> {
@@ -301,6 +267,93 @@ public class ExerciseFragment extends Fragment {
 
     }
 
+    private void setWordInfoDialog() {
+        if (wordId != null) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(context);
+            ThreadTask.runOnThread(() -> vocabularyRepository.queryWordById(wordId, vtypeId), v -> {
+                View view = getLayoutInflater().inflate(R.layout.layout_info_vocab, null);
+                RecyclerView infoList = view.findViewById(R.id.recycler_info_vocab);
+
+                vocabDetailAdapter = new VocabDetailAdapter(context,
+                        this::setExampleInfoDialog, true);
+                infoList.setLayoutManager(new LinearLayoutManager(context));
+                infoList.setAdapter(vocabDetailAdapter);
+                String wordInfo = vocabularyDataManage.readFile(vtypeId, v.getWord());
+                ExerciseList eList = new Gson().fromJson(wordInfo, ExerciseList.class);
+                vocabDetailAdapter.setCollocations(eList.getCollocation());
+
+                builder.setTitle(R.string.mean_and_pos)
+                        .setView(view)
+                        .setNegativeButton(R.string.dialog_save, (dialogInterface, i) -> {
+                            if (eList.getCollocation().size() == 0) {
+                                Toast.makeText(context, String.format(
+                                        getString(R.string.vocab_save_fail_collcation_not_null),
+                                        v.getWord()), Toast.LENGTH_SHORT).show();
+                            } else {
+                                saveVocabulary(v.getWord(), eList);
+                            }
+                        })
+                        .setPositiveButton(R.string.dialog_cancel, null).create().show();
+            });
+        }
+    }
+
+    private void setExampleInfoDialog(Collocation collocation) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+
+        View view = getLayoutInflater().inflate(R.layout.layout_info_vocab, null);
+        RecyclerView infoList = view.findViewById(R.id.recycler_info_vocab);
+
+        exampleDetailAdapter = new ExampleDetailAdapter(context,
+                this::setExampleDialog, true);
+        infoList.setLayoutManager(new LinearLayoutManager(context));
+        infoList.setAdapter(exampleDetailAdapter);
+        exampleDetailAdapter.setExampleList(collocation.getExample());
+
+        builder.setTitle(collocation.getMeaning())
+                .setView(view)
+                .setNeutralButton(R.string.dialog_delete, (dialogInterface, i) -> {
+                    vocabDetailAdapter.getCollocations().remove(collocation);
+                    vocabDetailAdapter.notifyDataSetChanged();
+                })
+                .setNegativeButton(R.string.dialog_cancel, null)
+                .create().show();
+    }
+
+    private void setExampleDialog(Example example) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        View view = getLayoutInflater().inflate(R.layout.item_vocab_detail, null);
+        TextView tv_example = view.findViewById(R.id.tv_detail_title);
+        TextView tv_translation = view.findViewById(R.id.tv_detail_subtitle);
+
+        tv_example.setSingleLine(false);
+        tv_translation.setSingleLine(false);
+
+        tv_example.setText(example.getExample());
+        tv_translation.setText(example.getTranslation());
+
+        builder.setTitle(R.string.example)
+                .setView(view)
+                .setNeutralButton(R.string.dialog_delete, (dialogInterface, i) -> {
+                    if (exampleDetailAdapter.getExampleList().size() > 1) {
+                        exampleDetailAdapter.getExampleList().remove(example);
+                        exampleDetailAdapter.notifyDataSetChanged();
+                    } else {
+                        Toast.makeText(context, R.string.example_del_fail_example_not_null,
+                                Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton(R.string.dialog_cancel, null)
+                .create().show();
+    }
+
+    private void saveVocabulary(String word, ExerciseList eList) {
+        String json = new Gson().toJson(eList, ExerciseList.class);
+        vocabularyDataManage.overWriteFile(json, vtypeId, word);
+        Toast.makeText(context, String.format(
+                getString(R.string.vocab_save_success), word), Toast.LENGTH_SHORT).show();
+    }
+
     private void reDialog(View view) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle(R.string.exercise_fragment_exclude_dialog_title)
@@ -362,7 +415,7 @@ public class ExerciseFragment extends Fragment {
         if (currentCard.equals(cardIndex)) {
             if (correctFlag) {
                 String uAnswer = exercise_card.getAnswerLowerCaseString();
-                if ((answer.length() > 0 && answer.equals(uAnswer)) || inflection.contains(uAnswer)) {
+                if ((answer.length() > 0 && answer.toLowerCase().equals(uAnswer)) || inflection.contains(uAnswer)) {
                     exercise_card.setAnswerBaseLineColor(ExerciseCardView.CORRECT_BASELINE);
                     correctFlag = false;
                     remember(wordId, vtypeId);
@@ -415,7 +468,7 @@ public class ExerciseFragment extends Fragment {
             exercise_card.startExerciseCardAnim();
             setPronounceAndReplayVisible();
         } else {
-            getCardData(10);
+            getCardData(cardQuantity);
         }
         correctFlag = true;
         exercise_card.hideAnswer();

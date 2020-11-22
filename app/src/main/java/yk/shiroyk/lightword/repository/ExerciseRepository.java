@@ -17,12 +17,12 @@ import yk.shiroyk.lightword.utils.CalDate;
 import yk.shiroyk.lightword.utils.ThreadTask;
 
 public class ExerciseRepository {
-    private ExerciseDao exerciseDao;
+    private final ExerciseDao exerciseDao;
     private List<Integer> minList = Arrays.asList(5, 20, 720, 1440, 2880, 5760, 10080, 14436, 46080, 92160);
     public static final int EXERCISE_CORRECT = 10005;
     public static final int EXERCISE_WRONG = 10006;
     public static final int EXERCISE_NEW = 10007;
-    private MutableLiveData<Integer> exerciseStatus = new MutableLiveData<>();
+    private final MutableLiveData<Integer> exerciseStatus = new MutableLiveData<>();
 
     public ExerciseRepository(Application application) {
         LightWordDatabase db = LightWordDatabase.getDatabase(application);
@@ -160,6 +160,16 @@ public class ExerciseRepository {
 
     public LiveData<Integer> getExerciseReview(Long vtypeId) {
         return exerciseDao.getExerciseReview(vtypeId);
+    }
+
+    public void updateMasterStage() {
+        ThreadTask.runOnThread(() -> {
+            List<ExerciseData> dataList = exerciseDao.getMastered();
+            for (ExerciseData data : dataList) {
+                data.setStage(minList.size() + 1);
+                exerciseDao.update(data);
+            }
+        });
     }
 
     public void insert(ExerciseData e) {

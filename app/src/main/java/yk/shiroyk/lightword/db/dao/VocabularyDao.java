@@ -58,6 +58,11 @@ public interface VocabularyDao {
     @Query("SELECT * FROM vocabulary WHERE vtype_id = :vtypeId")
     LiveData<List<Vocabulary>> getAllWord(Long vtypeId);
 
+    @Query("SELECT vocabulary.* FROM exercise_data INNER JOIN vocabulary on " +
+            "vocabulary.id = exercise_data.word_id WHERE exercise_data.vtype_id = :vtypeId " +
+            "AND timestamp <= strftime('%s','now') * 1000 ORDER BY exercise_data.timestamp DESC")
+    LiveData<List<Vocabulary>> getAllReviewWord(Long vtypeId);
+
     @Query("SELECT id FROM vocabulary WHERE vtype_id = :vtypeId")
     List<Long> getAllWordId(Long vtypeId);
 

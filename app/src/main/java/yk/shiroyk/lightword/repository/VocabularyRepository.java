@@ -14,7 +14,7 @@ import yk.shiroyk.lightword.utils.ThreadTask;
 
 public class VocabularyRepository {
 
-    private VocabularyDao vocabularyDao;
+    private final VocabularyDao vocabularyDao;
 
     public VocabularyRepository(Application application) {
         LightWordDatabase db = LightWordDatabase.getDatabase(application);
@@ -23,6 +23,10 @@ public class VocabularyRepository {
 
     public LiveData<List<Vocabulary>> getAllWordList(Long vtypeId) {
         return vocabularyDao.getAllWord(vtypeId);
+    }
+
+    public LiveData<List<Vocabulary>> getAllReviewWord(Long vtypeId) {
+        return vocabularyDao.getAllReviewWord(vtypeId);
     }
 
     public LiveData<Integer> getCount(Long vtypeId) {

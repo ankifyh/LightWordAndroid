@@ -48,6 +48,13 @@
             app:useSimpleSummaryProvider="true" />
 
         <EditTextPreference
+            app:defaultValue="10"
+            app:dialogTitle="设置一组词卡的数量"
+            app:key="cardQuantity"
+            app:title="词卡数量"
+            app:useSimpleSummaryProvider="true" />
+
+        <EditTextPreference
             app:defaultValue="0"
             app:dialogTitle="设置每日目标"
             app:key="dailyTarget"
