@@ -20,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.SearchView;
+import androidx.core.util.Consumer;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -165,7 +166,7 @@ public class VocabFragment extends Fragment {
                 allVocabItem.setChecked(true);
                 exitSelectMode();
                 setWordList();
-                setSearchWordView(searchView);
+                setSearchWordView(searchView, this::searchWord);
                 masterSelectItem.setTitle(R.string.mastered_word);
                 sharedViewModel.setSubTitle(defaultVType.toString());
                 return false;
@@ -175,7 +176,7 @@ public class VocabFragment extends Fragment {
                 reviewVocabItem.setChecked(true);
                 exitSelectMode();
                 setReviewWordList(defaultVType);
-                setSearchWordView(searchView);
+                setSearchWordView(searchView, this::searchReviewWord);
                 masterSelectItem.setTitle(R.string.mastered_word);
                 return false;
             });
@@ -184,7 +185,7 @@ public class VocabFragment extends Fragment {
                 masterItem.setChecked(true);
                 exitSelectMode();
                 setMasterWordList(defaultVType);
-                setSearchMasterWordView(searchView);
+                setSearchWordView(searchView, this::searchMasterWord);
                 masterSelectItem.setTitle(R.string.demaster_word);
                 return false;
             });
@@ -211,7 +212,7 @@ public class VocabFragment extends Fragment {
                 }
                 allVocabItem.setChecked(true);
                 searchMenuItem.setVisible(true);
-                setSearchWordView(searchView);
+                setSearchWordView(searchView, this::searchWord);
                 MenuItem masterWord = menu.findItem(R.id.action_master_select_word);
                 masterWord.setVisible(true);
                 menu.setGroupVisible(R.id.vocab_data_menu_group, true);
@@ -273,59 +274,53 @@ public class VocabFragment extends Fragment {
         });
     }
 
-    private void setSearchWordView(SearchView searchView) {
-        vocabViewModel.getVocabType().observe(getViewLifecycleOwner(), v -> {
-            searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-                @Override
-                public boolean onQueryTextSubmit(String s) {
-                    getResults(s);
-                    return true;
-                }
+    private void setSearchWordView(SearchView searchView, Consumer<String> searchWord) {
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String s) {
+                getResults(s);
+                return true;
+            }
 
-                @Override
-                public boolean onQueryTextChange(String s) {
-                    getResults(s);
-                    return true;
-                }
+            @Override
+            public boolean onQueryTextChange(String s) {
+                getResults(s);
+                return true;
+            }
 
-                private void getResults(String newText) {
-                    vocabularyRepository.searchWord(
-                            "%" + newText + "%", v.getId()).observe(
-                            getViewLifecycleOwner(), words -> {
-                                if (words == null) return;
-                                adapter.setWords(words);
-                            });
-                }
-            });
+            private void getResults(String newText) {
+                searchWord.accept(newText);
+            }
         });
     }
 
-    private void setSearchMasterWordView(SearchView searchView) {
-        vocabViewModel.getVocabType().observe(getViewLifecycleOwner(), vocabType -> {
-            searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-                @Override
-                public boolean onQueryTextSubmit(String s) {
-                    getResults(s);
-                    return true;
-                }
-
-                @Override
-                public boolean onQueryTextChange(String s) {
-                    getResults(s);
-                    return true;
-                }
-
-                private void getResults(String newText) {
-                    exerciseRepository.searchMasterWord(vocabType.getId(),
-                            "%" + newText + "%").observe(
-                            getViewLifecycleOwner(), words -> {
-                                if (words == null) return;
-                                adapter.setWords(words);
-                            });
-                }
-            });
-        });
+    private void searchWord(String word) {
+        vocabularyRepository.searchWord(
+                "%" + word + "%", defaultVType.getId()).observe(
+                getViewLifecycleOwner(), words -> {
+                    if (words == null) return;
+                    adapter.setWords(words);
+                });
     }
+
+    private void searchReviewWord(String word) {
+        vocabularyRepository.searchReviewWord(
+                "%" + word + "%", defaultVType.getId()).observe(
+                getViewLifecycleOwner(), words -> {
+                    if (words == null) return;
+                    adapter.setWords(words);
+                });
+    }
+
+    private void searchMasterWord(String word) {
+        exerciseRepository.searchMasterWord(defaultVType.getId(),
+                "%" + word + "%").observe(
+                getViewLifecycleOwner(), words -> {
+                    if (words == null) return;
+                    adapter.setWords(words);
+                });
+    }
+
 
     private void enterSelectMode() {
         doneMenuItem.setVisible(true);

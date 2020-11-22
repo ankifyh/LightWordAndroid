@@ -29,6 +29,10 @@ public class VocabularyRepository {
         return vocabularyDao.getAllReviewWord(vtypeId);
     }
 
+    public LiveData<List<Vocabulary>> searchReviewWord(String word, Long vtypeId) {
+        return vocabularyDao.searchReviewWord(word, vtypeId);
+    }
+
     public LiveData<Integer> getCount(Long vtypeId) {
         return vocabularyDao.getCount(vtypeId);
     }
