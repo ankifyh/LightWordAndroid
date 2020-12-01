@@ -57,6 +57,7 @@
     <string name="home_timeline_date_string" translatable="false">8/17 共323张</string>
     <string name="home_timeline_statistic_string" translatable="false">266｜57｜82%</string>
     <string name="tv_vocab_word_string" translatable="false">abandon</string>
+    <string name="tv_vocab_statistic" translatable="false">0｜0</string>
     <string name="import_data" translatable="false">管理数据</string>
     <string name="mastered" translatable="false">已经掌握</string>
     <string name="create_vocab" translatable="false">新建词汇</string>
@@ -94,10 +95,18 @@
     <string name="example_del_fail_example_not_null">删除失败，例句不能为空！</string>
     <string name="vocab_delete_success">%s 删除成功！</string>
     <string name="all_vocab">全部词汇</string>
+    <string name="order_vocab">排序方式</string>
+    <string name="order_by_word">词汇</string>
+    <string name="order_by_frequency">词频</string>
+    <string name="order_by_correct">正确次数</string>
+    <string name="order_by_wrong">错误次数</string>
+    <string name="order_by_last_practice">最后练习</string>
+    <string name="order_by_timestamp">下次练习</string>
     <string name="review_vocab">待复习</string>
     <string name="review_vocab_size">待复习(%d)</string>
     <string name="mastered_word">已掌握</string>
     <string name="master_word">已掌握(%d)</string>
+    <string name="collect_word">添加到分类</string>
     <string name="demaster_word">取消掌握</string>
     <string name="action_create_vocab" translatable="false">vocab</string>
     <string name="action_info" translatable="false">info</string>

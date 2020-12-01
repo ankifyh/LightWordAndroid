@@ -3,8 +3,10 @@ package yk.shiroyk.lightword.ui.managedata;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -23,6 +25,7 @@ import androidx.appcompat.widget.SearchView;
 import androidx.core.util.Consumer;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -43,6 +46,7 @@ import java.util.List;
 import yk.shiroyk.lightword.MainActivity;
 import yk.shiroyk.lightword.R;
 import yk.shiroyk.lightword.db.entity.ExerciseData;
+import yk.shiroyk.lightword.db.entity.VocabExercise;
 import yk.shiroyk.lightword.db.entity.VocabType;
 import yk.shiroyk.lightword.db.entity.Vocabulary;
 import yk.shiroyk.lightword.db.entity.exercise.Collocation;
@@ -80,6 +84,7 @@ public class VocabFragment extends Fragment {
     private VocabTypeRepository vocabTypeRepository;
     private VocabularyDataManage vocabularyDataManage;
     private ExerciseRepository exerciseRepository;
+    private SharedPreferences sp;
 
     private TextInputEditText et_vocab;
     private TextInputEditText et_frequency;
@@ -107,6 +112,7 @@ public class VocabFragment extends Fragment {
                              Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_import_vocab, container, false);
         context = root.getContext();
+        sp = PreferenceManager.getDefaultSharedPreferences(context);
         setHasOptionsMenu(true);
         init(root);
         setWordList();
@@ -149,6 +155,7 @@ public class VocabFragment extends Fragment {
             MenuItem searchMenuItem = menu.findItem(R.id.action_search);
             doneMenuItem = menu.findItem(R.id.action_done);
             newVocab = menu.findItem(R.id.action_create_vocab);
+            MenuItem vocabOrder = menu.findItem(R.id.action_vocab_order);
             MenuItem allVocabItem = menu.findItem(R.id.action_all_vocab);
             MenuItem reviewVocabItem = menu.findItem(R.id.action_review_vocab);
             MenuItem masterItem = menu.findItem(R.id.action_master_word);
@@ -213,10 +220,10 @@ public class VocabFragment extends Fragment {
                 allVocabItem.setChecked(true);
                 searchMenuItem.setVisible(true);
                 setSearchWordView(searchView, this::searchWord);
-                MenuItem masterWord = menu.findItem(R.id.action_master_select_word);
-                masterWord.setVisible(true);
+                menu.findItem(R.id.action_master_select_word).setVisible(true);
+                vocabOrder.setVisible(true);
+                menu.findItem(R.id.action_vocab_order_word).setChecked(true);
                 menu.setGroupVisible(R.id.vocab_data_menu_group, true);
-                menu.setGroupCheckable(R.id.vocab_data_menu_group, true, true);
             } else {
                 searchMenuItem.setVisible(false);
                 menu.setGroupVisible(R.id.vocab_data_menu_group, false);
@@ -239,6 +246,30 @@ public class VocabFragment extends Fragment {
                     deMasterWord(adapter.getSelectedItem());
                 }
                 return true;
+            case R.id.action_vocab_order_word:
+                item.setChecked(true);
+                vocabViewModel.setOrderBy(OrderEnum.Word);
+                return true;
+            case R.id.action_vocab_order_frequency:
+                item.setChecked(true);
+                vocabViewModel.setOrderBy(OrderEnum.Frequency);
+                return true;
+            case R.id.action_vocab_order_correct:
+                item.setChecked(true);
+                vocabViewModel.setOrderBy(OrderEnum.Correct);
+                return true;
+            case R.id.action_vocab_order_wrong:
+                item.setChecked(true);
+                vocabViewModel.setOrderBy(OrderEnum.Wrong);
+                return true;
+            case R.id.action_vocab_order_last_practice:
+                item.setChecked(true);
+                vocabViewModel.setOrderBy(OrderEnum.LastPractice);
+                return true;
+            case R.id.action_vocab_order_timestamp:
+                item.setChecked(true);
+                vocabViewModel.setOrderBy(OrderEnum.Timestamp);
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -255,12 +286,18 @@ public class VocabFragment extends Fragment {
 
     private void setDefaultTitle(List<VocabType> vocabTypes) {
         if (vocabTypes.size() > 0) {
-            defaultVType = vocabTypes.get(0);
+            String preValue = sp.getString("vtypeId", "1");
+            for (VocabType v : vocabTypes) {
+                if (v.getId().equals(Long.valueOf(preValue))) {
+                    defaultVType = v;
+                }
+            }
             vocabViewModel.setVocabType(defaultVType);
+            vocabViewModel.setOrderBy(OrderEnum.Word);
             sharedViewModel.setSubTitle(defaultVType.toString());
         } else {
             tv_vocab_msg.setVisibility(View.VISIBLE);
-            vocab_loading.setVisibility(View.GONE);
+            setVocabLoading(false);
         }
     }
 
@@ -317,7 +354,7 @@ public class VocabFragment extends Fragment {
                 "%" + word + "%").observe(
                 getViewLifecycleOwner(), words -> {
                     if (words == null) return;
-                    adapter.setWords(words);
+//                    adapter.setWords(words);
                 });
     }
 
@@ -340,7 +377,7 @@ public class VocabFragment extends Fragment {
      * ⬇️
      */
 
-    private void editVocabDialog(String title, Vocabulary vocabulary) {
+    private void editVocabDialog(String title, VocabExercise vocab) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
 
         View view = getLayoutInflater().inflate(R.layout.layout_edit_vocab, null);
@@ -359,12 +396,12 @@ public class VocabFragment extends Fragment {
         recycler_collocation.setLayoutManager(new LinearLayoutManager(context));
         recycler_collocation.setAdapter(vocabDetailAdapter);
 
-        if (vocabulary != null) {
-            et_vocab.setText(vocabulary.getWord());
-            et_frequency.setText(vocabulary.getFrequency().toString());
+        if (vocab != null) {
+            et_vocab.setText(vocab.word);
+            et_frequency.setText(String.valueOf(vocab.frequency));
             try {
                 String ex = vocabularyDataManage
-                        .readFile(vocabulary.getVtypeId(), vocabulary.getWord());
+                        .readFile(vocab.vtypeId, vocab.word);
                 exerciseList = new Gson().fromJson(ex, ExerciseList.class);
                 et_pronounce.setText(exerciseList.getPronounceString());
                 vocabDetailAdapter.setCollocations(exerciseList.getCollocation());
@@ -373,7 +410,7 @@ public class VocabFragment extends Fragment {
             }
 
             builder.setNeutralButton(R.string.dialog_delete, (dialogInterface, i) -> {
-                delVocabDialog(vocabulary);
+                delVocabDialog(vocab);
             });
         } else {
             builder.setNeutralButton(R.string.create_vocab_type, (dialogInterface, i) -> {
@@ -430,23 +467,21 @@ public class VocabFragment extends Fragment {
         exerciseList.setPronounce(Arrays.asList(et_pronounce.getText().toString().split(",")));
 
         String json = new Gson().toJson(exerciseList, ExerciseList.class);
-        Vocabulary v = new Vocabulary();
-        v.setWord(w);
+
         long fre;
         try {
             fre = Long.parseLong(et_frequency.getText().toString().trim());
         } catch (Exception ignored) {
             fre = 0;
         }
-        v.setFrequency(fre);
-        v.setVtypeId(defaultVType.getId());
+        Vocabulary vocab = new Vocabulary(w, fre, defaultVType.getId());
         if (newVocab) {
-            vocabularyRepository.insert(v, l -> {
+            vocabularyRepository.insert(vocab, l -> {
                 if (l > 0) {
                     vocabularyDataManage.overWriteFile(json, defaultVType.getId(), w);
                     // update vocab type amount
-                    defaultVType.inAmount(1);
-                    vocabTypeRepository.updateAmount(defaultVType);
+                    defaultVType.upAmount(1);
+                    vocabTypeRepository.updateOnThread(defaultVType);
 
                     // refresh option menu
                     getActivity().invalidateOptionsMenu();
@@ -456,8 +491,8 @@ public class VocabFragment extends Fragment {
                 }
             });
         } else {
-            vocabularyRepository.update(v);
-            vocabularyDataManage.overWriteFile(json, v.getVtypeId(), w);
+            vocabularyRepository.update(vocab);
+            vocabularyDataManage.overWriteFile(json, vocab.getVtypeId(), w);
             Toast.makeText(context, String.format(
                     getString(R.string.vocab_save_success), w), Toast.LENGTH_SHORT).show();
         }
@@ -552,17 +587,17 @@ public class VocabFragment extends Fragment {
                 .create().show();
     }
 
-    private void delVocabDialog(Vocabulary vocabulary) {
+    private void delVocabDialog(VocabExercise vocab) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle(R.string.delete_vocab)
-                .setMessage(String.format(getString(R.string.delete_vocab_msg), vocabulary.getWord()))
+                .setMessage(String.format(getString(R.string.delete_vocab_msg), vocab.word))
                 .setPositiveButton(R.string.dialog_delete, (dialogInterface, i) ->
-                        vocabularyRepository.delete(vocabulary, l -> {
+                        vocabularyRepository.delete(new Vocabulary(vocab), l -> {
                             if (l > 0) {
-                                vocabularyDataManage.deleteFile(vocabulary.getVtypeId(), vocabulary.getWord());
+                                vocabularyDataManage.deleteFile(vocab.vtypeId, vocab.word);
                                 Toast.makeText(context, String.format(
                                         getString(R.string.vocab_delete_success),
-                                        vocabulary.getWord()), Toast.LENGTH_SHORT).show();
+                                        vocab.word), Toast.LENGTH_SHORT).show();
                             }
                         }))
                 .setNegativeButton(R.string.dialog_cancel, null)
@@ -653,11 +688,19 @@ public class VocabFragment extends Fragment {
      * ⬇️
      */
 
-    private void setVocabList(List<Vocabulary> vList) {
+    private void setVocabLoading(boolean isLoading) {
+        if (isLoading) {
+            vocab_loading.setVisibility(View.VISIBLE);
+        } else {
+            vocab_loading.setVisibility(View.GONE);
+        }
+    }
+
+    private void setVocabList(List<VocabExercise> vList, OrderEnum orderEnum) {
         if (vList.size() > 0) {
             vocab_list.setVisibility(View.VISIBLE);
             tv_vocab_msg.setVisibility(View.GONE);
-            adapter = new VocabularyAdapter(context, vList);
+            adapter = new VocabularyAdapter(context, vList, orderEnum);
             adapter.setOnInfoClickListener(vocabulary ->
                     editVocabDialog(getString(R.string.edit_vocab_title), vocabulary));
             adapter.setOnLongClickListener(multiSelectMode -> {
@@ -683,36 +726,43 @@ public class VocabFragment extends Fragment {
             vocab_list.setVisibility(View.GONE);
             tv_vocab_msg.setVisibility(View.VISIBLE);
         }
-        vocab_loading.setVisibility(View.GONE);
+        setVocabLoading(false);
     }
 
     private void setWordList() {
         vocabViewModel.getVocabType().observe(getViewLifecycleOwner(), v -> {
-            vocabularyRepository.getAllWordList(v.getId()).observe(
-                    getViewLifecycleOwner(), this::setVocabList);
+            vocabViewModel.getOrderBy().observe(getViewLifecycleOwner(), order -> {
+                setVocabLoading(true);
+                vocabularyRepository.getAllWordListOrderBy(v.getId(), order).observe(
+                        getViewLifecycleOwner(), vList -> setVocabList(vList, order));
+            });
         });
     }
 
     private void setReviewWordList(VocabType vType) {
-        vocabularyRepository.getAllReviewWord(vType.getId()).observe(
-                getViewLifecycleOwner(), vList -> {
-                    setVocabList(vList);
-                    sharedViewModel.setSubTitle(
-                            String.format(getString(R.string.review_vocab_size), vList.size()));
-                });
+        vocabViewModel.getOrderBy().observe(getViewLifecycleOwner(), order -> {
+            setVocabLoading(true);
+            vocabularyRepository.getAllReviewWord(vType.getId(), order).observe(
+                    getViewLifecycleOwner(), vList -> {
+                        setVocabList(vList, order);
+                        sharedViewModel.setSubTitle(
+                                String.format(getString(R.string.review_vocab_size), vList.size()));
+                    });
+        });
     }
 
     private void setMasterWordList(VocabType vType) {
         //query word list by stage > 10
+        setVocabLoading(true);
         ThreadTask.runOnThread(() -> exerciseRepository.getMasterWord(vType.getId()), vList -> {
             if (vList.size() > 0) {
                 vocab_list.setVisibility(View.VISIBLE);
                 tv_vocab_msg.setVisibility(View.GONE);
-                adapter.setWords(vList);
+//                adapter.setWords(vList);
                 adapter.setOnInfoClickListener(vocabulary ->
                         ThreadTask.runOnThread(() -> exerciseRepository
-                                        .getWordDetail(vocabulary.getId(), vType.getId()),
-                                data -> deMasterWord(vocabulary.getWord(), data)));
+                                        .getWordDetail(vocabulary.id, vType.getId()),
+                                data -> deMasterWord(vocabulary.word, data)));
                 adapter.setOnLongClickListener(multiSelectMode -> {
                     if (multiSelectMode) {
                         enterSelectMode();
@@ -738,7 +788,7 @@ public class VocabFragment extends Fragment {
             }
             sharedViewModel.setSubTitle(
                     String.format(getString(R.string.master_word), vList.size()));
-            vocab_loading.setVisibility(View.GONE);
+            setVocabLoading(false);
         });
     }
 
@@ -798,8 +848,9 @@ public class VocabFragment extends Fragment {
             if (overWrite) {
                 wordList = vocabularyRepository
                         .getWordString(vocabType.getId());
+            } else {
+                vocabType.setAmount(lines);
             }
-            vocabType.setAmount(lines);
 
             int overWriteNum = 0;
             List<Vocabulary> vocabList = new ArrayList<>();
@@ -813,13 +864,9 @@ public class VocabFragment extends Fragment {
                     if (line.length == 3) {
                         String word = line[0];
                         if (!wordList.contains(word)) {
-                            Vocabulary vocabulary = new Vocabulary();
                             try {
                                 long frequency = Long.parseLong(line[1]);
-                                vocabulary.setWord(word);
-                                vocabulary.setFrequency(frequency);
-                                vocabulary.setVtypeId(vocabType.getId());
-                                vocabList.add(vocabulary);
+                                vocabList.add(new Vocabulary(word, frequency, vocabType.getId()));
                                 vocabularyDataManage
                                         .writeFile(line[2], vocabType.getId(), word);
                             } catch (NumberFormatException ignored) {
@@ -836,21 +883,21 @@ public class VocabFragment extends Fragment {
                 ex.printStackTrace();
             }
 
-            int count = vocabList.size();
+            int newWordNum = vocabList.size();
 
             String msg;
 
-            if (count > 0) {
+            if (newWordNum > 0) {
                 Vocabulary[] vocab =
-                        vocabList.toArray(new Vocabulary[count]);
+                        vocabList.toArray(new Vocabulary[newWordNum]);
                 vocabularyRepository.insert(vocab);
 
                 msg = "词汇数据导入成功,";
                 if (overWriteNum > 0) {
-                    msg += "新增" + count + "条";
+                    msg += "共导入" + newWordNum + "条数据";
                 } else {
-                    msg += "共导入" + count + "条数据";
-                    vocabType.setAmount(count);
+                    msg += "新增" + newWordNum + "条";
+                    vocabType.upAmount(newWordNum);
                     Integer i = vocabTypeRepository.update(vocabType);
                     if (i.equals(1)) {
                         getActivity().invalidateOptionsMenu();
@@ -863,7 +910,7 @@ public class VocabFragment extends Fragment {
                     msg = "解析失败，未导入数据！";
                 }
             }
-
+            Log.d(TAG, overWriteNum + "  c:" + newWordNum);
             return msg;
         }, msg -> {
             loadingDialog.dismiss();

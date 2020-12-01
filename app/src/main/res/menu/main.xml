@@ -20,6 +20,12 @@
                     android:title="@string/mastered_word"
                     android:visible="false"
                     app:showAsAction="never" />
+                <item
+                    android:id="@+id/action_collect_select_word"
+                    android:orderInCategory="200"
+                    android:title="@string/collect_word"
+                    android:visible="false"
+                    app:showAsAction="never" />
             </group>
         </menu>
     </item>
@@ -39,8 +45,53 @@
         android:visible="false"
         app:showAsAction="always" />
 
+    <item
+        android:id="@+id/action_vocab_order"
+        android:title="@string/order_vocab"
+        android:visible="false"
+        app:showAsAction="never">
+        <menu>
+            <group
+                android:id="@+id/vocab_order_menu_group"
+                android:checkableBehavior="single"
+                android:visible="true">
+                <item
+                    android:id="@+id/action_vocab_order_word"
+                    android:orderInCategory="100"
+                    android:title="@string/order_by_word"
+                    app:showAsAction="never" />
+                <item
+                    android:id="@+id/action_vocab_order_frequency"
+                    android:orderInCategory="100"
+                    android:title="@string/order_by_frequency"
+                    app:showAsAction="never" />
+                <item
+                    android:id="@+id/action_vocab_order_correct"
+                    android:orderInCategory="100"
+                    android:title="@string/order_by_correct"
+                    app:showAsAction="never" />
+                <item
+                    android:id="@+id/action_vocab_order_wrong"
+                    android:orderInCategory="100"
+                    android:title="@string/order_by_wrong"
+                    app:showAsAction="never" />
+                <item
+                    android:id="@+id/action_vocab_order_last_practice"
+                    android:orderInCategory="100"
+                    android:title="@string/order_by_last_practice"
+                    app:showAsAction="never" />
+                <item
+                    android:id="@+id/action_vocab_order_timestamp"
+                    android:orderInCategory="100"
+                    android:title="@string/order_by_timestamp"
+                    app:showAsAction="never" />
+            </group>
+        </menu>
+    </item>
+
     <group
         android:id="@+id/vocab_data_menu_group"
+        android:checkableBehavior="single"
         android:visible="false">
         <item
             android:id="@+id/action_all_vocab"
@@ -55,6 +106,7 @@
         <item
             android:id="@+id/action_master_word"
             android:orderInCategory="200"
+            android:visible="false"
             android:title="@string/mastered_word"
             app:showAsAction="never" />
     </group>

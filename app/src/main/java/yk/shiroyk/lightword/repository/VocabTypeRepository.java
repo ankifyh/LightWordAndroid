@@ -12,7 +12,7 @@ import yk.shiroyk.lightword.db.entity.VocabType;
 import yk.shiroyk.lightword.utils.ThreadTask;
 
 public class VocabTypeRepository {
-    private VocabTypeDao vocabTypeDao;
+    private final VocabTypeDao vocabTypeDao;
 
     public VocabTypeRepository(Application application) {
         LightWordDatabase db = LightWordDatabase.getDatabase(application);
@@ -23,7 +23,7 @@ public class VocabTypeRepository {
         return vocabTypeDao.update(v);
     }
 
-    public void updateAmount(VocabType v) {
+    public void updateOnThread(VocabType v) {
         ThreadTask.runOnThread(() -> vocabTypeDao.update(v));
     }
 

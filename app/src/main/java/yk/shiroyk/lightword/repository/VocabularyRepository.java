@@ -9,7 +9,9 @@ import java.util.List;
 
 import yk.shiroyk.lightword.db.LightWordDatabase;
 import yk.shiroyk.lightword.db.dao.VocabularyDao;
+import yk.shiroyk.lightword.db.entity.VocabExercise;
 import yk.shiroyk.lightword.db.entity.Vocabulary;
+import yk.shiroyk.lightword.ui.managedata.OrderEnum;
 import yk.shiroyk.lightword.utils.ThreadTask;
 
 public class VocabularyRepository {
@@ -25,11 +27,15 @@ public class VocabularyRepository {
         return vocabularyDao.getAllWord(vtypeId);
     }
 
-    public LiveData<List<Vocabulary>> getAllReviewWord(Long vtypeId) {
-        return vocabularyDao.getAllReviewWord(vtypeId);
+    public LiveData<List<VocabExercise>> getAllWordListOrderBy(Long vtypeId, OrderEnum order) {
+        return vocabularyDao.getAllWordOrderBy(vtypeId, order);
     }
 
-    public LiveData<List<Vocabulary>> searchReviewWord(String word, Long vtypeId) {
+    public LiveData<List<VocabExercise>> getAllReviewWord(Long vtypeId, OrderEnum order) {
+        return vocabularyDao.getAllReviewWord(vtypeId, order);
+    }
+
+    public LiveData<List<VocabExercise>> searchReviewWord(String word, Long vtypeId) {
         return vocabularyDao.searchReviewWord(word, vtypeId);
     }
 
@@ -61,7 +67,7 @@ public class VocabularyRepository {
         return vocabularyDao.queryWord(word, vtypeId);
     }
 
-    public LiveData<List<Vocabulary>> searchWord(String word, Long vtypeId) {
+    public LiveData<List<VocabExercise>> searchWord(String word, Long vtypeId) {
         return vocabularyDao.searchWord(word, vtypeId);
     }
 

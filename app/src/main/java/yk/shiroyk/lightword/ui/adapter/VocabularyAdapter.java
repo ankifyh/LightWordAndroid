@@ -1,6 +1,7 @@
 package yk.shiroyk.lightword.ui.adapter;
 
 import android.content.Context;
+import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,24 +13,30 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import yk.shiroyk.lightword.R;
-import yk.shiroyk.lightword.db.entity.Vocabulary;
+import yk.shiroyk.lightword.db.entity.VocabExercise;
+import yk.shiroyk.lightword.ui.managedata.OrderEnum;
 
 public class VocabularyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> implements FastScrollRecyclerView.SectionedAdapter {
     public OnInfoClickListener infoClickListener;
     public OnLongClickListener longClickListener;
     public OnSelectedChanged onSelectedChanged;
-    private Context context;
-    private List<Vocabulary> words;
-    private List<Long> selectedItem = new ArrayList<>();
+    private final Context context;
+    private final List<Long> selectedItem = new ArrayList<>();
+    private final OrderEnum orderEnum;
+    private List<VocabExercise> words;
     private boolean multiSelectMode = false;
 
-    public VocabularyAdapter(Context context, List<Vocabulary> words) {
+    public VocabularyAdapter(Context context, List<VocabExercise> words, OrderEnum orderEnum) {
         this.context = context;
         this.words = words;
+        this.orderEnum = orderEnum;
     }
 
     @NonNull
@@ -41,14 +48,30 @@ public class VocabularyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         ViewHolder viewHolder = (ViewHolder) holder;
-        Vocabulary vocabulary = words.get(position);
-        viewHolder.setBackground(vocabulary.getId());
-        viewHolder.tv_vocab_word.setText(vocabulary.getWord());
+        VocabExercise vocab = words.get(position);
+        viewHolder.setBackground(vocab.id);
+        viewHolder.tv_vocab_word.setText(vocab.word);
         viewHolder.btn_vocab_info.setOnClickListener(view ->
-                infoClickListener.onClick(vocabulary));
+                infoClickListener.onClick(vocab));
         viewHolder.itemView.setOnClickListener(view ->
-                viewHolder.setSelected(vocabulary.getId()));
-
+                viewHolder.setSelected(vocab.id));
+        switch (orderEnum) {
+            case Correct:
+            case Wrong:
+                viewHolder.setVocabCorrectWrong(vocab.correct, vocab.wrong);
+                break;
+            case Frequency:
+                viewHolder.setVocabFrequency(vocab.frequency);
+                break;
+            case LastPractice:
+                viewHolder.setVocabDate(vocab.lastPractice);
+                break;
+            case Timestamp:
+                viewHolder.setVocabDate(vocab.timestamp);
+                break;
+            default:
+                viewHolder.tv_vocab_statistic.setVisibility(View.GONE);
+        }
     }
 
     @Override
@@ -56,8 +79,8 @@ public class VocabularyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         return words.size();
     }
 
-    public void setWords(List<Vocabulary> vocabularyList) {
-        this.words = vocabularyList;
+    public void setWords(List<VocabExercise> vocabExerciseList) {
+        this.words = vocabExerciseList;
         notifyDataSetChanged();
     }
 
@@ -79,11 +102,11 @@ public class VocabularyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     @NonNull
     @Override
     public String getSectionName(int i) {
-        return words.get(i).getWord().substring(0, 1).toUpperCase();
+        return words.get(i).word.substring(0, 1).toUpperCase();
     }
 
     public interface OnInfoClickListener {
-        void onClick(Vocabulary vocabulary);
+        void onClick(VocabExercise vocabExercise);
     }
 
     public void setOnInfoClickListener(OnInfoClickListener infoClickListener) {
@@ -107,13 +130,15 @@ public class VocabularyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     }
 
     private class ViewHolder extends RecyclerView.ViewHolder {
-        private TextView tv_vocab_word;
-        private AppCompatImageButton btn_vocab_info;
+        private final TextView tv_vocab_word;
+        private final TextView tv_vocab_statistic;
+        private final AppCompatImageButton btn_vocab_info;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             tv_vocab_word = itemView.findViewById(R.id.tv_vocab_word);
             btn_vocab_info = itemView.findViewById(R.id.btn_vocab_info);
+            tv_vocab_statistic = itemView.findViewById(R.id.tv_vocab_statistic);
 
             itemView.setOnLongClickListener(view -> {
                 if (!multiSelectMode) {
@@ -122,6 +147,36 @@ public class VocabularyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
                 }
                 return false;
             });
+        }
+
+        public void setVocabCorrectWrong(short correct, short wrong) {
+            if (correct > 0 || wrong > 0) {
+                tv_vocab_statistic.setText(Html.fromHtml(String.format(Locale.CHINA,
+                        "<font color=#66bb6a>%d</font>｜" +
+                                "<font color=#ff7043>%d</font>",
+                        correct, wrong)));
+            } else {
+                tv_vocab_statistic.setText(R.string.tv_vocab_statistic);
+            }
+            tv_vocab_statistic.setVisibility(View.VISIBLE);
+        }
+
+        public void setVocabFrequency(Long frequency) {
+            tv_vocab_statistic.setVisibility(View.VISIBLE);
+            if (frequency != null) {
+                tv_vocab_statistic.setText(String.valueOf(frequency));
+            }
+        }
+
+        public void setVocabDate(Date date) {
+            SimpleDateFormat format = new SimpleDateFormat("MM/dd HH:mm", Locale.CHINA);
+            if (date != null) {
+                tv_vocab_statistic.setVisibility(View.VISIBLE);
+                tv_vocab_statistic.setText(format.format(date));
+            } else {
+                tv_vocab_statistic.setVisibility(View.GONE);
+            }
+
         }
 
         public void setSelected(Long id) {

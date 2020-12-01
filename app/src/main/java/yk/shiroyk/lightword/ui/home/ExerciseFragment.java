@@ -284,7 +284,7 @@ public class ExerciseFragment extends Fragment {
 
                 builder.setTitle(R.string.mean_and_pos)
                         .setView(view)
-                        .setNegativeButton(R.string.dialog_save, (dialogInterface, i) -> {
+                        .setNeutralButton(R.string.dialog_save, (dialogInterface, i) -> {
                             if (eList.getCollocation().size() == 0) {
                                 Toast.makeText(context, String.format(
                                         getString(R.string.vocab_save_fail_collcation_not_null),

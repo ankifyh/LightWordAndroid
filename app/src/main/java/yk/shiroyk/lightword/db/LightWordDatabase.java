@@ -11,6 +11,7 @@ import androidx.room.migration.Migration;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
 import yk.shiroyk.lightword.db.converter.DateConverter;
+import yk.shiroyk.lightword.db.converter.OrderConverter;
 import yk.shiroyk.lightword.db.dao.ExerciseDao;
 import yk.shiroyk.lightword.db.dao.UserStatisticDao;
 import yk.shiroyk.lightword.db.dao.VocabTypeDao;
@@ -24,7 +25,7 @@ import yk.shiroyk.lightword.db.entity.Vocabulary;
         VocabType.class,
         Vocabulary.class,
         UserStatistic.class}, version = 3)
-@TypeConverters(DateConverter.class)
+@TypeConverters({DateConverter.class, OrderConverter.class})
 public abstract class LightWordDatabase extends RoomDatabase {
     @VisibleForTesting
     public static final String DATABASE_NAME = "lightword";

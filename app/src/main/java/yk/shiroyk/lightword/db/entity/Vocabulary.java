@@ -79,12 +79,16 @@ public class Vocabulary {
         this.totalError = totalError;
     }
 
-    @Override
-    public String toString() {
-        return "Vocabulary{" +
-                "id=" + id +
-                ", word='" + word + '\'' +
-                ", frequency=" + frequency +
-                '}';
+    public Vocabulary(VocabExercise vocabExercise) {
+        this.id = vocabExercise.id;
+        this.word = vocabExercise.word;
+        this.vtypeId = vocabExercise.vtypeId;
+        this.frequency = vocabExercise.frequency;
+    }
+
+    public Vocabulary(String word, Long vtypeId, Long frequency) {
+        this.word = word;
+        this.vtypeId = vtypeId;
+        this.frequency = frequency;
     }
 }

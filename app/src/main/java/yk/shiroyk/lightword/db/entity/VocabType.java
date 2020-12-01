@@ -49,7 +49,7 @@ public class VocabType {
         this.amount = amount;
     }
 
-    public void inAmount(Integer amount) {
+    public void upAmount(Integer amount) {
         this.amount += amount;
     }
 
