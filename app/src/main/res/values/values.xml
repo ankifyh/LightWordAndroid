@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ Copyright (c) 2020 All right reserved.
+  ~ Created by shiroyk, https://github.com/shiroyk
+  -->
+
+<resources>
+    <integer name="default_themePref">0</integer>
+    <integer name="default_is_pronounce">0</integer>
+    <integer name="default_card_quantity">10</integer>
+    <integer name="default_daily_target">0</integer>
+</resources>

@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2020 All right reserved.
+  ~ Created by shiroyk, https://github.com/shiroyk
+  -->
+
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
@@ -24,7 +29,6 @@
                     android:id="@+id/action_collect_select_word"
                     android:orderInCategory="200"
                     android:title="@string/collect_word"
-                    android:visible="false"
                     app:showAsAction="never" />
             </group>
         </menu>
@@ -106,7 +110,6 @@
         <item
             android:id="@+id/action_master_word"
             android:orderInCategory="200"
-            android:visible="false"
             android:title="@string/mastered_word"
             app:showAsAction="never" />
     </group>

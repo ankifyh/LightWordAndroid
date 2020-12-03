@@ -1,32 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2020 All right reserved.
+  ~ Created by shiroyk, https://github.com/shiroyk
+  -->
+
 <resources>
 
-    <string-array name="themeListArray">
+    <string-array name="themeArray">
         <item>明亮</item>
         <item>黑暗</item>
         <item>跟随系统</item>
-    </string-array>
-
-    <string-array name="themeEntryArray">
-        <item>light</item>
-        <item>dark</item>
-        <item>default</item>
-    </string-array>
-
-    <string-array name="vtypeListArray" />
-
-    <string-array name="vtypeEntryArray" />
-
-    <string-array name="ttsListArray">
-        <item>关闭</item>
-        <item>词汇</item>
-        <item>句子</item>
-    </string-array>
-
-    <string-array name="ttsEntryArray">
-        <item>close</item>
-        <item>vocabulary</item>
-        <item>sentence</item>
     </string-array>
 
     <array name="primary_colors">
@@ -46,16 +29,16 @@
         <item>@color/color12</item>
     </array>
 
-    <string-array name="pronounceListArray">
+    <string-array name="pronounceArray">
         <item>关闭</item>
         <item>读音1</item>
         <item>读音2</item>
     </string-array>
 
-    <string-array name="pronounceEntryArray">
-        <item>0</item>
-        <item>1</item>
-        <item>2</item>
+    <string-array name="ttsArray">
+        <item>关闭</item>
+        <item>词汇</item>
+        <item>句子</item>
     </string-array>
 
 </resources>

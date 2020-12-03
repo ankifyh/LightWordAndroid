@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2020 All right reserved.
+ * Created by shiroyk, https://github.com/shiroyk
+ */
+
 package yk.shiroyk.lightword.db.entity;
 
 import androidx.room.ColumnInfo;
@@ -7,6 +12,7 @@ import androidx.room.PrimaryKey;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Objects;
 
 @Entity(tableName = "exercise_data",
         foreignKeys = {
@@ -127,5 +133,19 @@ public class ExerciseData {
                 "\n复习阶段: " + stage + "/10" +
                 "\n正确次数: " + correct +
                 ", 错误次数: " + wrong;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ExerciseData that = (ExerciseData) o;
+        return Objects.equals(getWordId(), that.getWordId()) &&
+                Objects.equals(getVtypeId(), that.getVtypeId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getWordId(), getVtypeId());
     }
 }

@@ -1,17 +1,6 @@
 /*
- * Copyright (C) 2019 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright (c) 2020 All right reserved.
+ * Created by shiroyk, https://github.com/shiroyk
  */
 
 package yk.shiroyk.lightword.utils;
@@ -21,28 +10,24 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import android.util.TypedValue;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatDelegate;
 
 import yk.shiroyk.lightword.R;
+import yk.shiroyk.lightword.db.constant.ThemeEnum;
 
 public class ThemeHelper {
 
-    public static final String LIGHT_MODE = "light";
-    public static final String DARK_MODE = "dark";
-    public static final String DEFAULT_MODE = "default";
-
-    public static void applyTheme(@NonNull String themePref) {
-        switch (themePref) {
-            case LIGHT_MODE: {
+    public static void applyTheme(ThemeEnum theme) {
+        switch (theme) {
+            case LightMode: {
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
                 break;
             }
-            case DARK_MODE: {
+            case DarkMode: {
                 AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
                 break;
             }
-            default: {
+            case AutoMode: {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
                 } else {

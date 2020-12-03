@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright (c) 2020 All right reserved.
+  ~ Created by shiroyk, https://github.com/shiroyk
+  -->
+
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -29,7 +34,7 @@
         android:id="@+id/nav_data"
         android:name="yk.shiroyk.lightword.ui.managedata.VocabFragment"
         android:label="@string/title_data"
-        tools:layout="@layout/fragment_import_vocab" />
+        tools:layout="@layout/fragment_manage_vocab" />
 
     <fragment
         android:id="@+id/nav_setting"
@@ -40,6 +45,11 @@
         android:id="@+id/nav_about"
         android:name="yk.shiroyk.lightword.ui.about.AboutFragment"
         android:label="@string/title_about" />
+
+    <fragment
+        android:id="@+id/nav_help"
+        android:name="yk.shiroyk.lightword.ui.help.HelpFragment"
+        android:label="@string/title_help" />
 
 
 </navigation>

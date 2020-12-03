@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2020 All right reserved.
+ * Created by shiroyk, https://github.com/shiroyk
+ */
+
 package yk.shiroyk.lightword.ui.home;
 
 import android.content.Context;
@@ -25,13 +30,13 @@ import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
@@ -87,7 +92,7 @@ public class ExerciseFragment extends Fragment {
     private Integer cardQuantity = 10;
     private Integer cardIndex = 0;
     private Integer currentCard = 0;
-    private String ttsSpeech = "close";
+    private Integer ttsSpeech = 0;
     private boolean correctFlag = true;
     private boolean wrongFlag = true;
     private boolean showAnswer = false;
@@ -166,8 +171,8 @@ public class ExerciseFragment extends Fragment {
                 tv_daily_target.setText(String.format(getString(
                         R.string.exercise_fragment_today_target), integer, dailyTarget));
                 if (integer == parseInt) {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                    builder.setIcon(R.drawable.ic_create)
+                    new MaterialAlertDialogBuilder(context)
+                            .setIcon(R.drawable.ic_create)
                             .setTitle(String.format(getString(
                                     R.string.exercise_fragment_target_dialog_title), integer, parseInt))
                             .setNegativeButton(R.string.dialog_ensure, null).create().show();
@@ -187,10 +192,9 @@ public class ExerciseFragment extends Fragment {
         tv_daily_target = root.findViewById(R.id.tv_daily_target);
         exercise_speech = root.findViewById(R.id.exercise_speech);
 
-        String preValue = sp.getString("vtypeId", "1");
         String cardValue = sp.getString("cardQuantity", "10");
         dailyTarget = sp.getString("dailyTarget", "0");
-        vtypeId = Long.valueOf(preValue);
+        vtypeId = sp.getLong("vtypeId", 1L);
         cardQuantity = Integer.parseInt(cardValue);
 
         exercise_card.setOnCardProgressClickListener(this::reDialog);
@@ -239,23 +243,23 @@ public class ExerciseFragment extends Fragment {
             }
         });
 
-        ttsSpeech = sp.getString("ttsSpeech", "close");
-        if (!"close".equals(ttsSpeech)) {
+        ttsSpeech = sp.getInt("ttsSpeech", 0);
+        if (ttsSpeech != 0) {
             isSpeech = true;
             exercise_speech.setChecked(true);
         }
         exercise_speech.setOnClickListener(view -> {
-            String s;
+            int s;
             if (isSpeech) {
-                s = "close";
+                s = 0;
             } else {
-                if ("close".equals(ttsSpeech)) {
-                    ttsSpeech = "vocabulary";
+                if (ttsSpeech == 0) {
+                    ttsSpeech = 1;
                 }
                 s = ttsSpeech;
             }
             isSpeech = !isSpeech;
-            sp.edit().putString("ttsSpeech", s).apply();
+            sp.edit().putInt("ttsSpeech", s).apply();
 
         });
 
@@ -269,7 +273,6 @@ public class ExerciseFragment extends Fragment {
 
     private void setWordInfoDialog() {
         if (wordId != null) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(context);
             ThreadTask.runOnThread(() -> vocabularyRepository.queryWordById(wordId, vtypeId), v -> {
                 View view = getLayoutInflater().inflate(R.layout.layout_info_vocab, null);
                 RecyclerView infoList = view.findViewById(R.id.recycler_info_vocab);
@@ -282,7 +285,8 @@ public class ExerciseFragment extends Fragment {
                 ExerciseList eList = new Gson().fromJson(wordInfo, ExerciseList.class);
                 vocabDetailAdapter.setCollocations(eList.getCollocation());
 
-                builder.setTitle(R.string.mean_and_pos)
+                new MaterialAlertDialogBuilder(context)
+                        .setTitle(R.string.mean_and_pos)
                         .setView(view)
                         .setNeutralButton(R.string.dialog_save, (dialogInterface, i) -> {
                             if (eList.getCollocation().size() == 0) {
@@ -299,8 +303,6 @@ public class ExerciseFragment extends Fragment {
     }
 
     private void setExampleInfoDialog(Collocation collocation) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-
         View view = getLayoutInflater().inflate(R.layout.layout_info_vocab, null);
         RecyclerView infoList = view.findViewById(R.id.recycler_info_vocab);
 
@@ -310,7 +312,8 @@ public class ExerciseFragment extends Fragment {
         infoList.setAdapter(exampleDetailAdapter);
         exampleDetailAdapter.setExampleList(collocation.getExample());
 
-        builder.setTitle(collocation.getMeaning())
+        new MaterialAlertDialogBuilder(context)
+                .setTitle(collocation.getMeaning())
                 .setView(view)
                 .setNeutralButton(R.string.dialog_delete, (dialogInterface, i) -> {
                     vocabDetailAdapter.getCollocations().remove(collocation);
@@ -321,7 +324,6 @@ public class ExerciseFragment extends Fragment {
     }
 
     private void setExampleDialog(Example example) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
         View view = getLayoutInflater().inflate(R.layout.item_vocab_detail, null);
         TextView tv_example = view.findViewById(R.id.tv_detail_title);
         TextView tv_translation = view.findViewById(R.id.tv_detail_subtitle);
@@ -332,7 +334,8 @@ public class ExerciseFragment extends Fragment {
         tv_example.setText(example.getExample());
         tv_translation.setText(example.getTranslation());
 
-        builder.setTitle(R.string.example)
+        new MaterialAlertDialogBuilder(context)
+                .setTitle(R.string.example)
                 .setView(view)
                 .setNeutralButton(R.string.dialog_delete, (dialogInterface, i) -> {
                     if (exampleDetailAdapter.getExampleList().size() > 1) {
@@ -355,8 +358,8 @@ public class ExerciseFragment extends Fragment {
     }
 
     private void reDialog(View view) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle(R.string.exercise_fragment_exclude_dialog_title)
+        new MaterialAlertDialogBuilder(context)
+                .setTitle(R.string.exercise_fragment_exclude_dialog_title)
                 .setMessage(R.string.exercise_fragment_exclude_dialog_message)
                 .setPositiveButton(R.string.dialog_ensure, (dialogInterface, i) -> {
                     mastered(wordId, vtypeId);
@@ -537,7 +540,7 @@ public class ExerciseFragment extends Fragment {
             inflection = new ArrayList<>();
         }
         answer = exercise.getAnswer();
-        speakString = "sentence".equals(ttsSpeech) ? exercise.getSentence() : answer;
+        speakString = ttsSpeech == 2 ? exercise.getSentence() : answer;
         Log.d(TAG, "vtypeId: " + vtypeId + " Answer: " + answer + " Word: " +
                 exercise.getWord() + "\nSentence: " + exercise.getSentence());
         wordId = exercise.getId();

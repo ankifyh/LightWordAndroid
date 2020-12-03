@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2020 All right reserved.
+ * Created by shiroyk, https://github.com/shiroyk
+ */
+
 package yk.shiroyk.lightword.db;
 
 import android.content.Context;
@@ -24,7 +29,7 @@ import yk.shiroyk.lightword.db.entity.Vocabulary;
 @Database(entities = {ExerciseData.class,
         VocabType.class,
         Vocabulary.class,
-        UserStatistic.class}, version = 3)
+        UserStatistic.class}, version = 4)
 @TypeConverters({DateConverter.class, OrderConverter.class})
 public abstract class LightWordDatabase extends RoomDatabase {
     @VisibleForTesting
@@ -77,6 +82,14 @@ public abstract class LightWordDatabase extends RoomDatabase {
         }
     };
 
+    private static final Migration MIGRATION_3_4 = new Migration(3, 4) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            // update all mastered vocabulary exercise data
+            database.execSQL("UPDATE exercise_data SET stage = 99, timestamp = 0 WHERE stage = 11");
+        }
+    };
+
     public static LightWordDatabase getDatabase(final Context context) {
         if (INSTANCE == null) {
             synchronized (LightWordDatabase.class) {
@@ -88,6 +101,7 @@ public abstract class LightWordDatabase extends RoomDatabase {
                     )
                             .addMigrations(MIGRATION_1_2)
                             .addMigrations(MIGRATION_2_3)
+                            .addMigrations(MIGRATION_3_4)
                             .build();
                 }
             }

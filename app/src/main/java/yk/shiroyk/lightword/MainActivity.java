@@ -1,7 +1,14 @@
+/*
+ * Copyright (c) 2020 All right reserved.
+ * Created by shiroyk, https://github.com/shiroyk
+ */
+
 package yk.shiroyk.lightword;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
@@ -10,10 +17,10 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.AppCompatToggleButton;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
@@ -22,27 +29,28 @@ import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 import androidx.preference.PreferenceManager;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationView;
 import com.microsoft.appcenter.AppCenter;
 import com.microsoft.appcenter.analytics.Analytics;
 import com.microsoft.appcenter.crashes.AbstractCrashesListener;
 import com.microsoft.appcenter.crashes.Crashes;
 
+import yk.shiroyk.lightword.db.constant.ThemeEnum;
 import yk.shiroyk.lightword.ui.viewmodel.SharedViewModel;
 import yk.shiroyk.lightword.utils.ThemeHelper;
 
 public class MainActivity extends AppCompatActivity {
-    private Context context;
     private AppBarConfiguration mAppBarConfiguration;
-    private SharedViewModel sharedViewModel;
     private SharedPreferences sp;
+    private static final int REQUEST_EXTERNAL_STORAGE = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        context = getBaseContext();
+        Context context = getBaseContext();
         sp = PreferenceManager.getDefaultSharedPreferences(context);
-        sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
+        SharedViewModel sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
 
         setStatusBarTransparent();
         ThemeHelper.setPrimaryColor(this, sp);
@@ -61,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
         drawer.setClipToPadding(false);
 
         mAppBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.nav_home, R.id.nav_data, R.id.nav_setting, R.id.nav_about)
+                R.id.nav_home, R.id.nav_data, R.id.nav_setting, R.id.nav_about, R.id.nav_help)
                 .setDrawerLayout(drawer)
                 .build();
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
@@ -79,31 +87,31 @@ public class MainActivity extends AppCompatActivity {
             Crashes.setListener(new AbstractCrashesListener() {
                 @Override
                 public boolean shouldAwaitUserConfirmation() {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-                    builder
+                    new MaterialAlertDialogBuilder(context)
                             .setTitle("检测到APP上次发生崩溃")
                             .setMessage("是否发送崩溃日志？")
                             .setPositiveButton("是", (dialog, which) -> Crashes.notifyUserConfirmation(Crashes.SEND))
-                            .setNegativeButton("否", (dialog, which) -> Crashes.notifyUserConfirmation(Crashes.DONT_SEND));
-                    builder.create().show();
+                            .setNegativeButton("否", (dialog, which) -> Crashes.notifyUserConfirmation(Crashes.DONT_SEND))
+                            .create().show();
                     return true;
                 }
             });
         }
+
+        requestStoragePermissions();
     }
 
     private void setUpSwitchTheme(NavigationView nv) {
-        AppCompatToggleButton btn_theme_toggle = nv.getHeaderView(0).findViewById(R.id.btn_theme_toggle);
-        String themePref = sp.getString("themePref", ThemeHelper.DEFAULT_MODE);
-        btn_theme_toggle.setOnClickListener(view -> {
-            String switchTheme;
-            if (ThemeHelper.DARK_MODE.equals(themePref) || ThemeHelper.DEFAULT_MODE.equals(themePref)) {
-                switchTheme = ThemeHelper.LIGHT_MODE;
+        ThemeEnum themePref = ThemeEnum.values()[sp.getInt("themePref", ThemeEnum.LightMode.getMode())];
+        nv.getHeaderView(0).findViewById(R.id.btn_theme_toggle).setOnClickListener(view -> {
+            ThemeEnum newTheme;
+            if (ThemeEnum.LightMode == themePref) {
+                newTheme = ThemeEnum.DarkMode;
             } else {
-                switchTheme = ThemeHelper.DARK_MODE;
+                newTheme = ThemeEnum.LightMode;
             }
-            ThemeHelper.applyTheme(switchTheme);
-            sp.edit().putString("themePref", switchTheme).apply();
+            sp.edit().putInt("themePref", newTheme.getMode()).apply();
+            ThemeHelper.applyTheme(newTheme);
         });
     }
 
@@ -131,6 +139,30 @@ public class MainActivity extends AppCompatActivity {
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         window.setStatusBarColor(Color.TRANSPARENT);
         window.setNavigationBarColor(Color.TRANSPARENT);
+    }
+
+    private boolean hasReadPermissions() {
+        return (ContextCompat.checkSelfPermission(getBaseContext(),
+                Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
+    }
+
+    private boolean hasWritePermissions() {
+        return (ContextCompat.checkSelfPermission(getBaseContext(),
+                Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED);
+    }
+
+    private void requestStoragePermissions() {
+        if (hasReadPermissions() && hasWritePermissions()) {
+            return;
+        }
+
+        ActivityCompat.requestPermissions(
+                this,
+                new String[]{
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE
+                }, REQUEST_EXTERNAL_STORAGE
+        );
     }
 
     @Override

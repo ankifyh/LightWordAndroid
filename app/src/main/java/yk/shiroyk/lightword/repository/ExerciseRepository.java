@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2020 All right reserved.
+ * Created by shiroyk, https://github.com/shiroyk
+ */
+
 package yk.shiroyk.lightword.repository;
 
 import android.app.Application;
@@ -5,13 +10,17 @@ import android.app.Application;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import yk.shiroyk.lightword.db.LightWordDatabase;
 import yk.shiroyk.lightword.db.dao.ExerciseDao;
 import yk.shiroyk.lightword.db.entity.ExerciseData;
+import yk.shiroyk.lightword.db.entity.VocabExerciseData;
 import yk.shiroyk.lightword.db.entity.Vocabulary;
 import yk.shiroyk.lightword.utils.CalDate;
 import yk.shiroyk.lightword.utils.ThreadTask;
@@ -51,20 +60,16 @@ public class ExerciseRepository {
         ThreadTask.runOnThread(() -> exerciseDao.update(data));
     }
 
+    public Long getExerciseDataId(Long wordId, Long vtypeId) {
+        return exerciseDao.getExerciseDataId(wordId, vtypeId);
+    }
+
     public ExerciseData[] getWordListById(List<Long> idList, Long vtypeId) {
         return exerciseDao.getWordListById(idList, vtypeId);
     }
 
     public ExerciseData getWordDetail(Long wordId, Long vtypeId) {
         return exerciseDao.getWordDetail(wordId, vtypeId);
-    }
-
-    public List<Vocabulary> getMasterWord(Long vtypeId) {
-        return exerciseDao.getMasterWord(vtypeId);
-    }
-
-    public LiveData<List<Vocabulary>> searchMasterWord(Long vtypeId, String word) {
-        return exerciseDao.searchMasterWord(vtypeId, word);
     }
 
     public void remember(Long wordId, Long vtypeId) {
@@ -121,33 +126,103 @@ public class ExerciseRepository {
 
     public void mastered(Long wordId, Long vtypeId) {
         Date now = new Date();
-        long tenYears = now.getTime() + 5126400L * 60 * 1000;
         ThreadTask.runOnThread(() -> exerciseDao.getSingleWord(wordId, vtypeId),
                 data -> {
                     if (data != null) {
-                        Integer stage = data.getStage();
                         Integer correct = data.getCorrect();
-                        if (stage < minList.size()) {
-                            data.setTimestamp(new Date(tenYears));
-                            data.setStage(minList.size() + 1);
-                        }
+                        data.setTimestamp(new Date(0));
+                        data.setStage(99);
                         data.setLastPractice(now);
                         data.setCorrect(correct + 1);
                         update(data);
                         exerciseStatus.setValue(EXERCISE_CORRECT);
                     } else {
                         data = new ExerciseData();
-                        data.setTimestamp(new Date(tenYears));
+                        data.setTimestamp(new Date(0));
                         data.setWordId(wordId);
                         data.setVtypeId(vtypeId);
                         data.setLastPractice(now);
-                        data.setStage(minList.size() + 1);
+                        data.setStage(99);
                         data.setCorrect(1);
                         data.setWrong(0);
                         insert(data);
                         exerciseStatus.setValue(EXERCISE_NEW);
                     }
                 });
+    }
+
+    public List<VocabExerciseData> getExerciseDataList(Long vtypeId) {
+        return exerciseDao.getExerciseDataList(vtypeId);
+    }
+
+    public List<Long> getVocabIdList(Long vtypeId) {
+        return exerciseDao.getVocabIdList(vtypeId);
+    }
+
+    private Map<String, VocabExerciseData> getVocabExerciseMap(Long vtypeId) {
+        Map<String, VocabExerciseData> vocabMap = new HashMap<>();
+        for (VocabExerciseData data : getExerciseDataList(vtypeId)) {
+            vocabMap.put(data.word, data);
+        }
+        return vocabMap;
+    }
+
+    private List<Vocabulary> checkVocabDataExists(Long newVId, List<Vocabulary> vList) {
+        List<Vocabulary> newVList = new ArrayList<>();
+        List<Long> dataIdList = getVocabIdList(newVId);
+        for (Vocabulary vocab : vList) {
+            if (!dataIdList.contains(vocab.getId())) {
+                newVList.add(vocab);
+            }
+        }
+        return newVList;
+    }
+
+    public LiveData<Integer> copyExerciseData(Long oldVId, Long newVId, List<Vocabulary> vList) {
+        MutableLiveData<Integer> size = new MutableLiveData<>();
+        ThreadTask.runOnThread(() -> {
+            Map<String, VocabExerciseData> vocabMap = getVocabExerciseMap(oldVId);
+            List<ExerciseData> exerciseData = new ArrayList<>();
+            for (Vocabulary vocab : checkVocabDataExists(newVId, vList)) {
+                VocabExerciseData vocabExerciseData = vocabMap.get(vocab.getWord());
+                if (vocabExerciseData != null) {
+                    ExerciseData data = new ExerciseData();
+                    data.setWordId(vocab.getId());
+                    data.setVtypeId(vocab.getVtypeId());
+                    data.setLastPractice(vocabExerciseData.last_practice);
+                    data.setTimestamp(vocabExerciseData.timestamp);
+                    data.setStage(vocabExerciseData.stage);
+                    data.setCorrect(vocabExerciseData.correct);
+                    data.setWrong(vocabExerciseData.wrong);
+                    exerciseData.add(data);
+                }
+            }
+            return exerciseData;
+        }, exerciseData -> {
+            int result = exerciseData.size();
+            size.setValue(result);
+            insert(exerciseData.toArray(new ExerciseData[result]));
+        });
+        return size;
+    }
+
+    public void insertOrUpdate(ExerciseData[] dataArray) {
+        if (dataArray.length == 0) return;
+        List<ExerciseData> insertData = new ArrayList<>();
+        List<ExerciseData> updateData = new ArrayList<>();
+        for (ExerciseData data : dataArray) {
+            Long id = getExerciseDataId(data.getWordId(), data.getVtypeId());
+            if (id == null) insertData.add(data);
+            else {
+                data.setId(id);
+                updateData.add(data);
+            }
+        }
+        int insertSize = insertData.size();
+        int updateSize = updateData.size();
+
+        insert(insertData.toArray(new ExerciseData[insertSize]));
+        update(updateData.toArray(new ExerciseData[updateSize]));
     }
 
     public LiveData<Integer> getExerciseStatus() {
@@ -162,17 +237,11 @@ public class ExerciseRepository {
         return exerciseDao.getExerciseReview(vtypeId);
     }
 
-    public void updateMasterStage() {
-        ThreadTask.runOnThread(() -> {
-            List<ExerciseData> dataList = exerciseDao.getMastered();
-            for (ExerciseData data : dataList) {
-                data.setStage(minList.size() + 1);
-                exerciseDao.update(data);
-            }
-        });
+    public void insert(ExerciseData e) {
+        ThreadTask.runOnThread(() -> exerciseDao.insert(e));
     }
 
-    public void insert(ExerciseData e) {
+    public void insert(ExerciseData[] e) {
         ThreadTask.runOnThread(() -> exerciseDao.insert(e));
     }
 }

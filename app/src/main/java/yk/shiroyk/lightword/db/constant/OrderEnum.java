@@ -1,4 +1,9 @@
-package yk.shiroyk.lightword.ui.managedata;
+/*
+ * Copyright (c) 2020 All right reserved.
+ * Created by shiroyk, https://github.com/shiroyk
+ */
+
+package yk.shiroyk.lightword.db.constant;
 
 public enum OrderEnum {
     Word(0),

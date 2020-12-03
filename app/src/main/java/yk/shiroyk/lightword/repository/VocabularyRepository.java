@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2020 All right reserved.
+ * Created by shiroyk, https://github.com/shiroyk
+ */
+
 package yk.shiroyk.lightword.repository;
 
 import android.app.Application;
@@ -5,13 +10,16 @@ import android.app.Application;
 import androidx.core.util.Consumer;
 import androidx.lifecycle.LiveData;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import yk.shiroyk.lightword.db.LightWordDatabase;
+import yk.shiroyk.lightword.db.constant.OrderEnum;
 import yk.shiroyk.lightword.db.dao.VocabularyDao;
 import yk.shiroyk.lightword.db.entity.VocabExercise;
 import yk.shiroyk.lightword.db.entity.Vocabulary;
-import yk.shiroyk.lightword.ui.managedata.OrderEnum;
 import yk.shiroyk.lightword.utils.ThreadTask;
 
 public class VocabularyRepository {
@@ -31,6 +39,10 @@ public class VocabularyRepository {
         return vocabularyDao.getAllWordOrderBy(vtypeId, order);
     }
 
+    public LiveData<List<VocabExercise>> searchWord(String word, Long vtypeId) {
+        return vocabularyDao.searchWord(word, vtypeId);
+    }
+
     public LiveData<List<VocabExercise>> getAllReviewWord(Long vtypeId, OrderEnum order) {
         return vocabularyDao.getAllReviewWord(vtypeId, order);
     }
@@ -39,8 +51,16 @@ public class VocabularyRepository {
         return vocabularyDao.searchReviewWord(word, vtypeId);
     }
 
-    public LiveData<Integer> getCount(Long vtypeId) {
-        return vocabularyDao.getCount(vtypeId);
+    public LiveData<List<VocabExercise>> getAllMasterWord(Long vtypeId, OrderEnum order) {
+        return vocabularyDao.getAllMasterWord(vtypeId, order);
+    }
+
+    public LiveData<List<VocabExercise>> searchMasterWord(String word, Long vtypeId) {
+        return vocabularyDao.searchMasterWord(word, vtypeId);
+    }
+
+    public Integer countWord(Long vtypeId) {
+        return vocabularyDao.countWord(vtypeId);
     }
 
     public LiveData<Vocabulary> getWordById(Long wordId, Long vtypeId) {
@@ -59,6 +79,41 @@ public class VocabularyRepository {
         return vocabularyDao.getWordListById(wordId, vtypeId);
     }
 
+    public List<Vocabulary> getWordList(Long vtypeId) {
+        return vocabularyDao.getWordList(vtypeId);
+    }
+
+    public Map<String, Long> getWordIdMap(Long vtypeId) {
+        Map<String, Long> wordIdMap = new HashMap<>();
+        for (Vocabulary vocab : getWordList(vtypeId)) {
+            wordIdMap.put(vocab.getWord(), vocab.getId());
+        }
+        return wordIdMap;
+    }
+
+    private List<Vocabulary> checkExists(Long newType, List<Vocabulary> vList) {
+        List<Vocabulary> newList = new ArrayList<>();
+        List<String> oldVList = getWordString(newType);
+        for (Vocabulary vocab : vList) {
+            if (!oldVList.contains(vocab.getWord())) {
+                newList.add(vocab);
+            }
+        }
+        return newList;
+    }
+
+    public Integer collectNewVocab(Long newType, List<Vocabulary> vList) {
+        List<Vocabulary> newList = new ArrayList<>();
+        for (Vocabulary v : checkExists(newType, vList)) {
+            v.setId(null);
+            v.setVtypeId(newType);
+            newList.add(v);
+        }
+        int size = newList.size();
+        insert(newList.toArray(new Vocabulary[size]));
+        return size;
+    }
+
     public LiveData<Vocabulary> getWord(String word, Long vtypeId) {
         return vocabularyDao.getWord(word, vtypeId);
     }
@@ -67,16 +122,12 @@ public class VocabularyRepository {
         return vocabularyDao.queryWord(word, vtypeId);
     }
 
-    public LiveData<List<VocabExercise>> searchWord(String word, Long vtypeId) {
-        return vocabularyDao.searchWord(word, vtypeId);
-    }
-
     public List<Vocabulary> loadNewWord(Long vtypeId, Boolean order, Integer limit) {
         return vocabularyDao.loadNewWord(vtypeId, order, limit);
     }
 
     public void insert(Vocabulary[] v) {
-        ThreadTask.runOnThread(() -> vocabularyDao.insertMany(v));
+        vocabularyDao.insertMany(v);
     }
 
     public void update(Vocabulary v) {

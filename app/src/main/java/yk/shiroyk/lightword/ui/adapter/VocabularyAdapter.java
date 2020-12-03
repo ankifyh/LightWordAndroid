@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2020 All right reserved.
+ * Created by shiroyk, https://github.com/shiroyk
+ */
+
 package yk.shiroyk.lightword.ui.adapter;
 
 import android.content.Context;
@@ -20,8 +25,8 @@ import java.util.List;
 import java.util.Locale;
 
 import yk.shiroyk.lightword.R;
+import yk.shiroyk.lightword.db.constant.OrderEnum;
 import yk.shiroyk.lightword.db.entity.VocabExercise;
-import yk.shiroyk.lightword.ui.managedata.OrderEnum;
 
 public class VocabularyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> implements FastScrollRecyclerView.SectionedAdapter {
     public OnInfoClickListener infoClickListener;
@@ -29,7 +34,7 @@ public class VocabularyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     public OnSelectedChanged onSelectedChanged;
     private final Context context;
     private final List<Long> selectedItem = new ArrayList<>();
-    private final OrderEnum orderEnum;
+    private OrderEnum orderEnum;
     private List<VocabExercise> words;
     private boolean multiSelectMode = false;
 
@@ -82,6 +87,10 @@ public class VocabularyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
     public void setWords(List<VocabExercise> vocabExerciseList) {
         this.words = vocabExerciseList;
         notifyDataSetChanged();
+    }
+
+    public void setOrder(OrderEnum order) {
+        this.orderEnum = order;
     }
 
     public void clearSelected() {
@@ -173,6 +182,8 @@ public class VocabularyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
             if (date != null) {
                 tv_vocab_statistic.setVisibility(View.VISIBLE);
                 tv_vocab_statistic.setText(format.format(date));
+                if (date.getTime() == 0)
+                    tv_vocab_statistic.setVisibility(View.GONE);
             } else {
                 tv_vocab_statistic.setVisibility(View.GONE);
             }

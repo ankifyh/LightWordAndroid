@@ -1,3 +1,8 @@
+<!--
+  ~ Copyright (c) 2020 All right reserved.
+  ~ Created by shiroyk, https://github.com/shiroyk
+  -->
+
 <resources>
     <string name="app_name">LightWord</string>
     <string name="nav_header_title">Light Word</string>
@@ -12,6 +17,7 @@
     <string name="title_setting" translatable="false">设置</string>
     <string name="title_exercise" translatable="false">练习</string>
     <string name="title_about" translatable="false">关于</string>
+    <string name="title_help" translatable="false">帮助</string>
     <string name="title_master_word" translatable="false">已经掌握</string>
     <string name="versionName" translatable="false">1.1.1</string>
 
@@ -74,6 +80,9 @@
     <string name="meaning">词义</string>
     <string name="vocab_type">词汇分类</string>
     <string name="create_vocab_type" translatable="false">新建词汇分类</string>
+    <string name="select_vocab_type" translatable="false">选择词汇分类</string>
+    <string name="select_old_vocab_type" translatable="false">源词汇分类</string>
+    <string name="select_new_vocab_type" translatable="false">目标词汇分类</string>
     <string name="example">例句</string>
     <string name="translation">翻译</string>
     <string name="answer">回答</string>
@@ -121,4 +130,10 @@
     <string name="add_select_master_word_msg">是否将这些词汇添加至已掌握列表？</string>
     <string name="start_learn">开始学习</string>
     <string name="not_fount_vocab_type">保存失败，没有词汇分类，请先创建词汇分类！</string>
+    <string name="success_collect_vocab">成功添加%d个至%s</string>
+    <string name="success_copy_exercise">成功复制%d个至%s</string>
+    <string name="help_exercise">1. 练习界面中，点击进度⭕️可以快速添加到已掌握。</string>
+    <string name="help_setting">2. 设置界面中，复制的练习数据，如果数据已存在则会忽略。</string>
+    <string name="setting_copy_exercise">复制练习数据</string>
+    <string name="setting_copy_exercise_subtitle">将一个分类的练习数据复制到另一个</string>
 </resources>

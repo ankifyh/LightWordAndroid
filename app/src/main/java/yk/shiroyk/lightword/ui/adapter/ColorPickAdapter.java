@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2020 All right reserved.
+ * Created by shiroyk, https://github.com/shiroyk
+ */
+
 package yk.shiroyk.lightword.ui.adapter;
 
 import android.content.Context;
@@ -14,18 +19,16 @@ import androidx.annotation.Nullable;
 import yk.shiroyk.lightword.R;
 
 public class ColorPickAdapter extends ArrayAdapter {
-    final OnColorClickedListener listener;
-    private Context context;
-    private TypedArray colorRes;
+    private final Context context;
+    private final TypedArray colorRes;
+    OnColorClickedListener listener;
 
     public ColorPickAdapter(@NonNull Context context,
                             int resource,
-                            TypedArray colorRes,
-                            OnColorClickedListener listener) {
+                            TypedArray colorRes) {
         super(context, resource);
         this.context = context;
         this.colorRes = colorRes;
-        this.listener = listener;
     }
 
     @Override
@@ -50,13 +53,18 @@ public class ColorPickAdapter extends ArrayAdapter {
                 getResourceEntryName(colorRes.getResourceId(position, 0));
         button.setBackgroundColor(colorRes.getColor(position, 0));
         button.setOnClickListener(view -> {
-            listener.onClicked(color);
+            if (listener != null)
+                listener.onClicked(color);
         });
         return convertView;
     }
 
     public interface OnColorClickedListener {
         void onClicked(String newTheme);
+    }
+
+    public void setOnColorClickedListener(OnColorClickedListener listener) {
+        this.listener = listener;
     }
 }
 

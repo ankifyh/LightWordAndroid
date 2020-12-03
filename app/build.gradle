@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2020 All right reserved.
+ * Created by shiroyk, https://github.com/shiroyk
+ */
+
 apply plugin: 'com.android.application'
 
 def appCenterKeyFile = rootProject.file("appcenter.key")
@@ -50,7 +55,6 @@ dependencies {
     implementation 'androidx.room:room-runtime:2.2.5'
     implementation 'com.google.code.gson:gson:2.8.6'
     implementation 'androidx.preference:preference:1.1.1'
-    implementation 'com.google.android.material:material:1.2.0'
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
     implementation 'com.simplecityapps:recyclerview-fastscroll:2.0.1'

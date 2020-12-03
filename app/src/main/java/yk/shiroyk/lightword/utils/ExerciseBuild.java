@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2020 All right reserved.
+ * Created by shiroyk, https://github.com/shiroyk
+ */
+
 package yk.shiroyk.lightword.utils;
 
 import android.app.Application;
@@ -28,15 +33,15 @@ public class ExerciseBuild extends ViewModel {
     public static final int MISSING_VOCAB = 10003;
     public static final int PARSE_FAILURE = 10004;
     private static final String TAG = ExerciseBuild.class.getSimpleName();
-    private MutableLiveData<List<Exercise>> exerciseList = new MutableLiveData<>();
-    private MutableLiveData<Integer> exerciseMsg = new MutableLiveData<>();
+    private final MutableLiveData<List<Exercise>> exerciseList = new MutableLiveData<>();
+    private final MutableLiveData<Integer> exerciseMsg = new MutableLiveData<>();
 
     private ExerciseRepository exerciseRepository;
     private VocabularyRepository vocabularyRepository;
     private VocabularyDataManage vocabularyDataManage;
 
     private Boolean byFrequency;
-    private String isPronounce;
+    private Integer isPronounce;
 
     public void setApplication(Application application) {
         exerciseRepository = new ExerciseRepository(application);
@@ -45,7 +50,7 @@ public class ExerciseBuild extends ViewModel {
         this.byFrequency = PreferenceManager.getDefaultSharedPreferences(application.getBaseContext())
                 .getBoolean("byFrequency", false);
         this.isPronounce = PreferenceManager.getDefaultSharedPreferences(application.getBaseContext())
-                .getString("isPronounce", "0");
+                .getInt("isPronounce", 0);
 
     }
 
@@ -73,16 +78,16 @@ public class ExerciseBuild extends ViewModel {
 
     private String getPronounce(List<String> pronounce) {
         switch (isPronounce) {
-            case "0":
+            case 0:
                 return "";
-            case "1":
+            case 1:
                 switch (pronounce.size()) {
                     case 0:
                         return "";
                     case 1:
                         return pronounce.get(0);
                 }
-            case "2":
+            case 2:
                 switch (pronounce.size()) {
                     case 0:
                         return "";

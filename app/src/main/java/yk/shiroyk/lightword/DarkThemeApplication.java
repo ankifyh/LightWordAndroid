@@ -1,17 +1,6 @@
 /*
- * Copyright (C) 2019 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright (c) 2020 All right reserved.
+ * Created by shiroyk, https://github.com/shiroyk
  */
 
 package yk.shiroyk.lightword;
@@ -21,15 +10,22 @@ import android.content.SharedPreferences;
 
 import androidx.preference.PreferenceManager;
 
+import yk.shiroyk.lightword.db.constant.ThemeEnum;
 import yk.shiroyk.lightword.utils.ThemeHelper;
 
 public class DarkThemeApplication extends Application {
 
     public void onCreate() {
         super.onCreate();
-        SharedPreferences sharedPreferences =
+        SharedPreferences sp =
                 PreferenceManager.getDefaultSharedPreferences(this);
-        String themePref = sharedPreferences.getString("themePref", ThemeHelper.LIGHT_MODE);
-        ThemeHelper.applyTheme(themePref);
+
+        if (!sp.getBoolean("isClear", false)) {
+            sp.edit().clear().apply();
+            sp.edit().putBoolean("isClear", true).apply();
+        }
+
+        int themePref = sp.getInt("themePref", ThemeEnum.LightMode.getMode());
+        ThemeHelper.applyTheme(ThemeEnum.values()[themePref]);
     }
 }

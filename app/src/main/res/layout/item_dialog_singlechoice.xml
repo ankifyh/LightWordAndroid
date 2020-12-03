@@ -1,0 +1,23 @@
+<!--
+  ~ Copyright (c) 2020 All right reserved.
+  ~ Created by shiroyk, https://github.com/shiroyk
+  -->
+
+<CheckedTextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@android:id/text1"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:drawablePadding="20dp"
+    android:ellipsize="marquee"
+    android:gravity="left|center_vertical"
+    android:minHeight="?attr/listPreferredItemHeightSmall"
+    android:paddingStart="@dimen/abc_select_dialog_padding_start_material"
+    android:paddingLeft="@dimen/abc_select_dialog_padding_start_material"
+    android:paddingEnd="?attr/dialogPreferredPadding"
+    android:paddingRight="?attr/dialogPreferredPadding"
+    android:textAlignment="viewStart"
+    app:drawableLeftCompat="?android:attr/listChoiceIndicatorSingle"
+    app:drawableStartCompat="?android:attr/listChoiceIndicatorSingle"
+    tools:ignore="RtlCompat" />

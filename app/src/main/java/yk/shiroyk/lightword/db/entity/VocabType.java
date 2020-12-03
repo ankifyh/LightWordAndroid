@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2020 All right reserved.
+ * Created by shiroyk, https://github.com/shiroyk
+ */
+
 package yk.shiroyk.lightword.db.entity;
 
 import androidx.room.ColumnInfo;
@@ -49,8 +54,12 @@ public class VocabType {
         this.amount = amount;
     }
 
-    public void upAmount(Integer amount) {
+    public void plusAmount(Integer amount) {
         this.amount += amount;
+    }
+
+    public void minusAmount(Integer amount) {
+        this.amount -= amount;
     }
 
     @Override

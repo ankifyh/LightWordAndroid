@@ -1,8 +1,13 @@
+/*
+ * Copyright (c) 2020 All right reserved.
+ * Created by shiroyk, https://github.com/shiroyk
+ */
+
 package yk.shiroyk.lightword.db.converter;
 
 import androidx.room.TypeConverter;
 
-import yk.shiroyk.lightword.ui.managedata.OrderEnum;
+import yk.shiroyk.lightword.db.constant.OrderEnum;
 
 public class OrderConverter {
     @TypeConverter

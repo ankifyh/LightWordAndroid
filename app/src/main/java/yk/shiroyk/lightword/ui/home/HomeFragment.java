@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2020 All right reserved.
+ * Created by shiroyk, https://github.com/shiroyk
+ */
+
 package yk.shiroyk.lightword.ui.home;
 
 import android.content.Context;
@@ -92,10 +97,10 @@ public class HomeFragment extends Fragment {
     }
 
     private void setHomeCardTitle() {
-        String preValue = sp.getString("vtypeId", "1");
+        long vtypePref = sp.getLong("vtypeId", 1L);
 
-        vocabTypeRepository.getVocabTypeById(Long.valueOf(preValue)).observe(getViewLifecycleOwner(), vocabType -> {
-            exerciseRepository.getExerciseProgress(Long.valueOf(preValue)).observe(getViewLifecycleOwner(), integer -> {
+        vocabTypeRepository.getVocabTypeById(vtypePref).observe(getViewLifecycleOwner(), vocabType -> {
+            exerciseRepository.getExerciseProgress(vtypePref).observe(getViewLifecycleOwner(), integer -> {
                 if (vocabType != null) {
                     tv_home_title.setText(vocabType.getVocabtype());
                     tv_home_subtitle.setVisibility(View.VISIBLE);
@@ -107,7 +112,7 @@ public class HomeFragment extends Fragment {
                     tv_home_subtitle.setVisibility(View.INVISIBLE);
                 }
             });
-            exerciseRepository.getExerciseReview(Long.valueOf(preValue)).observe(getViewLifecycleOwner(), integer -> {
+            exerciseRepository.getExerciseReview(vtypePref).observe(getViewLifecycleOwner(), integer -> {
                 if (vocabType != null) {
                     tv_home_review.setVisibility(View.VISIBLE);
                     tv_home_review.setText(
@@ -188,7 +193,7 @@ public class HomeFragment extends Fragment {
         xAxis.setAxisLineColor(white);
         xAxis.setDrawGridLines(false);
         xAxis.setValueFormatter(new ValueFormatter() {
-            SimpleDateFormat dateFormat = new SimpleDateFormat("M/dd", Locale.CHINA);
+            final SimpleDateFormat dateFormat = new SimpleDateFormat("M/dd", Locale.CHINA);
 
             @Override
             public String getFormattedValue(float value) {

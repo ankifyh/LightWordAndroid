@@ -1,41 +1,88 @@
+/*
+ * Copyright (c) 2020 All right reserved.
+ * Created by shiroyk, https://github.com/shiroyk
+ */
+
 package yk.shiroyk.lightword.ui.setting;
 
 import android.app.Activity;
-import android.app.AlertDialog;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.CountDownTimer;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.text.InputType;
 import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.GridView;
+import android.widget.ListView;
 
+import androidx.annotation.ArrayRes;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.core.util.Consumer;
 import androidx.preference.EditTextPreference;
-import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.SwitchPreferenceCompat;
 
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.snackbar.Snackbar;
+
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import yk.shiroyk.lightword.R;
+import yk.shiroyk.lightword.db.constant.ThemeEnum;
+import yk.shiroyk.lightword.db.entity.ExerciseData;
+import yk.shiroyk.lightword.db.entity.VocabExerciseData;
 import yk.shiroyk.lightword.db.entity.VocabType;
+import yk.shiroyk.lightword.db.entity.Vocabulary;
+import yk.shiroyk.lightword.repository.ExerciseRepository;
 import yk.shiroyk.lightword.repository.VocabTypeRepository;
+import yk.shiroyk.lightword.repository.VocabularyRepository;
 import yk.shiroyk.lightword.ui.adapter.ColorPickAdapter;
 import yk.shiroyk.lightword.utils.ThemeHelper;
 import yk.shiroyk.lightword.utils.ThreadTask;
+import yk.shiroyk.lightword.utils.VocabularyDataManage;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
 
-    private Activity mActivity;
-
+    private static final int REQUEST_VOCAB_EXERCISE = 10002;
     private VocabTypeRepository vocabTypeRepository;
+    private VocabularyRepository vocabularyRepository;
+    private VocabularyDataManage vocabularyDataManage;
+    private ExerciseRepository exerciseRepository;
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         setPreferencesFromResource(R.xml.preferences, rootKey);
-        mActivity = getActivity();
-        vocabTypeRepository = new VocabTypeRepository(mActivity.getApplication());
+        vocabTypeRepository = new VocabTypeRepository(getActivity().getApplication());
+        vocabularyRepository = new VocabularyRepository(getActivity().getApplication());
+        vocabularyDataManage = new VocabularyDataManage(getContext());
+        exerciseRepository = new ExerciseRepository(getActivity().getApplication());
         init();
     }
 
@@ -45,13 +92,8 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     }
 
     private void init() {
-        ListPreference themePreference = findPreference("themePref");
-        themePreference.setOnPreferenceChangeListener(
-                (preference, newValue) -> {
-                    String themeOption = (String) newValue;
-                    ThemeHelper.applyTheme(themeOption);
-                    return true;
-                });
+        materialSingleChoiceDialog("themePref", R.array.themeArray, newValue ->
+                ThemeHelper.applyTheme(ThemeEnum.values()[newValue]));
 
         Preference primaryColor = findPreference("primaryColor");
         primaryColor.setOnPreferenceClickListener(preference -> {
@@ -65,15 +107,19 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             return false;
         });
 
-        setVTypeEntry();
+        choiceVTypeDialog();
+
+        materialSingleChoiceDialog("isPronounce", R.array.pronounceArray, null);
 
         EditTextPreference targetPreference = findPreference("dailyTarget");
         targetPreference.setOnBindEditTextListener(editText ->
-                editText.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED));
+                editText.setInputType(InputType.TYPE_CLASS_NUMBER));
 
         EditTextPreference cardQuantity = findPreference("cardQuantity");
         cardQuantity.setOnBindEditTextListener(editText ->
-                editText.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED));
+                editText.setInputType(InputType.TYPE_CLASS_NUMBER));
+
+        materialSingleChoiceDialog("ttsSpeech", R.array.ttsArray, null);
 
         Preference systemTTS = findPreference("systemTTS");
         systemTTS.setOnPreferenceClickListener(preference -> {
@@ -87,77 +133,347 @@ public class SettingsFragment extends PreferenceFragmentCompat {
             return false;
         });
 
+        Preference backupVocabulary = findPreference("backupVocabulary");
+        backupVocabulary.setOnPreferenceClickListener(preference -> {
+            selectVTypeDialog(vType -> {
+                writeBackupFile(
+                        vType.getVocabtype(),
+                        vType, false);
+            });
+            return false;
+        });
+
+        Preference copyExercise = findPreference("copyExercise");
+        copyExercise.setOnPreferenceClickListener(preference -> {
+            copyExerciseDialog();
+            return false;
+        });
+
+        Preference backupExercise = findPreference("backupExercise");
+        backupExercise.setOnPreferenceClickListener(preference -> {
+            selectVTypeDialog(vType -> {
+                SimpleDateFormat format = new SimpleDateFormat("-MM-dd-HH-mm", Locale.CHINA);
+                writeBackupFile(
+                        vType.getVocabtype() + "-" +
+                                getString(R.string.app_name) +
+                                "-backup-" +
+                                format.format(new Date()),
+                        vType, true);
+            });
+            return false;
+        });
+
+        Preference importExercise = findPreference("importExercise");
+        importExercise.setOnPreferenceClickListener(preference -> {
+            pickVocabExercise();
+            return false;
+        });
+
     }
 
-    private void setVTypeEntry() {
+    private void materialSingleChoiceDialog(String key, @ArrayRes int id, Consumer<Integer> consumer) {
+        Preference preference = findPreference(key);
+        CharSequence[] stringArray = getResources().getStringArray(id);
+        AtomicInteger position = new AtomicInteger(getPreferenceScreen().getSharedPreferences().getInt(key, 0));
+        preference.setSummary(stringArray[position.get()]);
+
+        preference.setOnPreferenceClickListener(pref -> {
+            position.set(pref.getSharedPreferences().getInt(key, 0));
+            new MaterialAlertDialogBuilder(getContext())
+                    .setTitle(preference.getTitle())
+                    .setSingleChoiceItems(stringArray, position.get(), (dialogInterface, i) -> {
+                        position.set(i);
+                        pref.getSharedPreferences().edit().putInt(key, i).apply();
+                        if (consumer != null)
+                            consumer.accept(i);
+                        pref.setSummary(stringArray[i]);
+                        dialogInterface.dismiss();
+                    })
+                    .setNegativeButton(R.string.dialog_cancel, null)
+                    .create().show();
+            return false;
+        });
+    }
+
+    private void choiceVTypeDialog() {
+        Preference vtypePreference = findPreference("vtypeId");
         ThreadTask.runOnThread(() -> vocabTypeRepository.getAllVocabTypes(), vList -> {
             if (vList.size() > 0) {
-                List<String> entries = new ArrayList<>();
-                List<String> entryValues = new ArrayList<>();
-
-                ListPreference vtypePreference = findPreference("vtypeId");
-                String preValue = vtypePreference.getValue();
-
-                for (VocabType v : vList) {
-                    Long id = v.getId();
-                    String vType = v.getVocabtype();
-                    entries.add(vType + " (" + v.getAmount() + ")");
-                    entryValues.add(id + "");
-                    if (id.toString().equals(preValue))
-                        vtypePreference.setSummaryProvider(p -> vType);
+                Long vtypeId = vtypePreference.getSharedPreferences().getLong("vtypeId", 1L);
+                AtomicInteger position = new AtomicInteger(0);
+                for (int i = 0; i < vList.size(); i++) {
+                    if (vtypeId.equals(vList.get(i).getId())) {
+                        vtypePreference.setSummary(vList.get(i).getVocabtype());
+                        position.set(i);
+                    }
                 }
-                CharSequence[] vtype = entries.toArray(new CharSequence[0]);
-                CharSequence[] vtypeId = entryValues.toArray(new CharSequence[0]);
-
-                vtypePreference.setEntries(vtype);
-                vtypePreference.setEntryValues(vtypeId);
-
-                vtypePreference.setOnPreferenceChangeListener(
-                        (preference, newValue) -> {
-                            vtypePreference.setValue(newValue.toString());
-                            if (vtype.length > 0)
-                                vtypePreference.setSummaryProvider(p ->
-                                        vtype[Integer.parseInt(newValue.toString()) - 1]);
-                            return false;
-                        });
+                ArrayAdapter<VocabType> arrayAdapter = new ArrayAdapter<>
+                        (getContext(), R.layout.item_dialog_singlechoice);
+                arrayAdapter.addAll(vList);
+                vtypePreference.setOnPreferenceClickListener(preference -> {
+                    new MaterialAlertDialogBuilder(getContext())
+                            .setTitle(R.string.select_vocab_type)
+                            .setSingleChoiceItems(arrayAdapter, position.get(), (dialogInterface, i) -> {
+                                VocabType vocabType = arrayAdapter.getItem(i);
+                                position.set(i);
+                                preference.getSharedPreferences().edit()
+                                        .putLong("vtypeId", vocabType.getId()).apply();
+                                preference.setSummary(vocabType.getVocabtype());
+                                dialogInterface.dismiss();
+                            })
+                            .setNegativeButton(R.string.dialog_cancel, null)
+                            .create().show();
+                    return false;
+                });
+            } else {
+                vtypePreference.setSummary("未设置");
             }
         });
     }
 
     private void setColorPickView(SharedPreferences sp) {
-        final String[] theme = new String[1];
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         View dialogView = getLayoutInflater().inflate(R.layout.layout_color_picker, null);
 
         GridView gridView = dialogView.findViewById(R.id.color_grid);
         ColorPickAdapter adapter = new ColorPickAdapter(
                 getContext(),
                 R.layout.item_color_btn,
-                getResources().obtainTypedArray(R.array.primary_colors),
-                newTheme -> {
-                    theme[0] = newTheme;
-                });
+                getResources().obtainTypedArray(R.array.primary_colors));
         gridView.setAdapter(adapter);
-        builder.setTitle("选择主色调")
-                .setView(dialogView);
 
-        AlertDialog dialog = builder.create();
-        dialogView.findViewById(R.id.btn_color_default).setOnClickListener(view -> {
-            sp.edit().putString("primaryColor", "default").apply();
+        AlertDialog dialog = new MaterialAlertDialogBuilder(getContext(), R.style.Custom_MaterialAlertDialog).
+                setTitle("选择主色调")
+                .setView(dialogView)
+                .setNeutralButton(R.string.dialog_default, (dialogInterface, i) -> {
+                    sp.edit().putString("primaryColor", "default").apply();
+                    dialogInterface.dismiss();
+                    getActivity().recreate();
+                })
+                .setPositiveButton(R.string.dialog_cancel, null).create();
+        adapter.setOnColorClickedListener(newTheme -> {
+            sp.edit().putString("primaryColor", newTheme).apply();
             dialog.dismiss();
             getActivity().recreate();
         });
-
-        dialogView.findViewById(R.id.btn_color_ensure).setOnClickListener(view -> {
-            String newTheme = theme[0];
-            if (newTheme != null) {
-                sp.edit().putString("primaryColor", newTheme).apply();
-            }
-            dialog.dismiss();
-            getActivity().recreate();
-        });
-        dialogView.findViewById(R.id.btn_color_cancel)
-                .setOnClickListener(view -> dialog.dismiss());
         dialog.show();
+    }
+
+    private void countDown(Runnable runnable, int millis) {
+        new CountDownTimer(millis, 1000) {
+            @Override
+            public void onTick(long l) {
+            }
+
+            @Override
+            public void onFinish() {
+                runnable.run();
+            }
+        }.start();
+    }
+
+    private void copyExerciseDialog() {
+        View dialogView = getLayoutInflater().inflate(R.layout.layout_copy_vocab_exercise, null);
+        AutoCompleteTextView tv_oldVType = dialogView.findViewById(R.id.old_vType);
+        AutoCompleteTextView tv_newVType = dialogView.findViewById(R.id.new_vType);
+
+        ArrayAdapter<VocabType> arrayAdapter = new ArrayAdapter<>
+                (getContext(), android.R.layout.simple_list_item_single_choice);
+        vocabTypeRepository.getAllVocabType().observe(getViewLifecycleOwner(), vTypes -> {
+            arrayAdapter.addAll(vTypes);
+            tv_oldVType.setAdapter(arrayAdapter);
+            tv_newVType.setAdapter(arrayAdapter);
+            AtomicReference<VocabType> oldVType = new AtomicReference<>();
+            AtomicReference<VocabType> newVType = new AtomicReference<>();
+            tv_oldVType.setOnItemClickListener((adapterView, view, i, l) ->
+                    oldVType.set((VocabType) adapterView.getItemAtPosition(i)));
+            tv_newVType.setOnItemClickListener((adapterView, view, i, l) ->
+                    newVType.set((VocabType) adapterView.getItemAtPosition(i)));
+
+            new MaterialAlertDialogBuilder(getContext())
+                    .setTitle(R.string.select_vocab_type)
+                    .setView(dialogView)
+                    .setPositiveButton(R.string.dialog_ensure, (dialogInterface, i) -> {
+                        Snackbar snackbar = Snackbar.make(getView(), "复制中....", Snackbar.LENGTH_INDEFINITE);
+                        snackbar.show();
+                        ThreadTask.runOnThread(() -> vocabularyRepository.getWordList(newVType.get().getId()), vList -> {
+                            exerciseRepository.copyExerciseData(oldVType.get().getId(), newVType.get().getId(), vList)
+                                    .observe(getViewLifecycleOwner(), size -> {
+                                        snackbar.setText(String.format(getString(R.string.success_copy_exercise),
+                                                size, newVType.get().getVocabtype()));
+                                        countDown(snackbar::dismiss, 1000);
+                                    });
+                        });
+                    })
+                    .setNegativeButton(R.string.dialog_cancel, null)
+                    .create().show();
+        });
+    }
+
+    private void writeBackupFile(String name, VocabType vType, Boolean isExercise) {
+        Snackbar snackbar = Snackbar.make(getView(), "备份中...", Snackbar.LENGTH_INDEFINITE);
+        snackbar.show();
+
+        ThreadTask.runOnThread(() -> {
+            int size;
+            try {
+                OutputStream outputStream;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    ContentResolver resolver = getContext().getContentResolver();
+                    ContentValues contentValues = new ContentValues();
+                    contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, name + ".csv");
+                    contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "text/csv");
+                    contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOCUMENTS);
+                    Uri backup = resolver.insert(MediaStore.Files.getContentUri("external"), contentValues);
+                    outputStream = resolver.openOutputStream(Objects.requireNonNull(backup));
+                } else {
+                    File document = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
+                    if (!document.exists()) document.mkdir();
+                    File backup = new File(document, name + ".csv");
+                    outputStream = new FileOutputStream(backup);
+                }
+
+                BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(outputStream);
+
+                try {
+                    if (isExercise) {
+                        List<VocabExerciseData> vList = exerciseRepository.getExerciseDataList(vType.getId());
+
+                        String header = "word, timestamp, last_practice, " +
+                                "stage, correct, wrong, " + vType.getVocabtype() +
+                                ", Backup generated by LightWord \n";
+                        bufferedOutputStream.write(header.getBytes());
+                        bufferedOutputStream.flush();
+                        for (VocabExerciseData vData : vList) {
+                            String line = vData.word + ","
+                                    + vData.timestamp.getTime() + ","
+                                    + vData.last_practice.getTime() + ","
+                                    + vData.stage + ","
+                                    + vData.correct + ","
+                                    + vData.wrong + "\n";
+                            bufferedOutputStream.write(line.getBytes());
+                            bufferedOutputStream.flush();
+                        }
+                        size = vList.size();
+                    } else {
+                        List<Vocabulary> vList = vocabularyRepository.getWordList(vType.getId());
+
+                        for (Vocabulary vocab : vList) {
+                            String line = vocab.getWord() + ","
+                                    + vocab.getFrequency() + ","
+                                    + vocabularyDataManage.readFile(vType.getId()
+                                    , vocab.getWord()).trim() + "\n";
+                            bufferedOutputStream.write(line.getBytes());
+                            bufferedOutputStream.flush();
+                        }
+                        size = vList.size();
+                    }
+                    outputStream.close();
+                    bufferedOutputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+                return -1;
+            }
+            return size;
+        }, size -> {
+            if (size == null) snackbar.setText("备份失败！");
+            else if (size == -1) snackbar.setText("备份失败，无写入权限！");
+            else snackbar.setText("备份到" + Environment.DIRECTORY_DOCUMENTS + "已完成！");
+            countDown(snackbar::dismiss, 2000);
+        });
+
+    }
+
+    private void selectVTypeDialog(Consumer<VocabType> consumer) {
+        ArrayAdapter<VocabType> arrayAdapter = new ArrayAdapter<>
+                (getContext(), R.layout.item_dialog_singlechoice);
+        vocabTypeRepository.getAllVocabType().observe(getViewLifecycleOwner(), vTypes -> {
+            arrayAdapter.addAll(vTypes);
+            AtomicReference<VocabType> vTypeAtomic = new AtomicReference<>();
+            ListView view = new ListView(getContext());
+            view.setAdapter(arrayAdapter);
+            new MaterialAlertDialogBuilder(getContext())
+                    .setTitle(R.string.select_vocab_type)
+                    .setSingleChoiceItems(arrayAdapter, 0, (dialogInterface, i) -> {
+                        vTypeAtomic.set(arrayAdapter.getItem(i));
+                    })
+                    .setPositiveButton(R.string.dialog_ensure, (dialogInterface, i) -> {
+                        if (vTypeAtomic.get() == null)
+                            vTypeAtomic.set(arrayAdapter.getItem(0));
+                        consumer.accept(vTypeAtomic.get());
+                    })
+                    .setNegativeButton(R.string.dialog_cancel, null)
+                    .create().show();
+        });
+    }
+
+    private void pickVocabExercise() {
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("text/*");
+        String[] mimetypes = {"text/csv", "text/comma-separated-values", "application/csv"};
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, mimetypes);
+        this.startActivityForResult(intent, REQUEST_VOCAB_EXERCISE);
+    }
+
+    private void importVocabExercise(Uri uri) {
+        Snackbar snackbar = Snackbar.make(getView(), "导入备份中...", Snackbar.LENGTH_INDEFINITE);
+        snackbar.show();
+        ThreadTask.runOnThread(() -> {
+            Integer count = 0;
+            try {
+                InputStream is = getContext().getContentResolver().openInputStream(uri);
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(is));
+                String header = bufferedReader.readLine();
+                if (!header.contains("Backup generated by LightWord")) return -1;
+                VocabType vType = vocabTypeRepository.getVocabType(header.split(",", 8)[6].trim());
+                if (vType == null) return -2;
+
+                Map<String, Long> wordIdMap = vocabularyRepository.getWordIdMap(vType.getId());
+                List<ExerciseData> dataList = new ArrayList<>();
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
+                    String[] data = line.split(",", 6);
+                    try {
+                        ExerciseData exerciseData = new ExerciseData();
+                        exerciseData.setWordId(wordIdMap.get(data[0]));
+                        exerciseData.setVtypeId(vType.getId());
+                        exerciseData.setTimestamp(new Date(Long.parseLong(data[1])));
+                        exerciseData.setLastPractice(new Date(Long.parseLong(data[2])));
+                        exerciseData.setStage(Integer.parseInt(data[3]));
+                        exerciseData.setCorrect(Integer.parseInt(data[4]));
+                        exerciseData.setWrong(Integer.parseInt(data[5]));
+                        dataList.add(exerciseData);
+                        count++;
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
+                exerciseRepository.insertOrUpdate(dataList.toArray(new ExerciseData[count]));
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                count = null;
+            }
+            return count;
+        }, size -> {
+            if (size == null) snackbar.setText("导入备份失败！");
+            else if (size == -1) snackbar.setText("解析失败，不是备份文件！");
+            else if (size == -2) snackbar.setText("词汇分类不存在，无法导入练习数据！");
+            else snackbar.setText("导入备份已完成！共导入" + size + "条数据。");
+            countDown(snackbar::dismiss, 2000);
+        });
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_VOCAB_EXERCISE && resultCode == Activity.RESULT_OK) {
+            if (data != null) {
+                importVocabExercise(data.getData());
+            }
+        }
     }
 }

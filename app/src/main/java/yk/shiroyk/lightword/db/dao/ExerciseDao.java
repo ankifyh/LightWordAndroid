@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2020 All right reserved.
+ * Created by shiroyk, https://github.com/shiroyk
+ */
+
 package yk.shiroyk.lightword.db.dao;
 
 import androidx.lifecycle.LiveData;
@@ -10,13 +15,17 @@ import androidx.room.Update;
 import java.util.List;
 
 import yk.shiroyk.lightword.db.entity.ExerciseData;
-import yk.shiroyk.lightword.db.entity.Vocabulary;
+import yk.shiroyk.lightword.db.entity.VocabExerciseData;
 
 @Dao
 public interface ExerciseDao {
 
     @Insert
     Long insert(ExerciseData exercisedata);
+
+    @Transaction
+    @Insert
+    void insert(ExerciseData[] exercisedata);
 
     @Update
     void update(ExerciseData exercisedata);
@@ -25,31 +34,29 @@ public interface ExerciseDao {
     @Update
     void update(ExerciseData[] exerciseData);
 
-    @Query("SELECT * FROM exercise_data")
-    ExerciseData getAllData();
+    @Query("SELECT word, word_id, vtype_id, timestamp, last_practice," +
+            "stage, correct, wrong FROM vocabulary INNER JOIN (SELECT word_id, " +
+            "timestamp, last_practice, stage, correct, wrong " +
+            "FROM exercise_data WHERE vtype_id = :vtypeId) AS userword ON " +
+            "vocabulary.id = userword.word_id")
+    List<VocabExerciseData> getExerciseDataList(Long vtypeId);
+
+    @Query("SELECT id FROM exercise_data WHERE word_id = :wordId AND vtype_id = :vtypeId")
+    Long getExerciseDataId(Long wordId, Long vtypeId);
+
+    @Query("SELECT word_id FROM exercise_data WHERE vtype_id = :vtypeId")
+    List<Long> getVocabIdList(Long vtypeId);
 
     @Transaction
     @Query("SELECT * FROM exercise_data WHERE vtype_id = :vtypeId AND word_id IN (:idList)")
     ExerciseData[] getWordListById(List<Long> idList, Long vtypeId);
-
-    @Query("SELECT vocabulary.* FROM exercise_data, vocabulary WHERE " +
-            "stage = 11 AND exercise_data.vtype_id = :vtypeId" +
-            " AND exercise_data.word_id = vocabulary.id")
-    List<Vocabulary> getMasterWord(long vtypeId);
-
-    @Query("SELECT * FROM exercise_data WHERE stage = 11")
-    List<ExerciseData> getMastered();
-
-    @Query("SELECT vocabulary.* FROM exercise_data, vocabulary WHERE " +
-            "stage = 11 AND exercise_data.vtype_id = :vtypeId " +
-            " AND exercise_data.word_id = vocabulary.id AND word LIKE :word")
-    LiveData<List<Vocabulary>> searchMasterWord(long vtypeId, String word);
 
     @Query("SELECT count(word_id) FROM exercise_data WHERE vtype_id = :vtypeId")
     LiveData<Integer> getExerciseProgress(long vtypeId);
 
     @Query("SELECT count(word_id) FROM exercise_data " +
             "WHERE vtype_id = :vtypeId " +
+            "AND stage != 99 " +
             "AND timestamp <= strftime('%s','now') * 1000")
     LiveData<Integer> getExerciseReview(long vtypeId);
 
@@ -66,6 +73,7 @@ public interface ExerciseDao {
     @Query("SELECT word_id FROM exercise_data " +
             "WHERE exercise_data.vtype_id = :vtypeId " +
             "AND timestamp <= strftime('%s','now') * 1000 " +
+            "AND stage != 99 " +
             "ORDER BY exercise_data.timestamp " +
             "LIMIT :limit")
     List<Long> LoadReviewWord(long vtypeId, Integer limit);

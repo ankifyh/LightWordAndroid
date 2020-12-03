@@ -1,17 +1,20 @@
-<androidx.preference.PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+<!--
+  ~ Copyright (c) 2020 All right reserved.
+  ~ Created by shiroyk, https://github.com/shiroyk
+  -->
+
+<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory
         app:key="theme_category"
         app:title="主题">
 
-        <ListPreference
-            app:defaultValue="light"
-            app:dialogTitle="选择主题"
-            app:entries="@array/themeListArray"
-            app:entryValues="@array/themeEntryArray"
+        <Preference
+            app:defaultValue="@integer/default_themePref"
             app:key="themePref"
             app:title="选择主题"
-            app:useSimpleSummaryProvider="true" />
+            app:summary="跟随系统" />
 
         <Preference
             app:key="primaryColor"
@@ -29,36 +32,31 @@
         app:key="exercise_category"
         app:title="练习设置">
 
-        <ListPreference
-            app:defaultValue="1"
-            app:dialogTitle="选择练习单词分类"
-            app:entries="@array/vtypeListArray"
-            app:entryValues="@array/vtypeEntryArray"
+        <Preference
             app:key="vtypeId"
             app:title="练习单词分类"
-            app:useSimpleSummaryProvider="true" />
+            app:summary="无数据" />
 
-        <ListPreference
-            app:defaultValue="0"
-            app:dialogTitle="选择单词读音"
-            app:entries="@array/pronounceListArray"
-            app:entryValues="@array/pronounceEntryArray"
+        <Preference
+            app:defaultValue="@integer/default_is_pronounce"
             app:key="isPronounce"
             app:title="显示单词读音"
-            app:useSimpleSummaryProvider="true" />
+            app:summary="未设置" />
 
         <EditTextPreference
-            app:defaultValue="10"
+            android:inputType="number"
             app:dialogTitle="设置一组词卡的数量"
             app:key="cardQuantity"
             app:title="词卡数量"
+            app:defaultValue="@integer/default_card_quantity"
             app:useSimpleSummaryProvider="true" />
 
         <EditTextPreference
-            app:defaultValue="0"
+            android:inputType="number"
             app:dialogTitle="设置每日目标"
             app:key="dailyTarget"
             app:title="每日目标"
+            app:defaultValue="@integer/default_daily_target"
             app:useSimpleSummaryProvider="true" />
 
         <SwitchPreferenceCompat
@@ -73,18 +71,37 @@
         app:key="tts_category"
         app:title="例句发音">
 
-        <ListPreference
-            app:defaultValue="close"
-            app:dialogTitle="选择朗读"
-            app:entries="@array/ttsListArray"
-            app:entryValues="@array/ttsEntryArray"
+        <Preference
             app:key="ttsSpeech"
             app:title="TTS朗读"
-            app:useSimpleSummaryProvider="true" />
+            app:summary="未设置" />
 
         <Preference
             app:key="systemTTS"
             app:title="前往系统TTS设置" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        app:key="exercise_data_category"
+        app:title="数据管理">
+
+        <Preference
+            app:key="backupVocabulary"
+            app:title="备份词汇数据" />
+
+        <Preference
+            app:key="copyExercise"
+            app:summary="@string/setting_copy_exercise_subtitle"
+            app:title="@string/setting_copy_exercise" />
+
+        <Preference
+            app:key="backupExercise"
+            app:title="备份练习数据" />
+
+        <Preference
+            app:key="importExercise"
+            app:title="导入练习数据" />
 
     </PreferenceCategory>
 
