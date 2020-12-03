@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -430,7 +431,8 @@ public class VocabFragment extends Fragment {
                         .readFile(vocab.vtypeId, vocab.word);
                 exerciseList = new Gson().fromJson(ex, ExerciseList.class);
                 et_pronounce.setText(exerciseList.getPronounceString());
-                vocabDetailAdapter.setCollocations(exerciseList.getCollocation());
+                if (exerciseList.getCollocation() != null)
+                    vocabDetailAdapter.setCollocations(exerciseList.getCollocation());
             } catch (Exception ignored) {
 
             }
@@ -562,6 +564,7 @@ public class VocabFragment extends Fragment {
                         coll.setPartOfSpeech(et_pos.getText().toString().trim());
                         coll.setMeaning(et_mean.getText().toString().trim());
                         coll.setExample(exampleDetailAdapter.getExampleList());
+                        Log.e(TAG, "editCollocationDialog: " + vocabDetailAdapter.getCollocations());
                         vocabDetailAdapter.addCollocation(coll);
                         exerciseList.setCollocation(vocabDetailAdapter.getCollocations());
                     });

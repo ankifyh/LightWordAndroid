@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2020 All right reserved.
+ * Created by shiroyk, https://github.com/shiroyk
+ */
+
 package yk.shiroyk.lightword.db.entity.exercise;
 
 import com.google.gson.annotations.Expose;
@@ -39,6 +44,6 @@ public class Example {
     }
 
     public boolean hasAnswer() {
-        return answer != null;
+        return answer != null && answer.length() > 0;
     }
 }

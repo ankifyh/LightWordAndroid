@@ -202,45 +202,51 @@ public class ExerciseBuild extends ViewModel {
                 if (exampleList != null) {
 
                     List<String> inflection = exampleList.getInflection();
+                    if (inflection == null)
+                        inflection = new ArrayList<>();
                     exercise.setInflection(inflection);
 
                     exercise.setPronounce(getPronounce(exampleList.getPronounce()));
 
-                    Collocation collocation = rdCollocation(exampleList);
-                    exercise.setMeaning(collocation.getMeaning());
-                    exercise.setPartOfSpeech(collocation.getPartOfSpeech());
+                    try {
+                        Collocation collocation = rdCollocation(exampleList);
+                        exercise.setMeaning(collocation.getMeaning());
+                        exercise.setPartOfSpeech(collocation.getPartOfSpeech());
 
-                    Example example = rdExample(collocation);
-                    if (example == null) {
-                        Log.e(TAG, "例句缺失: " + "Word: " + word);
-                        continue;
+                        Example example = rdExample(collocation);
+                        if (example == null) {
+                            throw new NullPointerException();
+                        }
+                        String sentence = example.getExample();
+
+                        if (example.hasAnswer()) {
+                            inflection.add(example.getAnswer());
+                        } else {
+                            inflection.add(word);
+                        }
+
+                        Answer ans = getAnswer(inflection, sentence);
+                        String answer = ans.answer;
+                        String translation = example.getTranslation();
+                        int index = ans.index;
+                        if (answer == null) {
+                            answer = word;
+                            sentence = word;
+                            index = 0;
+                            translation = "";
+                        }
+                        exercise.setSentence(sentence);
+                        exercise.setTranslation(translation);
+                        exercise.setAnswer(answer);
+                        exercise.setAnswerIndex(index);
+
+                        exerciseList.add(exercise);
+                    } catch (Exception exception) {
+                        exception.printStackTrace();
+                        Log.e(TAG, "例句缺失 - " + "Word: " + word);
                     }
-
-                    String sentence = example.getExample();
-
-                    if (example.hasAnswer()) {
-                        inflection = new ArrayList<>();
-                        inflection.add(example.getAnswer());
-                    }
-
-                    Answer ans = getAnswer(inflection, sentence);
-                    String answer = ans.answer;
-                    String translation = example.getTranslation();
-                    int index = ans.index;
-                    if (answer == null) {
-                        answer = word;
-                        sentence = word;
-                        index = 0;
-                        translation = "";
-                    }
-                    exercise.setSentence(sentence);
-                    exercise.setTranslation(translation);
-                    exercise.setAnswer(answer);
-                    exercise.setAnswerIndex(index);
-
-                    exerciseList.add(exercise);
                 } else {
-                    Log.e(TAG, "词汇例句缺失: " + "Word: " + word);
+                    Log.e(TAG, "词汇例句缺失 - " + "Word: " + word);
                 }
             }
         }

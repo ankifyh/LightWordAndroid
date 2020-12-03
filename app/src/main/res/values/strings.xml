@@ -98,7 +98,7 @@
     <string name="create_example">新建更多例句</string>
     <string name="save_vocab_error">保存失败，词汇不能为空！</string>
     <string name="vocab_exist">%s 已存在</string>
-    <string name="vocab_exist_msg">是否覆盖？</string>
+    <string name="vocab_exist_msg">是否保存所修改的数据？</string>
     <string name="vocab_save_success">%s 保存成功！</string>
     <string name="vocab_save_fail_collcation_not_null">%s 保存失败，搭配不能为空！</string>
     <string name="example_del_fail_example_not_null">删除失败，例句不能为空！</string>

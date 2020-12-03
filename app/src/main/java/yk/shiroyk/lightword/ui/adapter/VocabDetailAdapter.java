@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2020 All right reserved.
+ * Created by shiroyk, https://github.com/shiroyk
+ */
+
 package yk.shiroyk.lightword.ui.adapter;
 
 import android.content.Context;
@@ -16,10 +21,10 @@ import yk.shiroyk.lightword.R;
 import yk.shiroyk.lightword.db.entity.exercise.Collocation;
 
 public class VocabDetailAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-    private OnItemClickListener listener;
-    private Context context;
+    private final OnItemClickListener listener;
+    private final Context context;
     private List<Collocation> collocations = new ArrayList<>();
-    private boolean multiLine;
+    private final boolean multiLine;
 
     public VocabDetailAdapter(Context context, OnItemClickListener listener, boolean multiLine) {
         this.context = context;
@@ -66,7 +71,8 @@ public class VocabDetailAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     }
 
     private static class ViewHolder extends RecyclerView.ViewHolder {
-        private TextView tv_detail_title, tv_detail_subtitle;
+        private final TextView tv_detail_title;
+        private final TextView tv_detail_subtitle;
 
         public ViewHolder(@NonNull View itemView, boolean multiLine) {
             super(itemView);
