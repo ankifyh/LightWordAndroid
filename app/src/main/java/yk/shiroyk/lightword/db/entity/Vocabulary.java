@@ -1,9 +1,16 @@
+/*
+ * Copyright (c) 2020 All right reserved.
+ * Created by shiroyk, https://github.com/shiroyk
+ */
+
 package yk.shiroyk.lightword.db.entity;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
 import androidx.room.PrimaryKey;
+
+import java.util.Objects;
 
 @Entity(tableName = "vocabulary",
         foreignKeys = {
@@ -90,5 +97,19 @@ public class Vocabulary {
         this.word = word;
         this.vtypeId = vtypeId;
         this.frequency = frequency;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Vocabulary that = (Vocabulary) o;
+        return getWord().equals(that.getWord()) &&
+                getVtypeId().equals(that.getVtypeId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getWord(), getVtypeId());
     }
 }

@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2020 All right reserved.
+ * Created by shiroyk, https://github.com/shiroyk
+ */
+
 package yk.shiroyk.lightword.utils;
 
 import android.content.Context;
@@ -8,11 +13,11 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 
-public class VocabularyDataManage {
+public class VocabFileManage {
     private final String datafile = "vocabulary";
-    private Context context;
+    private final Context context;
 
-    public VocabularyDataManage(Context context) {
+    public VocabFileManage(Context context) {
         this.context = context;
     }
 
@@ -48,6 +53,12 @@ public class VocabularyDataManage {
         if (file.exists()) {
             file.delete();
         }
+    }
+
+    public void copyFile(Long oldVType, Long newVType, String oldName) {
+        File oldFile = new File(dataDir(oldVType), oldName + ".json");
+        File newFile = new File(dataDir(newVType), oldName + ".json");
+        FileUtils.copyFile(oldFile, newFile);
     }
 
     public String readFile(Long VType, String filename) {

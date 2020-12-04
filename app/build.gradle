@@ -18,7 +18,7 @@ android {
         minSdkVersion 22
         targetSdkVersion 30
         versionCode 1
-        versionName "v1.2.4"
+        versionName "v1.2.5"
 
         buildConfigField("String", "APPSECRET", appCenterKey['APPSECRET'])
         archivesBaseName = "lightword-$versionName"

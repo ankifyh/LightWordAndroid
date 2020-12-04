@@ -83,6 +83,17 @@
     </PreferenceCategory>
 
     <PreferenceCategory
+        app:key="other_category"
+        app:title="其他设置">
+
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:key="autoCheckUpdate"
+            app:title="自动检测更新" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
         app:key="exercise_data_category"
         app:title="数据管理">
 

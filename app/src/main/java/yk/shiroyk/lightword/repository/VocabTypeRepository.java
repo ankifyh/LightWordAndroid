@@ -1,7 +1,13 @@
+/*
+ * Copyright (c) 2020 All right reserved.
+ * Created by shiroyk, https://github.com/shiroyk
+ */
+
 package yk.shiroyk.lightword.repository;
 
 import android.app.Application;
 
+import androidx.core.util.Consumer;
 import androidx.lifecycle.LiveData;
 
 import java.util.List;
@@ -29,6 +35,10 @@ public class VocabTypeRepository {
 
     public void delete(VocabType v) {
         ThreadTask.runOnThread(() -> vocabTypeDao.delete(v));
+    }
+
+    public void delete(VocabType v, Consumer<Integer> consumer) {
+        ThreadTask.runOnThread(() -> vocabTypeDao.delete(v), consumer);
     }
 
     public List<VocabType> getAllVocabTypes() {

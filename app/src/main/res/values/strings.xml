@@ -40,7 +40,7 @@
 
     <string name="import_vocab_data_submenu" translatable="false">词汇数据</string>
     <string name="import_vocab_type_exist_title" translatable="false">该词汇分类已存在</string>
-    <string name="import_vocab_type_exist_message" translatable="false">是否新增该词汇分类的单词？</string>
+    <string name="import_vocab_type_exist_message" translatable="false">是否覆盖已存在或新增该词汇分类的词汇数据？</string>
     <string name="dialog_ensure" translatable="false">确认</string>
     <string name="dialog_cancel" translatable="false">取消</string>
     <string name="dialog_default" translatable="false">默认</string>
@@ -92,8 +92,10 @@
     <string name="new_item">新建</string>
     <string name="new_vocab_title">新建词汇</string>
     <string name="edit_vocab_title">编辑词汇</string>
-    <string name="delete_vocab">删除词汇</string>
-    <string name="delete_vocab_msg">是否删除词汇 %s？\n这个操作将会删除这个词汇的学习数据！</string>
+    <string name="delete_single_vocab">删除词汇</string>
+    <string name="delete_select_vocab">删除选择的词汇</string>
+    <string name="delete_single_vocab_msg">是否删除词汇 %s？\n这个操作将会删除这个词汇的学习数据！</string>
+    <string name="delete_select_vocab_msg">确定要删除选择的词汇吗？\n这个操作将会删除这些词汇的学习数据！</string>
     <string name="create_collocation">新建更多搭配</string>
     <string name="create_example">新建更多例句</string>
     <string name="save_vocab_error">保存失败，词汇不能为空！</string>
@@ -115,7 +117,8 @@
     <string name="review_vocab_size">待复习(%d)</string>
     <string name="mastered_word">已掌握</string>
     <string name="master_word">已掌握(%d)</string>
-    <string name="collect_word">添加到分类</string>
+    <string name="collect_word">复制到分类</string>
+    <string name="delete_word">删除词汇</string>
     <string name="demaster_word">取消掌握</string>
     <string name="action_create_vocab" translatable="false">vocab</string>
     <string name="action_info" translatable="false">info</string>
@@ -124,16 +127,19 @@
     <string name="mulit_select_item_title">%d/%d</string>
     <string name="total_of">共%d条</string>
     <string name="deselect_all">退出选择</string>
-    <string name="add_to_vocab_type">添加到词汇分类</string>
+    <string name="add_to_vocab_type">复制到词汇分类</string>
     <string name="delete_select_master_word_title">取消掌握已选择</string>
     <string name="add_select_master_word_title">掌握已选择</string>
     <string name="add_select_master_word_msg">是否将这些词汇添加至已掌握列表？</string>
     <string name="start_learn">开始学习</string>
     <string name="not_fount_vocab_type">保存失败，没有词汇分类，请先创建词汇分类！</string>
-    <string name="success_collect_vocab">成功添加%d个至%s</string>
+    <string name="success_collect_vocab">成功复制%d个至%s</string>
+    <string name="success_collect_vocab_overwrite">, 覆盖%d个</string>
+    <string name="success_delete_vocab">成功删除%s的%d个词汇</string>
     <string name="success_copy_exercise">成功复制%d个至%s</string>
     <string name="help_exercise">1. 练习界面中，点击进度⭕️可以快速添加到已掌握。</string>
     <string name="help_setting">2. 设置界面中，复制的练习数据，如果数据已存在则会忽略。</string>
     <string name="setting_copy_exercise">复制练习数据</string>
     <string name="setting_copy_exercise_subtitle">将一个分类的练习数据复制到另一个</string>
+
 </resources>

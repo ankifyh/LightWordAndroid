@@ -14,8 +14,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import yk.shiroyk.lightword.db.LightWordDatabase;
 import yk.shiroyk.lightword.db.dao.ExerciseDao;
@@ -60,8 +62,8 @@ public class ExerciseRepository {
         ThreadTask.runOnThread(() -> exerciseDao.update(data));
     }
 
-    public Long getExerciseDataId(Long wordId, Long vtypeId) {
-        return exerciseDao.getExerciseDataId(wordId, vtypeId);
+    public Set<ExerciseData> getExerciseDataSet(Long vtypeId) {
+        return new HashSet<>(exerciseDao.getExerciseData(vtypeId));
     }
 
     public ExerciseData[] getWordListById(List<Long> idList, Long vtypeId) {
@@ -206,23 +208,20 @@ public class ExerciseRepository {
         return size;
     }
 
-    public void insertOrUpdate(ExerciseData[] dataArray) {
-        if (dataArray.length == 0) return;
-        List<ExerciseData> insertData = new ArrayList<>();
-        List<ExerciseData> updateData = new ArrayList<>();
-        for (ExerciseData data : dataArray) {
-            Long id = getExerciseDataId(data.getWordId(), data.getVtypeId());
-            if (id == null) insertData.add(data);
-            else {
-                data.setId(id);
-                updateData.add(data);
-            }
-        }
-        int insertSize = insertData.size();
-        int updateSize = updateData.size();
+    public void insertOrUpdate(Set<ExerciseData> dataSet, Long vtypeId) {
+        if (dataSet.size() == 0) return;
 
-        insert(insertData.toArray(new ExerciseData[insertSize]));
-        update(updateData.toArray(new ExerciseData[updateSize]));
+        Set<ExerciseData> dataCopy = new HashSet<>(dataSet);
+        Set<ExerciseData> oldSet = getExerciseDataSet(vtypeId);
+
+        dataSet.removeAll(oldSet);
+        dataCopy.retainAll(oldSet);
+
+        int insertSize = dataSet.size();
+        int updateSize = dataCopy.size();
+
+        insert(dataSet.toArray(new ExerciseData[insertSize]));
+        update(dataCopy.toArray(new ExerciseData[updateSize]));
     }
 
     public LiveData<Integer> getExerciseStatus() {

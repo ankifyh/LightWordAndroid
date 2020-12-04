@@ -34,20 +34,16 @@ public interface VocabularyDao {
     @Delete
     int delete(Vocabulary vocabulary);
 
+    @Transaction
+    @Delete
+    int delete(Vocabulary[] vocabulary);
+
     @Query("SELECT COUNT(id) FROM vocabulary WHERE vtype_id = :vtypeId")
     Integer countWord(Long vtypeId);
 
     @Query("SELECT * FROM vocabulary WHERE" +
             " id = :wordId AND vtype_id = :vtypeId")
-    LiveData<Vocabulary> getWordById(Long wordId, Long vtypeId);
-
-    @Query("SELECT * FROM vocabulary WHERE" +
-            " id = :wordId AND vtype_id = :vtypeId")
     Vocabulary queryWordById(Long wordId, Long vtypeId);
-
-    @Query("SELECT * FROM vocabulary WHERE" +
-            " word = :word AND vtype_id = :vtypeId")
-    LiveData<Vocabulary> getWord(String word, Long vtypeId);
 
     @Query("SELECT * FROM vocabulary WHERE" +
             " word = :word AND vtype_id = :vtypeId")
@@ -69,8 +65,8 @@ public interface VocabularyDao {
     LiveData<List<Vocabulary>> getAllWord(Long vtypeId);
 
     @Query("SELECT id, word, vocabulary.vtype_id AS vtypeId, frequency, userword.last_practice AS lastPractice, " +
-            " userword.timestamp AS timestamp, correct, wrong FROM vocabulary LEFT JOIN ( SELECT word_id, timestamp, " +
-            " last_practice, correct, wrong FROM exercise_data WHERE exercise_data.vtype_id = :vtypeId) AS userword " +
+            " timestamp, correct, wrong FROM vocabulary LEFT JOIN ( SELECT word_id, timestamp, last_practice, " +
+            " correct, wrong FROM exercise_data WHERE exercise_data.vtype_id = :vtypeId) AS userword " +
             " ON vocabulary.id = userword.word_id WHERE vocabulary.vtype_id = :vtypeId ORDER BY " +
             " CASE WHEN :order = 0 THEN LOWER(word) " +
             "      WHEN :order = 1 THEN frequency END ASC," +
@@ -81,16 +77,16 @@ public interface VocabularyDao {
     LiveData<List<VocabExercise>> getAllWordOrderBy(Long vtypeId, OrderEnum order);
 
     @Query("SELECT id, word, vocabulary.vtype_id AS vtypeId, frequency, userword.last_practice AS lastPractice, " +
-            " userword.timestamp AS timestamp, correct, wrong FROM vocabulary LEFT JOIN ( SELECT word_id, timestamp, " +
-            " last_practice, correct, wrong FROM exercise_data WHERE exercise_data.vtype_id = :vtypeId) " +
+            " timestamp, correct, wrong FROM vocabulary LEFT JOIN ( SELECT word_id, timestamp, last_practice, " +
+            " correct, wrong FROM exercise_data WHERE exercise_data.vtype_id = :vtypeId) " +
             " AS userword ON vocabulary.id = userword.word_id WHERE word LIKE :word " +
-            " AND vocabulary.vtype_id = :vtypeId ORDER BY word COLLATE NOCASE")
+            " AND vocabulary.vtype_id = :vtypeId ORDER BY LOWER(word)")
     LiveData<List<VocabExercise>> searchWord(String word, Long vtypeId);
 
     @Query("SELECT id, word, vocabulary.vtype_id AS vtypeId, frequency, userword.last_practice AS lastPractice, " +
-            " userword.timestamp AS timestamp, correct, wrong FROM vocabulary INNER JOIN ( SELECT word_id, timestamp, " +
-            " last_practice, correct, wrong FROM exercise_data WHERE exercise_data.vtype_id = :vtypeId AND stage != 99 " +
-            " AND timestamp <= strftime('%s','now') * 1000) AS userword ON vocabulary.id = userword.word_id ORDER BY " +
+            " timestamp, correct, wrong FROM vocabulary INNER JOIN ( SELECT word_id, timestamp, last_practice, " +
+            " correct, wrong FROM exercise_data WHERE exercise_data.vtype_id = :vtypeId AND stage != 99 AND " +
+            " timestamp <= strftime('%s','now') * 1000) AS userword ON vocabulary.id = userword.word_id ORDER BY " +
             " CASE WHEN :order = 0 THEN LOWER(word) " +
             "      WHEN :order = 1 THEN frequency END ASC," +
             " CASE WHEN :order = 2 THEN correct " +
@@ -99,17 +95,17 @@ public interface VocabularyDao {
             "      WHEN :order = 5 THEN timestamp END DESC")
     LiveData<List<VocabExercise>> getAllReviewWord(Long vtypeId, OrderEnum order);
 
-    @Query("SELECT id, word, vocabulary.vtype_id AS vtypeId, frequency, userword.last_practice AS lastPractice, " +
-            " userword.timestamp AS timestamp, correct, wrong FROM vocabulary INNER JOIN ( SELECT word_id, timestamp, " +
-            " last_practice, correct, wrong FROM exercise_data WHERE exercise_data.vtype_id = :vtypeId " +
-            " AND timestamp <=  strftime('%s','now') * 1000 AND stage != 99) AS userword " +
-            " ON vocabulary.id = userword.word_id WHERE vocabulary.word LIKE :word ORDER BY word COLLATE NOCASE")
+    @Query("SELECT id, word, vocabulary.vtype_id AS vtypeId, frequency, userword.last_practice AS " +
+            " lastPractice, timestamp, correct, wrong FROM vocabulary INNER JOIN ( SELECT word_id, " +
+            " timestamp, last_practice, correct, wrong FROM exercise_data WHERE exercise_data.vtype_id " +
+            " = :vtypeId AND timestamp <= strftime('%s','now') * 1000 AND stage != 99) AS userword " +
+            " ON vocabulary.id = userword.word_id WHERE vocabulary.word LIKE :word ORDER BY LOWER(word)")
     LiveData<List<VocabExercise>> searchReviewWord(String word, Long vtypeId);
 
-    @Query("SELECT id, word, vocabulary.vtype_id AS vtypeId, frequency, userword.last_practice AS lastPractice, " +
-            " userword.timestamp AS timestamp, correct, wrong FROM vocabulary INNER JOIN ( SELECT word_id, timestamp, " +
-            " last_practice, correct, wrong FROM exercise_data WHERE stage = 99 AND exercise_data.vtype_id = :vtypeId) " +
-            " AS userword ON vocabulary.id = userword.word_id ORDER BY " +
+    @Query("SELECT id, word, vocabulary.vtype_id AS vtypeId, frequency, userword.last_practice AS " +
+            " lastPractice, timestamp, correct, wrong FROM vocabulary INNER JOIN ( SELECT word_id, " +
+            " timestamp, last_practice, correct, wrong FROM exercise_data WHERE stage = 99 AND " +
+            " exercise_data.vtype_id = :vtypeId) AS userword ON vocabulary.id = userword.word_id ORDER BY " +
             " CASE WHEN :order = 0 THEN LOWER(word) " +
             "      WHEN :order = 1 THEN frequency END ASC," +
             " CASE WHEN :order = 2 THEN correct " +
@@ -119,9 +115,9 @@ public interface VocabularyDao {
     LiveData<List<VocabExercise>> getAllMasterWord(Long vtypeId, OrderEnum order);
 
     @Query("SELECT id, word, vocabulary.vtype_id AS vtypeId, frequency, userword.last_practice AS lastPractice, " +
-            " userword.timestamp AS timestamp, correct, wrong FROM vocabulary INNER JOIN ( SELECT word_id, timestamp, " +
-            " last_practice, correct, wrong FROM exercise_data WHERE stage = 99 AND exercise_data.vtype_id = :vtypeId) " +
-            " AS userword ON vocabulary.id = userword.word_id WHERE vocabulary.word LIKE :word ORDER BY word COLLATE NOCASE")
+            " timestamp, correct, wrong FROM vocabulary INNER JOIN ( SELECT word_id, timestamp, last_practice, " +
+            " correct, wrong FROM exercise_data WHERE stage = 99 AND exercise_data.vtype_id = :vtypeId) AS userword " +
+            " ON vocabulary.id = userword.word_id WHERE vocabulary.word LIKE :word ORDER BY LOWER(word)")
     LiveData<List<VocabExercise>> searchMasterWord(String word, Long vtypeId);
 
     @Query("SELECT vocabulary.* " +

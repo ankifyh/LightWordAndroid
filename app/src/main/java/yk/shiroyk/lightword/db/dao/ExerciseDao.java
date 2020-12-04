@@ -41,8 +41,8 @@ public interface ExerciseDao {
             "vocabulary.id = userword.word_id")
     List<VocabExerciseData> getExerciseDataList(Long vtypeId);
 
-    @Query("SELECT id FROM exercise_data WHERE word_id = :wordId AND vtype_id = :vtypeId")
-    Long getExerciseDataId(Long wordId, Long vtypeId);
+    @Query("SELECT * FROM exercise_data WHERE vtype_id = :vtypeId")
+    List<ExerciseData> getExerciseData(Long vtypeId);
 
     @Query("SELECT word_id FROM exercise_data WHERE vtype_id = :vtypeId")
     List<Long> getVocabIdList(Long vtypeId);

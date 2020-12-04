@@ -30,6 +30,11 @@
                     android:orderInCategory="200"
                     android:title="@string/collect_word"
                     app:showAsAction="never" />
+                <item
+                    android:id="@+id/action_delete_select_word"
+                    android:orderInCategory="200"
+                    android:title="@string/delete_word"
+                    app:showAsAction="never" />
             </group>
         </menu>
     </item>

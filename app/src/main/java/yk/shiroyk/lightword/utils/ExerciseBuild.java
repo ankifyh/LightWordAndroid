@@ -38,7 +38,7 @@ public class ExerciseBuild extends ViewModel {
 
     private ExerciseRepository exerciseRepository;
     private VocabularyRepository vocabularyRepository;
-    private VocabularyDataManage vocabularyDataManage;
+    private VocabFileManage vocabFileManage;
 
     private Boolean byFrequency;
     private Integer isPronounce;
@@ -46,7 +46,7 @@ public class ExerciseBuild extends ViewModel {
     public void setApplication(Application application) {
         exerciseRepository = new ExerciseRepository(application);
         vocabularyRepository = new VocabularyRepository(application);
-        vocabularyDataManage = new VocabularyDataManage(application.getBaseContext());
+        vocabFileManage = new VocabFileManage(application.getBaseContext());
         this.byFrequency = PreferenceManager.getDefaultSharedPreferences(application.getBaseContext())
                 .getBoolean("byFrequency", false);
         this.isPronounce = PreferenceManager.getDefaultSharedPreferences(application.getBaseContext())
@@ -192,7 +192,7 @@ public class ExerciseBuild extends ViewModel {
                 exercise = new Exercise();
 
                 String word = vocabulary.getWord();
-                String ex = vocabularyDataManage.readFile(vtypeId, word);
+                String ex = vocabFileManage.readFile(vtypeId, word);
 
                 exercise.setId(vocabulary.getId());
                 exercise.setWord(word);

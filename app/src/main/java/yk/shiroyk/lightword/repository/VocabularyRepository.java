@@ -12,8 +12,10 @@ import androidx.lifecycle.LiveData;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import yk.shiroyk.lightword.db.LightWordDatabase;
 import yk.shiroyk.lightword.db.constant.OrderEnum;
@@ -63,16 +65,16 @@ public class VocabularyRepository {
         return vocabularyDao.countWord(vtypeId);
     }
 
-    public LiveData<Vocabulary> getWordById(Long wordId, Long vtypeId) {
-        return vocabularyDao.getWordById(wordId, vtypeId);
-    }
-
     public Vocabulary queryWordById(Long wordId, Long vtypeId) {
         return vocabularyDao.queryWordById(wordId, vtypeId);
     }
 
     public List<String> getWordString(Long vtypeId) {
         return vocabularyDao.getWordString(vtypeId);
+    }
+
+    public Set<String> getWordStringSet(Long vtypeId) {
+        return new HashSet<>(vocabularyDao.getWordString(vtypeId));
     }
 
     public List<Vocabulary> getWordListById(List<Long> wordId, Long vtypeId) {
@@ -102,7 +104,7 @@ public class VocabularyRepository {
         return newList;
     }
 
-    public Integer collectNewVocab(Long newType, List<Vocabulary> vList) {
+    public Vocabulary[] collectNewVocab(Long newType, List<Vocabulary> vList) {
         List<Vocabulary> newList = new ArrayList<>();
         for (Vocabulary v : checkExists(newType, vList)) {
             v.setId(null);
@@ -110,12 +112,7 @@ public class VocabularyRepository {
             newList.add(v);
         }
         int size = newList.size();
-        insert(newList.toArray(new Vocabulary[size]));
-        return size;
-    }
-
-    public LiveData<Vocabulary> getWord(String word, Long vtypeId) {
-        return vocabularyDao.getWord(word, vtypeId);
+        return newList.toArray(new Vocabulary[size]);
     }
 
     public Vocabulary queryWord(String word, Long vtypeId) {
@@ -138,7 +135,11 @@ public class VocabularyRepository {
         ThreadTask.runOnThread(() -> vocabularyDao.insert(v), consumer);
     }
 
-    public void delete(Vocabulary v, Consumer<Integer> consumer) {
-        ThreadTask.runOnThread(() -> vocabularyDao.delete(v), consumer);
+    public Integer delete(Vocabulary[] v) {
+        return vocabularyDao.delete(v);
+    }
+
+    public Integer delete(Vocabulary v) {
+        return vocabularyDao.delete(v);
     }
 }

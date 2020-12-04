@@ -57,7 +57,7 @@ import yk.shiroyk.lightword.ui.adapter.VocabDetailAdapter;
 import yk.shiroyk.lightword.ui.widget.ExerciseCardView;
 import yk.shiroyk.lightword.utils.ExerciseBuild;
 import yk.shiroyk.lightword.utils.ThreadTask;
-import yk.shiroyk.lightword.utils.VocabularyDataManage;
+import yk.shiroyk.lightword.utils.VocabFileManage;
 
 public class ExerciseFragment extends Fragment {
 
@@ -67,7 +67,7 @@ public class ExerciseFragment extends Fragment {
     private ExerciseRepository exerciseRepository;
     private UserStatisticRepository statisticRepository;
     private VocabularyRepository vocabularyRepository;
-    private VocabularyDataManage vocabularyDataManage;
+    private VocabFileManage vocabFileManage;
     private ExerciseBuild exerciseBuild;
     private SharedPreferences sp;
 
@@ -106,7 +106,7 @@ public class ExerciseFragment extends Fragment {
         exerciseRepository = new ExerciseRepository(getActivity().getApplication());
         statisticRepository = new UserStatisticRepository(getActivity().getApplication());
         vocabularyRepository = new VocabularyRepository(getActivity().getApplication());
-        vocabularyDataManage = new VocabularyDataManage(getActivity().getBaseContext());
+        vocabFileManage = new VocabFileManage(getActivity().getBaseContext());
         exerciseBuild = new ViewModelProvider(this).get(ExerciseBuild.class);
         exerciseBuild.setApplication(this.getActivity().getApplication());
     }
@@ -281,7 +281,7 @@ public class ExerciseFragment extends Fragment {
                         this::setExampleInfoDialog, true);
                 infoList.setLayoutManager(new LinearLayoutManager(context));
                 infoList.setAdapter(vocabDetailAdapter);
-                String wordInfo = vocabularyDataManage.readFile(vtypeId, v.getWord());
+                String wordInfo = vocabFileManage.readFile(vtypeId, v.getWord());
                 ExerciseList eList = new Gson().fromJson(wordInfo, ExerciseList.class);
                 vocabDetailAdapter.setCollocations(eList.getCollocation());
 
@@ -352,7 +352,7 @@ public class ExerciseFragment extends Fragment {
 
     private void saveVocabulary(String word, ExerciseList eList) {
         String json = new Gson().toJson(eList, ExerciseList.class);
-        vocabularyDataManage.overWriteFile(json, vtypeId, word);
+        vocabFileManage.overWriteFile(json, vtypeId, word);
         Toast.makeText(context, String.format(
                 getString(R.string.vocab_save_success), word), Toast.LENGTH_SHORT).show();
     }

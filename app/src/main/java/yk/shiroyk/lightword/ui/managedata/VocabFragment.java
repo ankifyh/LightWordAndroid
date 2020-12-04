@@ -11,7 +11,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -49,7 +49,10 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 import yk.shiroyk.lightword.MainActivity;
 import yk.shiroyk.lightword.R;
@@ -71,7 +74,7 @@ import yk.shiroyk.lightword.ui.adapter.VocabularyAdapter;
 import yk.shiroyk.lightword.ui.viewmodel.SharedViewModel;
 import yk.shiroyk.lightword.utils.FileUtils;
 import yk.shiroyk.lightword.utils.ThreadTask;
-import yk.shiroyk.lightword.utils.VocabularyDataManage;
+import yk.shiroyk.lightword.utils.VocabFileManage;
 
 
 public class VocabFragment extends Fragment {
@@ -92,7 +95,7 @@ public class VocabFragment extends Fragment {
 
     private VocabularyRepository vocabularyRepository;
     private VocabTypeRepository vocabTypeRepository;
-    private VocabularyDataManage vocabularyDataManage;
+    private VocabFileManage vocabFileManage;
     private ExerciseRepository exerciseRepository;
     private SharedPreferences sp;
 
@@ -101,7 +104,7 @@ public class VocabFragment extends Fragment {
     private TextInputEditText et_pronounce;
     private VocabDetailAdapter vocabDetailAdapter;
     private ExampleDetailAdapter exampleDetailAdapter;
-    private ExerciseList exerciseList = new ExerciseList();
+    private ExerciseList exerciseList;
 
     private VocabType defaultVType;
     private OrderEnum orderBy;
@@ -113,7 +116,7 @@ public class VocabFragment extends Fragment {
         vocabViewModel = new VocabViewModel(getActivity().getApplication());
         vocabularyRepository = new VocabularyRepository(getActivity().getApplication());
         vocabTypeRepository = new VocabTypeRepository(getActivity().getApplication());
-        vocabularyDataManage = new VocabularyDataManage(getActivity().getBaseContext());
+        vocabFileManage = new VocabFileManage(getActivity().getBaseContext());
         exerciseRepository = new ExerciseRepository(getActivity().getApplication());
 
     }
@@ -161,7 +164,7 @@ public class VocabFragment extends Fragment {
         menu.clear();
         SubMenu vType = menu.addSubMenu(R.string.import_vocab_data_submenu);
         ThreadTask.runOnThread(() -> vocabTypeRepository.getAllVocabTypes(), vocabTypes -> {
-            setDefaultTitle(vocabTypes);
+            initialDefaultVType(vocabTypes);
             MenuItem searchMenuItem = menu.findItem(R.id.action_search);
             doneMenuItem = menu.findItem(R.id.action_done);
             newVocab = menu.findItem(R.id.action_create_vocab);
@@ -265,6 +268,9 @@ public class VocabFragment extends Fragment {
             case R.id.action_collect_select_word:
                 collectVocabDialog();
                 return true;
+            case R.id.action_delete_select_word:
+                deleteSelectVocabDialog();
+                return true;
             case R.id.action_vocab_order_word:
                 item.setChecked(true);
                 vocabViewModel.setOrderBy(OrderEnum.Word);
@@ -303,16 +309,18 @@ public class VocabFragment extends Fragment {
         root.findViewById(R.id.fab_import_vocab).setOnClickListener(view -> pickVocabulary());
     }
 
-    private void setDefaultTitle(List<VocabType> vocabTypes) {
+    private void initialDefaultVType(List<VocabType> vocabTypes) {
         if (vocabTypes.size() > 0) {
-            long vtypePref = sp.getLong("vtypeId", 1L);
-            for (VocabType v : vocabTypes) {
-                if (v.getId().equals(vtypePref)) {
-                    defaultVType = v;
-                    vocabViewModel.setVocabType(v);
-                    vocabViewModel.setVocabFilter(VocabFilterEnum.All);
-                    vocabViewModel.setOrderBy(OrderEnum.Word);
-                    observeLoading();
+            if (defaultVType == null) {
+                long vtypePref = sp.getLong("vtypeId", 1L);
+                for (VocabType v : vocabTypes) {
+                    if (v.getId().equals(vtypePref)) {
+                        defaultVType = v;
+                        vocabViewModel.setVocabType(v);
+                        vocabViewModel.setVocabFilter(VocabFilterEnum.All);
+                        vocabViewModel.setOrderBy(OrderEnum.Word);
+                        observeLoading();
+                    }
                 }
             }
         } else {
@@ -427,7 +435,7 @@ public class VocabFragment extends Fragment {
             et_vocab.setText(vocab.word);
             et_frequency.setText(String.valueOf(vocab.frequency));
             try {
-                String ex = vocabularyDataManage
+                String ex = vocabFileManage
                         .readFile(vocab.vtypeId, vocab.word);
                 exerciseList = new Gson().fromJson(ex, ExerciseList.class);
                 et_pronounce.setText(exerciseList.getPronounceString());
@@ -441,6 +449,7 @@ public class VocabFragment extends Fragment {
                 delVocabDialog(vocab);
             });
         } else {
+            exerciseList = new ExerciseList();
             builder.setNeutralButton(R.string.create_vocab_type, (dialogInterface, i) -> {
                 setCreateVTypeDialog();
             });
@@ -468,7 +477,7 @@ public class VocabFragment extends Fragment {
                     vocabularyRepository.queryWord(w, defaultVType.getId()), v -> {
                 if (v == null) {
                     exerciseList.setInflection(null);
-                    exerciseList.setSource(null);
+                    exerciseList.setSource(getString(R.string.app_name));
                     writeToFile(w, true);
                 } else {
                     overWriteDialog(w);
@@ -506,7 +515,7 @@ public class VocabFragment extends Fragment {
         if (newVocab) {
             vocabularyRepository.insert(vocab, l -> {
                 if (l > 0) {
-                    vocabularyDataManage.overWriteFile(json, defaultVType.getId(), w);
+                    vocabFileManage.overWriteFile(json, defaultVType.getId(), w);
                     // update vocab type amount
                     defaultVType.plusAmount(1);
                     vocabTypeRepository.updateOnThread(defaultVType);
@@ -520,7 +529,7 @@ public class VocabFragment extends Fragment {
             });
         } else {
             vocabularyRepository.update(vocab);
-            vocabularyDataManage.overWriteFile(json, vocab.getVtypeId(), w);
+            vocabFileManage.overWriteFile(json, vocab.getVtypeId(), w);
             Toast.makeText(context, String.format(
                     getString(R.string.vocab_save_success), w), Toast.LENGTH_SHORT).show();
         }
@@ -564,7 +573,6 @@ public class VocabFragment extends Fragment {
                         coll.setPartOfSpeech(et_pos.getText().toString().trim());
                         coll.setMeaning(et_mean.getText().toString().trim());
                         coll.setExample(exampleDetailAdapter.getExampleList());
-                        Log.e(TAG, "editCollocationDialog: " + vocabDetailAdapter.getCollocations());
                         vocabDetailAdapter.addCollocation(coll);
                         exerciseList.setCollocation(vocabDetailAdapter.getCollocations());
                     });
@@ -618,19 +626,19 @@ public class VocabFragment extends Fragment {
 
     private void delVocabDialog(VocabExercise vocab) {
         new MaterialAlertDialogBuilder(context)
-                .setTitle(R.string.delete_vocab)
-                .setMessage(String.format(getString(R.string.delete_vocab_msg), vocab.word))
-                .setPositiveButton(R.string.dialog_delete, (dialogInterface, i) ->
-                        vocabularyRepository.delete(new Vocabulary(vocab), l -> {
-                            if (l > 0) {
-                                defaultVType.minusAmount(i);
-                                vocabTypeRepository.updateOnThread(defaultVType);
-                                vocabularyDataManage.deleteFile(vocab.vtypeId, vocab.word);
-                                Toast.makeText(context, String.format(
-                                        getString(R.string.vocab_delete_success),
-                                        vocab.word), Toast.LENGTH_SHORT).show();
-                            }
-                        }))
+                .setTitle(R.string.delete_single_vocab)
+                .setMessage(String.format(getString(R.string.delete_single_vocab_msg), vocab.word))
+                .setPositiveButton(R.string.dialog_delete, (dialogInterface, i) -> {
+                    ThreadTask.runOnThread(() -> {
+                        int size = vocabularyRepository.delete(new Vocabulary(vocab));
+                        if (size > 0) {
+                            vocabFileManage.deleteFile(defaultVType.getId(), vocab.word);
+                            defaultVType.minusAmount(size);
+                            vocabTypeRepository.update(defaultVType);
+                            getActivity().invalidateOptionsMenu();
+                        }
+                    });
+                })
                 .setNegativeButton(R.string.dialog_cancel, null)
                 .create().show();
     }
@@ -671,11 +679,6 @@ public class VocabFragment extends Fragment {
                 .create().show();
     }
 
-    /**
-     * Modify mastered vocabulary
-     * ⬇️
-     */
-
     private void collectVocabDialog() {
         View view = getLayoutInflater().inflate(R.layout.layout_pick_vocab_type, null);
         AppCompatSpinner sp_type = view.findViewById(R.id.spinner_vType);
@@ -693,22 +696,80 @@ public class VocabFragment extends Fragment {
                     ThreadTask.runOnThread(() -> {
                         List<Vocabulary> vList = vocabularyRepository
                                 .getWordListById(adapter.getSelectedItem(), defaultVType.getId());
-                        int size = vocabularyRepository.collectNewVocab(vType.getId(), vList);
-                        if (size > 0) {
+
+                        for (Vocabulary vocab : vList) {
+                            vocabFileManage.copyFile(
+                                    defaultVType.getId(),
+                                    vType.getId(),
+                                    vocab.getWord());
+                        }
+
+                        int[] result = new int[2];
+                        result[0] = vList.size();
+
+                        Vocabulary[] vocabs = vocabularyRepository.collectNewVocab(vType.getId(), vList);
+
+                        if (vocabs.length > 0) {
+                            vocabularyRepository.insert(vocabs);
+
                             vType.setAmount(vocabularyRepository.countWord(vType.getId()));
                             vocabTypeRepository.update(vType);
                             getActivity().invalidateOptionsMenu();
                         }
-                        return size;
-                    }, size -> {
-                        Snackbar.make(getView(), String.format(getString(R.string.success_collect_vocab),
-                                size, vType.getVocabtype()), Snackbar.LENGTH_LONG)
+                        result[1] = vocabs.length;
+
+                        return result;
+                    }, result -> {
+                        String msg = String.format(getString(R.string.success_collect_vocab),
+                                result[1],
+                                vType.getVocabtype());
+                        int overwrite = result[0] - result[1];
+                        if (overwrite > 0) {
+                            msg += String.format(
+                                    getString(R.string.success_collect_vocab_overwrite),
+                                    overwrite);
+                        }
+                        Snackbar.make(getView(), msg, Snackbar.LENGTH_LONG)
                                 .setAction("Action", null).show();
                     });
                 })
                 .setNegativeButton(R.string.dialog_cancel, null)
                 .create().show();
     }
+
+    private void deleteSelectVocabDialog() {
+        new MaterialAlertDialogBuilder(context)
+                .setTitle(R.string.delete_select_vocab)
+                .setMessage(R.string.delete_select_vocab_msg)
+                .setPositiveButton(R.string.dialog_ensure, (dialogInterface, i) -> {
+                    ThreadTask.runOnThread(() -> {
+                        List<Vocabulary> vList = vocabularyRepository
+                                .getWordListById(adapter.getSelectedItem(), defaultVType.getId());
+                        int deleteSize = vList.size();
+                        int size = vocabularyRepository.delete(vList.toArray(new Vocabulary[deleteSize]));
+                        if (size > 0) {
+                            for (Vocabulary vocab : vList) {
+                                vocabFileManage.deleteFile(defaultVType.getId(), vocab.getWord());
+                            }
+                            defaultVType.setAmount(vocabularyRepository.countWord(defaultVType.getId()));
+                            vocabTypeRepository.update(defaultVType);
+                            getActivity().invalidateOptionsMenu();
+                        }
+                        return size;
+                    }, size -> {
+                        Snackbar.make(getView(), String.format(getString(R.string.success_delete_vocab),
+                                defaultVType.getVocabtype(), size), Snackbar.LENGTH_LONG)
+                                .setAction("Action", null).show();
+                    });
+                })
+                .setNegativeButton(R.string.dialog_cancel, null)
+                .create().show();
+    }
+
+    /**
+     * Modify mastered vocabulary
+     * ⬇️
+     */
 
     private void deMasterWord(String title, ExerciseData data) {
         new MaterialAlertDialogBuilder(context)
@@ -744,7 +805,7 @@ public class VocabFragment extends Fragment {
         for (Long id : idList) {
             exerciseRepository.mastered(id, defaultVType.getId());
         }
-        Toast.makeText(context, "成功添加" + idList.size() + "个!", Toast.LENGTH_SHORT).show();
+        Snackbar.make(getView(), "成功添加" + idList.size() + "个!", Snackbar.LENGTH_SHORT).show();
     }
 
     private void updateExerciseData(ExerciseData data) {
@@ -752,7 +813,7 @@ public class VocabFragment extends Fragment {
         data.setTimestamp(new Date());
         data.setStage(1);
         exerciseRepository.update(data);
-        Toast.makeText(context, "删除成功!", Toast.LENGTH_SHORT).show();
+        Snackbar.make(getView(), "删除成功!", Snackbar.LENGTH_SHORT).show();
     }
 
     /**
@@ -912,66 +973,88 @@ public class VocabFragment extends Fragment {
         loadingDialog.show();
 
         ThreadTask.runOnThread(() -> {
-            List<String> wordList = new ArrayList<>();
+            Set<String> wordList = new HashSet<>();
 
             if (overWrite) {
-                wordList = vocabularyRepository.getWordString(vocabType.getId());
+                wordList = vocabularyRepository.getWordStringSet(vocabType.getId());
             }
 
-            int overWriteNum = 0;
             List<Vocabulary> vocabList = new ArrayList<>();
+
+            int[] result = new int[2];
+            //result[0] overwrite size
+            //result[1] new insert size
 
             try {
                 InputStream is = context.getContentResolver().openInputStream(uri);
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(is));
+
+                String header = bufferedReader.readLine();
+                if (header.contains("Backup generated by LightWord")) {
+                    result[0] = -1;
+                    return result;
+                }
+
                 String str;
                 while ((str = bufferedReader.readLine()) != null) {
                     String[] line = str.split(",", 3);
                     String word = line[0];
                     try {
-                        if (!wordList.contains(word)) {
-                            long frequency = Long.parseLong(line[1]);
-                            vocabList.add(new Vocabulary(word, vocabType.getId(), frequency));
-                            vocabularyDataManage
-                                    .writeFile(line[2], vocabType.getId(), word);
-                        } else {
-                            overWriteNum++;
-                            vocabularyDataManage
-                                    .overWriteFile(line[2], vocabType.getId(), word);
+                        if (!TextUtils.isEmpty(word)) {
+                            if (!wordList.contains(word)) {
+                                long frequency = Long.parseLong(line[1]);
+                                vocabList.add(new Vocabulary(word, vocabType.getId(), frequency));
+                            } else {
+                                result[0]++;
+                            }
+                            String data = line[2];
+                            if (!TextUtils.isEmpty(data))
+                                vocabFileManage.overWriteFile(line[2], vocabType.getId(), word);
                         }
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
                 }
             } catch (IOException ex) {
+                result[0] = -2;
                 ex.printStackTrace();
             }
 
-            int newWordNum = vocabList.size();
+            result[1] = vocabList.size();
 
-            String msg;
-
-            if (newWordNum > 0) {
-                vocabularyRepository.insert(vocabList.toArray(new Vocabulary[newWordNum]));
+            if (result[1] > 0) {
+                vocabularyRepository.insert(vocabList.toArray(new Vocabulary[result[1]]));
                 vocabType.setAmount(vocabularyRepository.countWord(vocabType.getId()));
                 int i = vocabTypeRepository.update(vocabType);
                 if (i == 1) getActivity().invalidateOptionsMenu();
+            }
+            return result;
+        }, result -> {
 
-                msg = "词汇数据导入成功,";
-                if (overWriteNum > 0) {
-                    msg += "共导入" + newWordNum + "条数据";
+            //result[0] overwrite size
+            //result[1] new insert size
+
+            String msg = "共解析到0条数据！";
+            if (result[0] == -1) msg = "导入失败，该文件是备份文件！";
+            else if (result[0] == -2) msg = "解析失败，未导入数据！";
+            else if (overWrite) {
+                if (result[0] > 0) {
+                    if (result[1] > 0)
+                        msg = String.format("导入成功，共覆盖%d条、新增%d条数据", result[0], result[1]);
+                    else msg = String.format("导入成功，共覆盖%d条数据", result[0]);
                 } else {
-                    msg += "新增" + newWordNum + "条";
+                    if (result[1] > 0) msg = String.format("导入成功，共新增%d条", result[1]);
                 }
             } else {
-                if (overWriteNum > 0) {
-                    msg = "导入成功，共覆盖" + overWriteNum + "条数据";
-                } else {
-                    msg = "解析失败，未导入数据！";
-                }
+                if (result[1] > 0) msg = String.format("导入成功，共导入%d条数据", result[1]);
             }
-            return msg;
-        }, msg -> {
+
+            //delete invalid vocabType
+            if (result[0] == -1 || result[0] == -2 || (result[0] == 0 && result[1] == 0)) {
+                vocabTypeRepository.delete(vocabType, i -> {
+                    if (i == 1) getActivity().invalidateOptionsMenu();
+                });
+            }
             loadingDialog.dismiss();
             Snackbar.make(getView(), msg, Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show();
@@ -984,7 +1067,7 @@ public class VocabFragment extends Fragment {
         if (requestCode == REQUEST_VOCABULARY && resultCode == Activity.RESULT_OK) {
             if (data != null) {
                 Uri uri = data.getData();
-                String fname = new FileUtils(context).getFileName(uri);
+                String fname = FileUtils.getFileName(context.getContentResolver(), Objects.requireNonNull(uri));
 
                 ThreadTask.runOnThread(() -> {
                     VocabType vocabType = vocabTypeRepository.getVocabType(fname);

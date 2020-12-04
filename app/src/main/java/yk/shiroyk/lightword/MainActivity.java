@@ -7,9 +7,11 @@ package yk.shiroyk.lightword;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -31,6 +33,7 @@ import androidx.preference.PreferenceManager;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.navigation.NavigationView;
+import com.google.android.material.snackbar.Snackbar;
 import com.microsoft.appcenter.AppCenter;
 import com.microsoft.appcenter.analytics.Analytics;
 import com.microsoft.appcenter.crashes.AbstractCrashesListener;
@@ -39,8 +42,11 @@ import com.microsoft.appcenter.crashes.Crashes;
 import yk.shiroyk.lightword.db.constant.ThemeEnum;
 import yk.shiroyk.lightword.ui.viewmodel.SharedViewModel;
 import yk.shiroyk.lightword.utils.ThemeHelper;
+import yk.shiroyk.lightword.utils.ThreadTask;
+import yk.shiroyk.lightword.utils.UpdateChecker;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = MainActivity.class.getSimpleName();
     private AppBarConfiguration mAppBarConfiguration;
     private SharedPreferences sp;
     private static final int REQUEST_EXTERNAL_STORAGE = 1;
@@ -99,6 +105,12 @@ public class MainActivity extends AppCompatActivity {
         }
 
         requestStoragePermissions();
+
+        onApplicationStart(() -> {
+            Log.i(TAG, "App Launch");
+            checkLatestVersion();
+        });
+
     }
 
     private void setUpSwitchTheme(NavigationView nv) {
@@ -163,6 +175,36 @@ public class MainActivity extends AppCompatActivity {
                         Manifest.permission.WRITE_EXTERNAL_STORAGE
                 }, REQUEST_EXTERNAL_STORAGE
         );
+    }
+
+    private void onApplicationStart(Runnable runnable) {
+        boolean firstTime = sp.getBoolean("firstTime", true);
+        if (!firstTime) return;
+        sp.edit().putBoolean("firstTime", false).apply();
+        runnable.run();
+    }
+
+    private void checkLatestVersion() {
+        boolean autoCheck = sp.getBoolean("autoCheckUpdate", false);
+        if (autoCheck) {
+            Log.i(TAG, "Checking Latest Version...");
+            UpdateChecker checker = new UpdateChecker();
+            ThreadTask.runOnThread(checker::checkUpdate, strings -> {
+                if (strings.length > 1) {
+                    Snackbar.make(findViewById(android.R.id.content), "有新的更新可用啦！", Snackbar.LENGTH_LONG)
+                            .setAction("点击查看", view ->
+                                    new MaterialAlertDialogBuilder(this)
+                                            .setTitle(strings[0])
+                                            .setMessage(strings[1])
+                                            .setPositiveButton(R.string.dialog_url,
+                                                    (dialogInterface, i) -> new Intent(Intent.ACTION_VIEW)
+                                                            .setData(Uri.parse(strings[2])))
+                                            .setNegativeButton(R.string.dialog_cancel, null).create().show()
+                            )
+                            .show();
+                } else Log.i(TAG, strings[0]);
+            });
+        }
     }
 
     @Override
