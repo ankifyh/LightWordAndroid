@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import yk.shiroyk.lightword.db.constant.Constant;
 import yk.shiroyk.lightword.db.entity.Vocabulary;
 import yk.shiroyk.lightword.db.entity.exercise.Collocation;
 import yk.shiroyk.lightword.db.entity.exercise.Example;
@@ -30,8 +31,6 @@ import yk.shiroyk.lightword.repository.ExerciseRepository;
 import yk.shiroyk.lightword.repository.VocabularyRepository;
 
 public class ExerciseBuild extends ViewModel {
-    public static final int MISSING_VOCAB = 10003;
-    public static final int PARSE_FAILURE = 10004;
     private static final String TAG = ExerciseBuild.class.getSimpleName();
     private final MutableLiveData<List<Exercise>> exerciseList = new MutableLiveData<>();
     private final MutableLiveData<Integer> exerciseMsg = new MutableLiveData<>();
@@ -262,11 +261,11 @@ public class ExerciseBuild extends ViewModel {
         ThreadTask.runOnThread(() -> {
             List<Vocabulary> idList = vocabularyRepository.loadNewWord(vtypeId, byFrequency, limit);
             if (idList.size() == 0) {
-                exerciseMsg.postValue(MISSING_VOCAB);
+                exerciseMsg.postValue(Constant.MISSING_VOCAB);
             }
             List<Exercise> exercises = buildExercise(idList, vtypeId, false);
             if (idList.size() != 0 && exercises.size() == 0) {
-                exerciseMsg.postValue(PARSE_FAILURE);
+                exerciseMsg.postValue(Constant.PARSE_FAILURE);
             }
             exerciseList.postValue(exercises);
         });
@@ -281,7 +280,7 @@ public class ExerciseBuild extends ViewModel {
                 List<Vocabulary> wordList = vocabularyRepository.getWordListById(idList, vtypeId);
                 List<Exercise> exercises = buildExercise(wordList, vtypeId, true);
                 if (idList.size() != 0 && exercises.size() == 0) {
-                    exerciseMsg.postValue(PARSE_FAILURE);
+                    exerciseMsg.postValue(Constant.PARSE_FAILURE);
                 }
                 exerciseList.postValue(exercises);
             }

@@ -45,6 +45,7 @@ import java.util.Locale;
 
 import yk.shiroyk.lightword.MainActivity;
 import yk.shiroyk.lightword.R;
+import yk.shiroyk.lightword.db.constant.Constant;
 import yk.shiroyk.lightword.db.entity.exercise.Collocation;
 import yk.shiroyk.lightword.db.entity.exercise.Example;
 import yk.shiroyk.lightword.db.entity.exercise.Exercise;
@@ -389,14 +390,14 @@ public class ExerciseFragment extends Fragment {
     private void setStatusObserve() {
         exerciseRepository.getExerciseStatus().observe(getViewLifecycleOwner(), status -> {
             switch (status) {
-                case ExerciseRepository.EXERCISE_NEW:
+                case Constant.EXERCISE_NEW:
                     statisticRepository.updateCount();
                     statisticRepository.updateCorrect();
                     break;
-                case ExerciseRepository.EXERCISE_WRONG:
+                case Constant.EXERCISE_WRONG:
                     statisticRepository.updateWrong();
                     break;
-                case ExerciseRepository.EXERCISE_CORRECT:
+                case Constant.EXERCISE_CORRECT:
                     statisticRepository.updateCorrect();
                     break;
             }
@@ -522,10 +523,10 @@ public class ExerciseFragment extends Fragment {
                 .observe(getViewLifecycleOwner(),
                         msg -> {
                             switch (msg) {
-                                case ExerciseBuild.MISSING_VOCAB:
+                                case Constant.MISSING_VOCAB:
                                     tv_tip.setText(R.string.missing_vocab_data);
                                     break;
-                                case ExerciseBuild.PARSE_FAILURE:
+                                case Constant.PARSE_FAILURE:
                                     tv_tip.setText(R.string.parse_vocab_data_error);
                                     break;
                             }

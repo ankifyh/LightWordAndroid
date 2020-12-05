@@ -112,7 +112,7 @@ public class HomeFragment extends Fragment {
                     tv_home_subtitle.setVisibility(View.INVISIBLE);
                 }
             });
-            exerciseRepository.getExerciseReview(vtypePref).observe(getViewLifecycleOwner(), integer -> {
+            exerciseRepository.countExerciseReview(vtypePref).observe(getViewLifecycleOwner(), integer -> {
                 if (vocabType != null) {
                     tv_home_review.setVisibility(View.VISIBLE);
                     tv_home_review.setText(

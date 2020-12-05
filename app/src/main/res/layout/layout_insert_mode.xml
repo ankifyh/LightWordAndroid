@@ -1,0 +1,26 @@
+<!--
+  ~ Copyright (c) 2020 All right reserved.
+  ~ Created by shiroyk, https://github.com/shiroyk
+  -->
+
+<RadioGroup xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/radio_insert_mode"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:checkedButton="@+id/radio_only_insert"
+    android:paddingHorizontal="?attr/dialogPreferredPadding"
+    android:paddingTop="10dp">
+
+    <RadioButton
+        android:id="@+id/radio_only_insert"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/only_insert" />
+
+    <RadioButton
+        android:id="@+id/radio_insert_update"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/insert_and_update" />
+
+</RadioGroup>

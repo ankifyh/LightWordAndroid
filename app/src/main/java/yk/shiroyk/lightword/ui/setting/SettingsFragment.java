@@ -25,6 +25,7 @@ import android.widget.ListView;
 
 import androidx.annotation.ArrayRes;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
 import androidx.core.util.Consumer;
 import androidx.preference.EditTextPreference;
@@ -33,6 +34,7 @@ import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.SwitchPreferenceCompat;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.radiobutton.MaterialRadioButton;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.io.BufferedOutputStream;
@@ -47,7 +49,6 @@ import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -56,6 +57,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import yk.shiroyk.lightword.R;
+import yk.shiroyk.lightword.db.constant.Constant;
 import yk.shiroyk.lightword.db.constant.ThemeEnum;
 import yk.shiroyk.lightword.db.entity.ExerciseData;
 import yk.shiroyk.lightword.db.entity.VocabExerciseData;
@@ -71,7 +73,6 @@ import yk.shiroyk.lightword.utils.VocabFileManage;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
 
-    private static final int REQUEST_VOCAB_EXERCISE = 10002;
     private VocabTypeRepository vocabTypeRepository;
     private VocabularyRepository vocabularyRepository;
     private VocabFileManage vocabFileManage;
@@ -272,6 +273,46 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         }.start();
     }
 
+    private void insertModeDialog(@StringRes int title, Consumer<Boolean> consumer) {
+        View dialogView = getLayoutInflater().inflate(R.layout.layout_insert_mode, null);
+        MaterialRadioButton insert = dialogView.findViewById(R.id.radio_only_insert);
+        MaterialRadioButton insertUpdate = dialogView.findViewById(R.id.radio_insert_update);
+
+        if (R.string.copy_mode == title) {
+            insert.setText(R.string.only_copy);
+            insertUpdate.setText(R.string.copy_and_update);
+        }
+
+        new MaterialAlertDialogBuilder(getContext())
+                .setTitle(title)
+                .setView(dialogView)
+                .setPositiveButton(R.string.dialog_ensure, (dialogInterface, i) -> {
+                    consumer.accept(insert.isChecked());
+                })
+                .setNegativeButton(R.string.dialog_cancel, null)
+                .create().show();
+    }
+
+    private void copyExercise(Boolean mode, Long oldVType, Long newVType, String vTypeName) {
+        Snackbar snackbar = Snackbar.make(getView(), "复制中....", Snackbar.LENGTH_INDEFINITE);
+        snackbar.show();
+        ThreadTask.runOnThread(() -> vocabularyRepository.getWordList(newVType), vList -> {
+            exerciseRepository.copyExerciseData(mode, oldVType, newVType, vList).observe(
+                    getViewLifecycleOwner(), size -> {
+                        String msg;
+                        if (mode) msg = String.format(
+                                getString(R.string.success_copy_exercise),
+                                size[0], vTypeName);
+                        else msg = String.format(
+                                getString(R.string.success_copy_update_exercise),
+                                size[0], size[1], vTypeName);
+                        snackbar.setText(msg);
+                        countDown(snackbar::dismiss, 1000);
+                    });
+        });
+
+    }
+
     private void copyExerciseDialog() {
         View dialogView = getLayoutInflater().inflate(R.layout.layout_copy_vocab_exercise, null);
         AutoCompleteTextView tv_oldVType = dialogView.findViewById(R.id.old_vType);
@@ -294,15 +335,16 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                     .setTitle(R.string.select_vocab_type)
                     .setView(dialogView)
                     .setPositiveButton(R.string.dialog_ensure, (dialogInterface, i) -> {
-                        Snackbar snackbar = Snackbar.make(getView(), "复制中....", Snackbar.LENGTH_INDEFINITE);
-                        snackbar.show();
-                        ThreadTask.runOnThread(() -> vocabularyRepository.getWordList(newVType.get().getId()), vList -> {
-                            exerciseRepository.copyExerciseData(oldVType.get().getId(), newVType.get().getId(), vList)
-                                    .observe(getViewLifecycleOwner(), size -> {
-                                        snackbar.setText(String.format(getString(R.string.success_copy_exercise),
-                                                size, newVType.get().getVocabtype()));
-                                        countDown(snackbar::dismiss, 1000);
-                                    });
+                        if (oldVType.get() == null || newVType.get() == null) {
+                            Snackbar.make(getView(), "未选择分类！", Snackbar.LENGTH_LONG).show();
+                            return;
+                        }
+                        insertModeDialog(R.string.copy_mode, mode -> {
+                            copyExercise(
+                                    mode,
+                                    oldVType.get().getId(),
+                                    newVType.get().getId(),
+                                    newVType.get().getVocabtype());
                         });
                     })
                     .setNegativeButton(R.string.dialog_cancel, null)
@@ -337,7 +379,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
                 try {
                     if (isExercise) {
-                        List<VocabExerciseData> vList = exerciseRepository.getExerciseDataList(vType.getId());
+                        Set<VocabExerciseData> vList = exerciseRepository.getVocabExerciseDataSet(vType.getId());
 
                         String header = "word,timestamp,last_practice," +
                                 "stage,correct,wrong," + vType.getVocabtype() +
@@ -356,7 +398,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                         }
                         size = vList.size();
                     } else {
-                        List<Vocabulary> vList = vocabularyRepository.getWordList(vType.getId());
+                        Set<Vocabulary> vList = vocabularyRepository.getWordSet(vType.getId());
 
                         String header = "word,frequency,json," + vType.getVocabtype() +
                                 ",Vocabulary generated by LightWord\n";
@@ -387,7 +429,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         }, size -> {
             if (size == null) snackbar.setText("备份失败！");
             else if (size == -1) snackbar.setText("备份失败，无文件写入权限！");
-            else snackbar.setText("备份到" + Environment.DIRECTORY_DOCUMENTS + "已完成！");
+            else snackbar.setText("备份到" + Environment.DIRECTORY_DOCUMENTS + "已完成！共备份" + size + "条");
             countDown(snackbar::dismiss, 2000);
         });
 
@@ -422,21 +464,20 @@ public class SettingsFragment extends PreferenceFragmentCompat {
         intent.setType("text/*");
         String[] mimetypes = {"text/csv", "text/comma-separated-values", "application/csv"};
         intent.putExtra(Intent.EXTRA_MIME_TYPES, mimetypes);
-        this.startActivityForResult(intent, REQUEST_VOCAB_EXERCISE);
+        this.startActivityForResult(intent, Constant.REQUEST_VOCAB_EXERCISE);
     }
 
-    private void importVocabExercise(Uri uri) {
+    private void importVocabExercise(Boolean mode, Uri uri) {
         Snackbar snackbar = Snackbar.make(getView(), "导入备份中...", Snackbar.LENGTH_INDEFINITE);
         snackbar.show();
         ThreadTask.runOnThread(() -> {
-            Integer count = 0;
             try {
                 InputStream is = getContext().getContentResolver().openInputStream(uri);
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(is));
                 String header = bufferedReader.readLine();
-                if (!header.contains("Backup generated by LightWord")) return -1;
+                if (!header.contains("Backup generated by LightWord")) return "解析失败，不是备份文件！";
                 VocabType vType = vocabTypeRepository.getVocabType(header.split(",", 8)[6].trim());
-                if (vType == null) return -2;
+                if (vType == null) return "词汇分类不存在，无法导入练习数据！";
 
                 Map<String, Long> wordIdMap = vocabularyRepository.getWordIdMap(vType.getId());
                 Set<ExerciseData> dataList = new HashSet<>();
@@ -453,22 +494,26 @@ public class SettingsFragment extends PreferenceFragmentCompat {
                         exerciseData.setCorrect(Integer.parseInt(data[4]));
                         exerciseData.setWrong(Integer.parseInt(data[5]));
                         dataList.add(exerciseData);
-                        count++;
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
                 }
-                exerciseRepository.insertOrUpdate(dataList, vType.getId());
+                Integer[] result = exerciseRepository
+                        .insertOrUpdate(mode, vType.getId(), dataList);
+                if (result[0] > 0 && result[1] == 0)
+                    return String.format("成功导入备份！共导入%d条数据", result[0]);
+                else if (result[0] > 0 && result[1] > 0)
+                    return String.format("成功导入备份！新增%d条、覆盖%d条", result[0], result[1]);
+                else if (result[1] != null && result[1] > 0)
+                    return String.format("成功导入备份！共覆盖%d条", result[1]);
+                else
+                    return "共导入0条数据！";
             } catch (IOException ex) {
                 ex.printStackTrace();
-                count = null;
+                return "导入备份失败！";
             }
-            return count;
-        }, size -> {
-            if (size == null) snackbar.setText("导入备份失败！");
-            else if (size == -1) snackbar.setText("解析失败，不是备份文件！");
-            else if (size == -2) snackbar.setText("词汇分类不存在，无法导入练习数据！");
-            else snackbar.setText("导入备份已完成！共导入" + size + "条数据。");
+        }, msg -> {
+            snackbar.setText(msg);
             countDown(snackbar::dismiss, 2000);
         });
     }
@@ -476,9 +521,11 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_VOCAB_EXERCISE && resultCode == Activity.RESULT_OK) {
+        if (requestCode == Constant.REQUEST_VOCAB_EXERCISE && resultCode == Activity.RESULT_OK) {
             if (data != null) {
-                importVocabExercise(data.getData());
+                insertModeDialog(R.string.insert_mode, mode -> {
+                    importVocabExercise(mode, data.getData());
+                });
             }
         }
     }

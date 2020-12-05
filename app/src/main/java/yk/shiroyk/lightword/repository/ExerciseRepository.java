@@ -6,11 +6,12 @@
 package yk.shiroyk.lightword.repository;
 
 import android.app.Application;
+import android.util.Log;
 
+import androidx.core.util.Consumer;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -20,19 +21,17 @@ import java.util.Map;
 import java.util.Set;
 
 import yk.shiroyk.lightword.db.LightWordDatabase;
+import yk.shiroyk.lightword.db.constant.Constant;
 import yk.shiroyk.lightword.db.dao.ExerciseDao;
 import yk.shiroyk.lightword.db.entity.ExerciseData;
 import yk.shiroyk.lightword.db.entity.VocabExerciseData;
 import yk.shiroyk.lightword.db.entity.Vocabulary;
-import yk.shiroyk.lightword.utils.CalDate;
 import yk.shiroyk.lightword.utils.ThreadTask;
 
 public class ExerciseRepository {
+    private static final String TAG = ExerciseRepository.class.getSimpleName();
     private final ExerciseDao exerciseDao;
-    private List<Integer> minList = Arrays.asList(5, 20, 720, 1440, 2880, 5760, 10080, 14436, 46080, 92160);
-    public static final int EXERCISE_CORRECT = 10005;
-    public static final int EXERCISE_WRONG = 10006;
-    public static final int EXERCISE_NEW = 10007;
+    private List<Integer> forgetTime = Arrays.asList(5, 20, 720, 1440, 2880, 5760, 10080, 14436, 46080, 92160);
     private final MutableLiveData<Integer> exerciseStatus = new MutableLiveData<>();
 
     public ExerciseRepository(Application application) {
@@ -44,14 +43,25 @@ public class ExerciseRepository {
         return exerciseDao.LoadReviewWord(vtypeId, limit);
     }
 
-    public void setForgetTime(List<Integer> minList) {
-        if (minList.size() > 0) {
-            this.minList = minList;
+    public void setForgetTime(List<Integer> forgetTime) {
+        if (forgetTime.size() > 0) {
+            this.forgetTime = forgetTime;
         }
     }
 
     public Integer getForgetTimeSize() {
-        return minList.size();
+        return forgetTime.size();
+    }
+
+    private Date calculateDate(Date timestamp, int stage, boolean minus) {
+        if (stage < forgetTime.size()) {
+            int calStage = minus && (stage > 1) ? 2 : 0;
+            long time = Long.valueOf(forgetTime.get(stage - calStage)) * 60 * 1000;
+            timestamp = new Date(new Date().getTime() + time);
+            Log.d(TAG, "Calculate Date: " + forgetTime.get(stage - calStage)
+                    + " Next Review Time: " + timestamp.toString());
+        }
+        return timestamp;
     }
 
     public void update(ExerciseData data) {
@@ -60,6 +70,10 @@ public class ExerciseRepository {
 
     public void update(ExerciseData[] data) {
         ThreadTask.runOnThread(() -> exerciseDao.update(data));
+    }
+
+    public void update(ExerciseData[] data, Consumer<Integer> consumer) {
+        ThreadTask.runOnThread(() -> exerciseDao.update(data), consumer);
     }
 
     public Set<ExerciseData> getExerciseDataSet(Long vtypeId) {
@@ -80,20 +94,18 @@ public class ExerciseRepository {
                 data -> {
                     if (data != null) {
                         Integer stage = data.getStage();
-                        Integer correct = data.getCorrect();
                         Date timestamp = data.getTimestamp();
-                        CalDate calDate = new CalDate(minList, timestamp, stage);
-                        if (stage < minList.size()) {
-                            data.setTimestamp(calDate.timestamp(false));
-                            data.setStage(stage + 1);
+                        if (stage < forgetTime.size()) {
+                            data.setTimestamp(calculateDate(timestamp, stage, false));
+                            data.inStage();
                         }
                         data.setLastPractice(now);
-                        data.setCorrect(correct + 1);
+                        data.inCorrect();
                         update(data);
-                        exerciseStatus.setValue(EXERCISE_CORRECT);
+                        exerciseStatus.setValue(Constant.EXERCISE_CORRECT);
                     } else {
                         data = new ExerciseData();
-                        data.setTimestamp(new Date(now.getTime() + minList.get(0) * 60 * 1000));
+                        data.setTimestamp(new Date(now.getTime() + forgetTime.get(0) * 60 * 1000));
                         data.setWordId(wordId);
                         data.setVtypeId(vtypeId);
                         data.setLastPractice(now);
@@ -101,7 +113,7 @@ public class ExerciseRepository {
                         data.setCorrect(1);
                         data.setWrong(0);
                         insert(data);
-                        exerciseStatus.setValue(EXERCISE_NEW);
+                        exerciseStatus.setValue(Constant.EXERCISE_NEW);
                     }
                 });
     }
@@ -111,18 +123,16 @@ public class ExerciseRepository {
                 data -> {
                     if (data != null) {
                         Integer stage = data.getStage();
-                        Integer wrong = data.getWrong();
                         Date timestamp = data.getTimestamp();
-                        CalDate calDate = new CalDate(minList, timestamp, stage);
                         if (stage > 1) {
-                            data.setTimestamp(calDate.timestamp(true));
-                            data.setStage(stage - 1);
+                            data.setTimestamp(calculateDate(timestamp, stage, true));
+                            data.deStage();
                         }
                         data.setLastPractice(new Date());
-                        data.setWrong(wrong + 1);
+                        data.inWrong();
                         update(data);
                     }
-                    exerciseStatus.setValue(EXERCISE_WRONG);
+                    exerciseStatus.setValue(Constant.EXERCISE_WRONG);
                 });
     }
 
@@ -131,13 +141,12 @@ public class ExerciseRepository {
         ThreadTask.runOnThread(() -> exerciseDao.getSingleWord(wordId, vtypeId),
                 data -> {
                     if (data != null) {
-                        Integer correct = data.getCorrect();
                         data.setTimestamp(new Date(0));
                         data.setStage(99);
                         data.setLastPractice(now);
-                        data.setCorrect(correct + 1);
+                        data.inCorrect();
                         update(data);
-                        exerciseStatus.setValue(EXERCISE_CORRECT);
+                        exerciseStatus.setValue(Constant.EXERCISE_CORRECT);
                     } else {
                         data = new ExerciseData();
                         data.setTimestamp(new Date(0));
@@ -148,80 +157,89 @@ public class ExerciseRepository {
                         data.setCorrect(1);
                         data.setWrong(0);
                         insert(data);
-                        exerciseStatus.setValue(EXERCISE_NEW);
+                        exerciseStatus.setValue(Constant.EXERCISE_NEW);
                     }
                 });
     }
 
-    public List<VocabExerciseData> getExerciseDataList(Long vtypeId) {
+    public List<VocabExerciseData> getVocabExerciseDataList(Long vtypeId) {
         return exerciseDao.getExerciseDataList(vtypeId);
     }
 
-    public List<Long> getVocabIdList(Long vtypeId) {
-        return exerciseDao.getVocabIdList(vtypeId);
+    public Set<VocabExerciseData> getVocabExerciseDataSet(Long vtypeId) {
+        return new HashSet<>(exerciseDao.getExerciseDataList(vtypeId));
     }
 
     private Map<String, VocabExerciseData> getVocabExerciseMap(Long vtypeId) {
         Map<String, VocabExerciseData> vocabMap = new HashMap<>();
-        for (VocabExerciseData data : getExerciseDataList(vtypeId)) {
+        for (VocabExerciseData data : getVocabExerciseDataList(vtypeId)) {
             vocabMap.put(data.word, data);
         }
         return vocabMap;
     }
 
-    private List<Vocabulary> checkVocabDataExists(Long newVId, List<Vocabulary> vList) {
-        List<Vocabulary> newVList = new ArrayList<>();
-        List<Long> dataIdList = getVocabIdList(newVId);
-        for (Vocabulary vocab : vList) {
-            if (!dataIdList.contains(vocab.getId())) {
-                newVList.add(vocab);
-            }
-        }
-        return newVList;
-    }
+    public LiveData<Integer[]> copyExerciseData(Boolean mode, Long oldVId, Long newVId, List<Vocabulary> vList) {
+        //mode true, only Insert
+        //mode false, Insert and Update
 
-    public LiveData<Integer> copyExerciseData(Long oldVId, Long newVId, List<Vocabulary> vList) {
-        MutableLiveData<Integer> size = new MutableLiveData<>();
+        MutableLiveData<Integer[]> size = new MutableLiveData<>();
         ThreadTask.runOnThread(() -> {
             Map<String, VocabExerciseData> vocabMap = getVocabExerciseMap(oldVId);
-            List<ExerciseData> exerciseData = new ArrayList<>();
-            for (Vocabulary vocab : checkVocabDataExists(newVId, vList)) {
-                VocabExerciseData vocabExerciseData = vocabMap.get(vocab.getWord());
-                if (vocabExerciseData != null) {
+            Set<ExerciseData> existEDSet = getExerciseDataSet(newVId);
+            Set<ExerciseData> newData = new HashSet<>();
+            for (Vocabulary vocab : vList) {
+                VocabExerciseData exData = vocabMap.get(vocab.getWord());
+                if (exData != null) {
                     ExerciseData data = new ExerciseData();
                     data.setWordId(vocab.getId());
-                    data.setVtypeId(vocab.getVtypeId());
-                    data.setLastPractice(vocabExerciseData.last_practice);
-                    data.setTimestamp(vocabExerciseData.timestamp);
-                    data.setStage(vocabExerciseData.stage);
-                    data.setCorrect(vocabExerciseData.correct);
-                    data.setWrong(vocabExerciseData.wrong);
-                    exerciseData.add(data);
+                    data.setVtypeId(newVId);
+                    data.setTimestamp(exData.timestamp);
+                    data.setLastPractice(exData.last_practice);
+                    data.setStage(exData.stage);
+                    data.setCorrect(exData.correct);
+                    data.setWrong(exData.wrong);
+                    newData.add(data);
                 }
             }
-            return exerciseData;
-        }, exerciseData -> {
-            int result = exerciseData.size();
-            size.setValue(result);
-            insert(exerciseData.toArray(new ExerciseData[result]));
+
+            Integer[] result = new Integer[2];
+            if (!mode) {
+                Set<ExerciseData> updateSet = new HashSet<>(existEDSet);
+                updateSet.retainAll(newData);
+                result[1] = updateSet.size();
+                update(updateSet.toArray(new ExerciseData[result[1]]));
+            }
+
+            newData.removeAll(existEDSet);
+            result[0] = newData.size();
+            insert(newData.toArray(new ExerciseData[result[0]]));
+
+            size.postValue(result);
         });
         return size;
     }
 
-    public void insertOrUpdate(Set<ExerciseData> dataSet, Long vtypeId) {
-        if (dataSet.size() == 0) return;
+    public Integer[] insertOrUpdate(Boolean mode, Long vtypeId, Set<ExerciseData> dataSet) {
+        Integer[] result = new Integer[2];
+        if (dataSet.size() == 0) return result;
 
-        Set<ExerciseData> dataCopy = new HashSet<>(dataSet);
+        //mode true, only Insert
+        //mode false, Insert and Update
+
         Set<ExerciseData> oldSet = getExerciseDataSet(vtypeId);
 
+        if (!mode) {
+            Set<ExerciseData> updateSet = new HashSet<>(oldSet);
+            updateSet.retainAll(dataSet);
+            result[1] = updateSet.size();
+            update(updateSet.toArray(new ExerciseData[result[1]]));
+        }
+
         dataSet.removeAll(oldSet);
-        dataCopy.retainAll(oldSet);
+        result[0] = dataSet.size();
+        insert(dataSet.toArray(new ExerciseData[result[0]]));
 
-        int insertSize = dataSet.size();
-        int updateSize = dataCopy.size();
-
-        insert(dataSet.toArray(new ExerciseData[insertSize]));
-        update(dataCopy.toArray(new ExerciseData[updateSize]));
+        return result;
     }
 
     public LiveData<Integer> getExerciseStatus() {
@@ -232,8 +250,8 @@ public class ExerciseRepository {
         return exerciseDao.getExerciseProgress(vtypeId);
     }
 
-    public LiveData<Integer> getExerciseReview(Long vtypeId) {
-        return exerciseDao.getExerciseReview(vtypeId);
+    public LiveData<Integer> countExerciseReview(Long vtypeId) {
+        return exerciseDao.countExerciseReview(vtypeId);
     }
 
     public void insert(ExerciseData e) {

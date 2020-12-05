@@ -10,7 +10,6 @@ import android.app.Application;
 import androidx.core.util.Consumer;
 import androidx.lifecycle.LiveData;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -81,8 +80,16 @@ public class VocabularyRepository {
         return vocabularyDao.getWordListById(wordId, vtypeId);
     }
 
+    public Set<Vocabulary> getWordSetById(List<Long> wordId, Long vtypeId) {
+        return new HashSet<>(vocabularyDao.getWordListById(wordId, vtypeId));
+    }
+
     public List<Vocabulary> getWordList(Long vtypeId) {
         return vocabularyDao.getWordList(vtypeId);
+    }
+
+    public Set<Vocabulary> getWordSet(Long vtypeId) {
+        return new HashSet<>(vocabularyDao.getWordList(vtypeId));
     }
 
     public Map<String, Long> getWordIdMap(Long vtypeId) {
@@ -93,26 +100,17 @@ public class VocabularyRepository {
         return wordIdMap;
     }
 
-    private List<Vocabulary> checkExists(Long newType, List<Vocabulary> vList) {
-        List<Vocabulary> newList = new ArrayList<>();
-        List<String> oldVList = getWordString(newType);
-        for (Vocabulary vocab : vList) {
-            if (!oldVList.contains(vocab.getWord())) {
-                newList.add(vocab);
-            }
-        }
-        return newList;
-    }
-
-    public Vocabulary[] collectNewVocab(Long newType, List<Vocabulary> vList) {
-        List<Vocabulary> newList = new ArrayList<>();
-        for (Vocabulary v : checkExists(newType, vList)) {
+    public Vocabulary[] collectNewVocab(Long newType, Set<Vocabulary> vList) {
+        Set<Vocabulary> newVList = new HashSet<>();
+        Set<Vocabulary> oldVList = new HashSet<>(getWordList(newType));
+        vList.removeAll(oldVList);
+        for (Vocabulary v : vList) {
             v.setId(null);
             v.setVtypeId(newType);
-            newList.add(v);
+            newVList.add(v);
         }
-        int size = newList.size();
-        return newList.toArray(new Vocabulary[size]);
+        int size = newVList.size();
+        return newVList.toArray(new Vocabulary[size]);
     }
 
     public Vocabulary queryWord(String word, Long vtypeId) {

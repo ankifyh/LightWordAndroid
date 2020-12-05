@@ -99,6 +99,16 @@ public class ExerciseData {
         this.stage = stage;
     }
 
+    public void inStage() {
+        if (stage != null)
+            this.stage++;
+    }
+
+    public void deStage() {
+        if (stage != null)
+            this.stage--;
+    }
+
     public Integer getCorrect() {
         return correct;
     }
@@ -107,12 +117,22 @@ public class ExerciseData {
         this.correct = correct;
     }
 
+    public void inCorrect() {
+        if (correct != null)
+            this.correct++;
+    }
+
     public Integer getWrong() {
         return wrong;
     }
 
     public void setWrong(Integer wrong) {
         this.wrong = wrong;
+    }
+
+    public void inWrong() {
+        if (wrong != null)
+            this.wrong++;
     }
 
     public String toMasterString() {

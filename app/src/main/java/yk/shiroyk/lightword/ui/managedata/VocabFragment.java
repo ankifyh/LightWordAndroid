@@ -46,7 +46,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
@@ -56,6 +55,7 @@ import java.util.Set;
 
 import yk.shiroyk.lightword.MainActivity;
 import yk.shiroyk.lightword.R;
+import yk.shiroyk.lightword.db.constant.Constant;
 import yk.shiroyk.lightword.db.constant.OrderEnum;
 import yk.shiroyk.lightword.db.constant.VocabFilterEnum;
 import yk.shiroyk.lightword.db.entity.ExerciseData;
@@ -80,7 +80,6 @@ import yk.shiroyk.lightword.utils.VocabFileManage;
 public class VocabFragment extends Fragment {
 
     private static final String TAG = "ImportVocabFragment";
-    private static final int REQUEST_VOCABULARY = 10001;
 
     private VocabViewModel vocabViewModel;
     private SharedViewModel sharedViewModel;
@@ -637,6 +636,12 @@ public class VocabFragment extends Fragment {
                             vocabTypeRepository.update(defaultVType);
                             getActivity().invalidateOptionsMenu();
                         }
+                        return size;
+                    }, size -> {
+                        if (size > 0) {
+                            Snackbar.make(getView(), String.format(getString(R.string.success_delete_single_vocab),
+                                    vocab.word), Snackbar.LENGTH_LONG).show();
+                        }
                     });
                 })
                 .setNegativeButton(R.string.dialog_cancel, null)
@@ -694,8 +699,8 @@ public class VocabFragment extends Fragment {
                 .setPositiveButton(R.string.dialog_ensure, (dialogInterface, i) -> {
                     VocabType vType = (VocabType) sp_type.getSelectedItem();
                     ThreadTask.runOnThread(() -> {
-                        List<Vocabulary> vList = vocabularyRepository
-                                .getWordListById(adapter.getSelectedItem(), defaultVType.getId());
+                        Set<Vocabulary> vList = vocabularyRepository
+                                .getWordSetById(adapter.getSelectedItem(), defaultVType.getId());
 
                         for (Vocabulary vocab : vList) {
                             vocabFileManage.copyFile(
@@ -729,8 +734,7 @@ public class VocabFragment extends Fragment {
                                     getString(R.string.success_collect_vocab_overwrite),
                                     overwrite);
                         }
-                        Snackbar.make(getView(), msg, Snackbar.LENGTH_LONG)
-                                .setAction("Action", null).show();
+                        Snackbar.make(getView(), msg, Snackbar.LENGTH_LONG).show();
                     });
                 })
                 .setNegativeButton(R.string.dialog_cancel, null)
@@ -757,9 +761,10 @@ public class VocabFragment extends Fragment {
                         }
                         return size;
                     }, size -> {
-                        Snackbar.make(getView(), String.format(getString(R.string.success_delete_vocab),
-                                defaultVType.getVocabtype(), size), Snackbar.LENGTH_LONG)
-                                .setAction("Action", null).show();
+                        if (size > 0) {
+                            Snackbar.make(getView(), String.format(getString(R.string.success_delete_vocab),
+                                    defaultVType.getVocabtype(), size), Snackbar.LENGTH_LONG).show();
+                        }
                     });
                 })
                 .setNegativeButton(R.string.dialog_cancel, null)
@@ -938,22 +943,22 @@ public class VocabFragment extends Fragment {
         intent.setType("text/*");
         String[] mimetypes = {"text/csv", "text/comma-separated-values", "application/csv"};
         intent.putExtra(Intent.EXTRA_MIME_TYPES, mimetypes);
-        this.startActivityForResult(intent, REQUEST_VOCABULARY);
+        this.startActivityForResult(intent, Constant.REQUEST_VOCABULARY);
     }
 
     private void updateExerciseData(List<Long> idList) {
         //reset exercise data
-        ThreadTask.runOnThread(() -> exerciseRepository
-                        .getWordListById(idList, defaultVType.getId()),
+        ThreadTask.runOnThread(() -> exerciseRepository.getWordListById(idList, defaultVType.getId()),
                 dataArray -> {
                     Date date = new Date();
                     for (ExerciseData data : dataArray) {
                         data.setTimestamp(date);
                         data.setStage(1);
                     }
-                    exerciseRepository.update(dataArray);
+                    exerciseRepository.update(dataArray, size -> {
+                        Snackbar.make(getView(), "取消已掌握成功，共取消" + size + "个！", Snackbar.LENGTH_SHORT).show();
+                    });
                 });
-        Toast.makeText(context, "删除成功!", Toast.LENGTH_SHORT).show();
     }
 
     private void setEnsureDialog(VocabType v, Uri uri) {
@@ -979,7 +984,7 @@ public class VocabFragment extends Fragment {
                 wordList = vocabularyRepository.getWordStringSet(vocabType.getId());
             }
 
-            List<Vocabulary> vocabList = new ArrayList<>();
+            Set<Vocabulary> vocabList = new HashSet<>();
 
             int[] result = new int[2];
             //result[0] overwrite size
@@ -1041,12 +1046,15 @@ public class VocabFragment extends Fragment {
                 if (result[0] > 0) {
                     if (result[1] > 0)
                         msg = String.format("导入成功，共覆盖%d条、新增%d条数据", result[0], result[1]);
-                    else msg = String.format("导入成功，共覆盖%d条数据", result[0]);
+                    else
+                        msg = String.format("导入成功，共覆盖%d条数据", result[0]);
                 } else {
-                    if (result[1] > 0) msg = String.format("导入成功，共新增%d条", result[1]);
+                    if (result[1] > 0)
+                        msg = String.format("导入成功，共新增%d条", result[1]);
                 }
             } else {
-                if (result[1] > 0) msg = String.format("导入成功，共导入%d条数据", result[1]);
+                if (result[1] > 0)
+                    msg = String.format("导入成功，共导入%d条数据", result[1]);
             }
 
             //delete invalid vocabType
@@ -1056,15 +1064,14 @@ public class VocabFragment extends Fragment {
                 });
             }
             loadingDialog.dismiss();
-            Snackbar.make(getView(), msg, Snackbar.LENGTH_LONG)
-                    .setAction("Action", null).show();
+            Snackbar.make(getView(), msg, Snackbar.LENGTH_LONG).show();
         });
     }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_VOCABULARY && resultCode == Activity.RESULT_OK) {
+        if (requestCode == Constant.REQUEST_VOCABULARY && resultCode == Activity.RESULT_OK) {
             if (data != null) {
                 Uri uri = data.getData();
                 String fname = FileUtils.getFileName(context.getContentResolver(), Objects.requireNonNull(uri));

@@ -104,7 +104,7 @@
     <string name="vocab_save_success">%s 保存成功！</string>
     <string name="vocab_save_fail_collcation_not_null">%s 保存失败，搭配不能为空！</string>
     <string name="example_del_fail_example_not_null">删除失败，例句不能为空！</string>
-    <string name="vocab_delete_success">%s 删除成功！</string>
+    <string name="success_delete_single_vocab">%s 删除成功！</string>
     <string name="all_vocab">全部词汇</string>
     <string name="order_vocab">排序方式</string>
     <string name="order_by_word">词汇</string>
@@ -137,9 +137,14 @@
     <string name="success_collect_vocab_overwrite">, 覆盖%d个</string>
     <string name="success_delete_vocab">成功删除%s的%d个词汇</string>
     <string name="success_copy_exercise">成功复制%d个至%s</string>
+    <string name="success_copy_update_exercise">成功复制%d个，覆盖%d个至%s</string>
     <string name="help_exercise">1. 练习界面中，点击进度⭕️可以快速添加到已掌握。</string>
-    <string name="help_setting">2. 设置界面中，复制的练习数据，如果数据已存在则会忽略。</string>
     <string name="setting_copy_exercise">复制练习数据</string>
     <string name="setting_copy_exercise_subtitle">将一个分类的练习数据复制到另一个</string>
-
+    <string name="insert_mode">导入方式</string>
+    <string name="only_insert">仅插入</string>
+    <string name="insert_and_update">插入并更新</string>
+    <string name="copy_mode">复制方式</string>
+    <string name="only_copy">仅复制</string>
+    <string name="copy_and_update">复制并更新</string>
 </resources>

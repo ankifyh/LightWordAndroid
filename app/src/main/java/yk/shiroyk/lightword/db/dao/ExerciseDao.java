@@ -32,20 +32,17 @@ public interface ExerciseDao {
 
     @Transaction
     @Update
-    void update(ExerciseData[] exerciseData);
+    int update(ExerciseData[] exerciseData);
 
     @Query("SELECT word, word_id, vtype_id, timestamp, last_practice," +
             "stage, correct, wrong FROM vocabulary INNER JOIN (SELECT word_id, " +
-            "timestamp, last_practice, stage, correct, wrong " +
-            "FROM exercise_data WHERE vtype_id = :vtypeId) AS userword ON " +
-            "vocabulary.id = userword.word_id")
+            "timestamp, last_practice, stage, correct, wrong FROM exercise_data " +
+            "WHERE vtype_id = :vtypeId) AS userword ON vocabulary.id = " +
+            "userword.word_id WHERE vtype_id = :vtypeId")
     List<VocabExerciseData> getExerciseDataList(Long vtypeId);
 
     @Query("SELECT * FROM exercise_data WHERE vtype_id = :vtypeId")
     List<ExerciseData> getExerciseData(Long vtypeId);
-
-    @Query("SELECT word_id FROM exercise_data WHERE vtype_id = :vtypeId")
-    List<Long> getVocabIdList(Long vtypeId);
 
     @Transaction
     @Query("SELECT * FROM exercise_data WHERE vtype_id = :vtypeId AND word_id IN (:idList)")
@@ -58,7 +55,7 @@ public interface ExerciseDao {
             "WHERE vtype_id = :vtypeId " +
             "AND stage != 99 " +
             "AND timestamp <= strftime('%s','now') * 1000")
-    LiveData<Integer> getExerciseReview(long vtypeId);
+    LiveData<Integer> countExerciseReview(long vtypeId);
 
     @Query("SELECT * FROM exercise_data " +
             "WHERE exercise_data.word_id = :wordId " +

@@ -59,6 +59,14 @@
             app:defaultValue="@integer/default_daily_target"
             app:useSimpleSummaryProvider="true" />
 
+        <EditTextPreference
+            android:inputType="text"
+            app:defaultValue="5, 20, 720, 1440, 2880, 5760, 10080, 14436, 46080, 92160"
+            app:dialogTitle="设置遗忘周期"
+            app:key="forgetTime"
+            app:title="遗忘周期"
+            app:useSimpleSummaryProvider="true" />
+
         <SwitchPreferenceCompat
             app:defaultValue="false"
             app:key="byFrequency"
